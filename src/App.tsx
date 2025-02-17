@@ -1,34 +1,34 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
+import { useEffect } from 'react'
+import { SDK, Config } from '@dappykit/sdk'
+import { Header } from './Header/Header'
+import { FooterLogged } from './FooterLogged'
+import { FooterNoAuth } from './FooterNoAuth'
+import { useAppSelector } from './redux/hooks.ts'
+import { selectAuth } from './redux/reducers/authSlice.ts'
+import { MainLogged } from './MainLogged.tsx'
+import { MainNoAuth } from './MainNoAuth.tsx'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const auth = useAppSelector(selectAuth)
+
+  useEffect(() => {
+    const sdk = new SDK(Config.optimismMainnetConfig)
+    console.log('sdk', sdk)
+  }, [])
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+      <>
+        <div className="overflow-x-hidden rounded-top-4 pt-2 pt-lg-4">
+          <Header/>
+
+          {auth.isAuthenticated ? <MainLogged/> : <MainNoAuth/>}
+
+          {/*{!auth.isAuthenticated && <Stata stata={stata}/>}*/}
+
+          {auth.isAuthenticated ? <FooterLogged/> : <FooterNoAuth/>}
+        </div>
+      </>
   )
 }
 
