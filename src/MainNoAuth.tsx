@@ -20,7 +20,7 @@ export function MainNoAuth() {
             </div>
           </div>
           <div className="mt-10 d-none d-lg-block pb-5">
-            <img src="/preview-1.png" alt="Preview" />
+            {/*<img src="/preview-1.png" alt="Preview" />*/}
           </div>
         </div>
       </div>
