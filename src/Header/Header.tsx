@@ -22,9 +22,9 @@ export function Header() {
                       <a
                           className="sign-in-header nav-item nav-link rounded-pill d-none d-lg-block"
                           href="#"
-                          onClick={e => e.preventDefault()}
+                          onClick={e => { e.preventDefault() }}
                       >
-                        <button className="btn btn-secondary">Sign in</button>
+                        <appkit-button />
                       </a>
                   )}
 
