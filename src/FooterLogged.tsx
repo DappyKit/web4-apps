@@ -1,4 +1,4 @@
-export function FooterLogged(){
+export function FooterLogged() {
   return (
     <footer className="pt-24 pb-10 mx-lg-auto w-lg-75">
       <hr/>

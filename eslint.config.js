@@ -29,6 +29,7 @@ export default tseslint.config(
             ...react.configs['jsx-runtime'].rules,
             ...reactHooks.configs.recommended.rules,
             'object-curly-spacing': ["error", "always"],
+            "indent": ["error", 2],
             'react-refresh/only-export-components': [
                 'warn',
                 {allowConstantExport: true},
