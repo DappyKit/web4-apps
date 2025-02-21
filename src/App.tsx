@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { SDK, Config } from '@dappykit/sdk'
 import { Header } from './Header/Header'
-import { FooterLogged } from './FooterLogged'
 import { FooterNoAuth } from './FooterNoAuth'
 import { useAppSelector } from './redux/hooks.ts'
 import { selectAuth } from './redux/reducers/authSlice.ts'
@@ -18,12 +17,12 @@ function App() {
 
   return (
     <>
-      <div className="overflow-x-hidden rounded-top-4 pt-2 pt-lg-4">
-        {auth.isAuthenticated ? <></>: <Header/>}
+      <div className={auth.isAuthenticated ? '' : 'overflow-x-hidden rounded-top-4 pt-2 pt-lg-4'}>
+        {auth.isAuthenticated ? <></> : <Header/>}
 
         {auth.isAuthenticated ? <MainLogged/> : <MainNoAuth/>}
 
-        {auth.isAuthenticated ? <FooterLogged/> : <FooterNoAuth/>}
+        {auth.isAuthenticated ? null : <FooterNoAuth/>}
       </div>
     </>
   )

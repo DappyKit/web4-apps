@@ -1,11 +1,11 @@
 export function FooterLogged() {
   return (
-    <footer className="pt-24 pb-10 mx-lg-auto w-lg-75">
-      <hr/>
-      <div className="container mw-screen-xl">
-        <div className="row mt-5 mb-7">
+    <footer className="px-md-4">
+      <hr className="w-100 my-4"/>
+      <div className="container-fluid px-0">
+        <div className="row mb-4">
           <div className="col">
-            <ul className="nav mx-n4">
+            <ul className="nav">
               <li className="nav-item">
                 <a
                   target="_blank"
@@ -27,9 +27,9 @@ export function FooterLogged() {
             </ul>
           </div>
         </div>
-        <div className="row">
+        <div className="row mb-3">
           <div className="col-auto">
-            <p className="text-sm text-muted">&copy; Copyright 2025 DappyKit</p>
+            <p className="text-sm text-muted mb-0">&copy; Copyright 2025 DappyKit</p>
           </div>
         </div>
       </div>
