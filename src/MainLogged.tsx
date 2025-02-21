@@ -8,8 +8,21 @@ import { AllApps } from './pages/AllApps'
 import { AllTemplates } from './pages/AllTemplates'
 import { Settings } from './pages/Settings'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { useDispatch } from 'react-redux'
+import { logout } from './redux/reducers/authSlice'
+import { useDisconnect } from 'wagmi'
 
 export function MainLogged() {
+  const { disconnect } = useDisconnect()
+  const dispatch = useDispatch()
+
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to logout?')) {
+      disconnect()
+      dispatch(logout())
+    }
+  }
+
   return (
     <main className="d-flex min-vh-100">
       <div className="border-end bg-body-tertiary" style={{ width: '280px' }}>
@@ -74,6 +87,15 @@ export function MainLogged() {
                   <i className="bi bi-gear-wide-connected"></i>
                   Settings
                 </NavLink>
+              </li>
+              <li className="nav-item">
+                <button 
+                  onClick={handleLogout}
+                  className="nav-link d-flex gap-2 text-danger border-0 bg-transparent w-100 text-start"
+                >
+                  <i className="bi bi-box-arrow-right"></i>
+                  Logout
+                </button>
               </li>
             </ul>
           </div>
