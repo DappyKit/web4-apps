@@ -7,6 +7,7 @@ import { MyTemplates } from './pages/MyTemplates'
 import { AllApps } from './pages/AllApps'
 import { AllTemplates } from './pages/AllTemplates'
 import { Settings } from './pages/Settings'
+import { ProtectedRoute } from './components/ProtectedRoute'
 
 export function MainLogged() {
   return (
@@ -82,12 +83,36 @@ export function MainLogged() {
       <div className="flex-grow-1 d-flex flex-column">
         <div className="px-md-4 flex-grow-1">
           <Routes>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/my-apps" element={<MyApps />} />
-            <Route path="/my-templates" element={<MyTemplates />} />
-            <Route path="/all-apps" element={<AllApps />} />
-            <Route path="/all-templates" element={<AllTemplates />} />
-            <Route path="/settings" element={<Settings />} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/my-apps" element={
+              <ProtectedRoute>
+                <MyApps />
+              </ProtectedRoute>
+            } />
+            <Route path="/my-templates" element={
+              <ProtectedRoute>
+                <MyTemplates />
+              </ProtectedRoute>
+            } />
+            <Route path="/all-apps" element={
+              <ProtectedRoute>
+                <AllApps />
+              </ProtectedRoute>
+            } />
+            <Route path="/all-templates" element={
+              <ProtectedRoute>
+                <AllTemplates />
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </div>
