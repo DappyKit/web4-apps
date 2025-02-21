@@ -15,6 +15,11 @@ function App() {
     console.log('sdk', sdk)
   }, [])
 
+  useEffect(() => {
+    // Add or remove body padding based on auth state
+    document.body.className = auth.isAuthenticated ? '' : 'p-1 p-lg-2'
+  }, [auth.isAuthenticated])
+
   return (
     <>
       <div className={auth.isAuthenticated ? '' : 'overflow-x-hidden rounded-top-4 pt-2 pt-lg-4'}>

@@ -15,7 +15,7 @@ export function MainNoAuth() {
               </p>
 
               <div className="d-block d-md-none d-flex justify-content-center align-items-center mt-5">
-                {/*<SignInButton onSuccess={(res: StatusAPIResponse) => onLogin(dispatch, res)} />*/}
+                <appkit-button />
               </div>
             </div>
           </div>
