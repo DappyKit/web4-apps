@@ -1,4 +1,3 @@
-import './App.css'
 import { useEffect } from 'react'
 import { SDK, Config } from '@dappykit/sdk'
 import { Header } from './Header/Header'
@@ -18,17 +17,15 @@ function App() {
   }, [])
 
   return (
-      <>
-        <div className="overflow-x-hidden rounded-top-4 pt-2 pt-lg-4">
-          <Header/>
+    <>
+      <div className="overflow-x-hidden rounded-top-4 pt-2 pt-lg-4">
+        {auth.isAuthenticated ? <></>: <Header/>}
 
-          {auth.isAuthenticated ? <MainLogged/> : <MainNoAuth/>}
+        {auth.isAuthenticated ? <MainLogged/> : <MainNoAuth/>}
 
-          {/*{!auth.isAuthenticated && <Stata stata={stata}/>}*/}
-
-          {auth.isAuthenticated ? <FooterLogged/> : <FooterNoAuth/>}
-        </div>
-      </>
+        {auth.isAuthenticated ? <FooterLogged/> : <FooterNoAuth/>}
+      </div>
+    </>
   )
 }
 
