@@ -6,6 +6,7 @@ import { useAppSelector } from './redux/hooks.ts'
 import { selectAuth } from './redux/reducers/authSlice.ts'
 import { MainLogged } from './MainLogged.tsx'
 import { MainNoAuth } from './MainNoAuth.tsx'
+import { BrowserRouter } from 'react-router-dom'
 
 function App() {
   const auth = useAppSelector(selectAuth)
@@ -21,7 +22,7 @@ function App() {
   }, [auth.isAuthenticated])
 
   return (
-    <>
+    <BrowserRouter>
       <div className={auth.isAuthenticated ? '' : 'overflow-x-hidden rounded-top-4 pt-2 pt-lg-4'}>
         {auth.isAuthenticated ? <></> : <Header/>}
 
@@ -29,7 +30,7 @@ function App() {
 
         {auth.isAuthenticated ? null : <FooterNoAuth/>}
       </div>
-    </>
+    </BrowserRouter>
   )
 }
 
