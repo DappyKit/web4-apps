@@ -32,12 +32,10 @@ describe('Apps API', () => {
       // Create test users
       await db('users').insert([
         {
-          address: testWallet.address,
-          username: 'test_user'
+          address: testWallet.address
         },
         {
-          address: otherWallet.address,
-          username: 'other_user'
+          address: otherWallet.address
         }
       ]);
       

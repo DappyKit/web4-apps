@@ -1,6 +1,5 @@
 export interface User {
   address: string;
-  username?: string;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -19,4 +18,10 @@ export interface CreateAppDTO {
   description?: string;
   signature: string;
   message: string;
+}
+
+export interface CreateUserDTO {
+  address: string;
+  message: string;
+  signature: string;
 } 

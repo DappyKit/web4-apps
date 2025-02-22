@@ -1,5 +1,6 @@
 import type { Knex } from "knex";
 import * as dotenv from 'dotenv';
+import path from 'path';
 
 dotenv.config();
 
@@ -13,7 +14,7 @@ const config: { [key: string]: Knex.Config } = {
       database: process.env.DB_NAME || 'dappykit_apps'
     },
     migrations: {
-      directory: './migrations',
+      directory: path.join(__dirname, '..', 'migrations'),
       extension: 'ts'
     }
   },
@@ -26,7 +27,7 @@ const config: { [key: string]: Knex.Config } = {
       database: process.env.DB_NAME
     },
     migrations: {
-      directory: './migrations',
+      directory: path.join(__dirname, '..', 'migrations'),
       extension: 'ts'
     }
   }

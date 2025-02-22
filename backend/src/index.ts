@@ -3,6 +3,7 @@ import knex from 'knex';
 import * as dotenv from 'dotenv';
 import knexConfig from './knexfile';
 import { createAppsRouter } from './routes/apps';
+import { createUsersRouter } from './routes/users';
 
 // Load environment variables
 dotenv.config();
@@ -19,6 +20,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api', createAppsRouter(db));
+app.use('/api', createUsersRouter(db));
 
 const port = process.env.PORT || 3001;
 app.listen(port, () => {
