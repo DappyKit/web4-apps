@@ -15,9 +15,12 @@ describe('Apps API', () => {
   let testWallet: ethers.HDNodeWallet;
   let otherWallet: ethers.HDNodeWallet;
   
-  beforeEach(async () => {
-    // Setup fresh database
+  beforeAll(async () => {
+    // Initialize database connection once
     db = knex(knexConfig['development']);
+  });
+
+  beforeEach(async () => {
     testWallet = ethers.Wallet.createRandom() as ethers.HDNodeWallet;
     otherWallet = ethers.Wallet.createRandom() as ethers.HDNodeWallet;
     
@@ -57,6 +60,7 @@ describe('Apps API', () => {
   });
   
   afterAll(async () => {
+    // Close database connection
     await db.destroy();
   });
 
@@ -143,6 +147,130 @@ describe('Apps API', () => {
       const apps = await db('apps')
         .where('owner_address', testWallet.address);
       expect(apps).toHaveLength(0);
+    });
+
+    describe('signature validation', () => {
+      it('should reject signature from different wallet', async () => {
+        const message = 'Create app: Test App';
+        const signature = await otherWallet.signMessage(message);
+        
+        const response = await request(app)
+          .post('/api/my-apps')
+          .set('x-wallet-address', testWallet.address)
+          .send({
+            name: 'Test App',
+            description: 'Test Description',
+            message,
+            signature
+          });
+
+        expect(response.status).toBe(401);
+        expect(response.body.error).toBe('Invalid signature');
+      });
+
+      it('should reject tampered message', async () => {
+        const message = 'Create app: Test App';
+        const signature = await testWallet.signMessage(message);
+        
+        const response = await request(app)
+          .post('/api/my-apps')
+          .set('x-wallet-address', testWallet.address)
+          .send({
+            name: 'Test App',
+            description: 'Test Description',
+            message: 'Create app: Different App', // Changed message
+            signature
+          });
+
+        expect(response.status).toBe(401);
+        expect(response.body.error).toBe('Invalid signature');
+      });
+
+      it('should reject invalid signature format', async () => {
+        const response = await request(app)
+          .post('/api/my-apps')
+          .set('x-wallet-address', testWallet.address)
+          .send({
+            name: 'Test App',
+            description: 'Test Description',
+            message: 'Create app: Test App',
+            signature: 'invalid_signature'
+          });
+
+        expect(response.status).toBe(401);
+        expect(response.body.error).toBe('Invalid signature');
+      });
+    });
+
+    describe('data validation', () => {
+      it('should reject empty name', async () => {
+        const message = 'Create app: ';
+        const signature = await testWallet.signMessage(message);
+        
+        const response = await request(app)
+          .post('/api/my-apps')
+          .set('x-wallet-address', testWallet.address)
+          .send({
+            name: '',
+            description: 'Test Description',
+            message,
+            signature
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBe('Name is required');
+      });
+
+      it('should reject too long name', async () => {
+        const longName = 'A'.repeat(256);
+        const message = `Create app: ${longName}`;
+        const signature = await testWallet.signMessage(message);
+        
+        const response = await request(app)
+          .post('/api/my-apps')
+          .set('x-wallet-address', testWallet.address)
+          .send({
+            name: longName,
+            description: 'Test Description',
+            message,
+            signature
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBe('Name must be less than 255 characters');
+      });
+
+      it('should reject too long description', async () => {
+        const longDescription = 'A'.repeat(1001);
+        const message = 'Create app: Test App';
+        const signature = await testWallet.signMessage(message);
+        
+        const response = await request(app)
+          .post('/api/my-apps')
+          .set('x-wallet-address', testWallet.address)
+          .send({
+            name: 'Test App',
+            description: longDescription,
+            message,
+            signature
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBe('Description must be less than 1000 characters');
+      });
+
+      it('should reject missing required fields', async () => {
+        const response = await request(app)
+          .post('/api/my-apps')
+          .set('x-wallet-address', testWallet.address)
+          .send({
+            name: 'Test App'
+            // Missing other required fields
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBe('Missing required fields');
+      });
     });
   });
 }); 

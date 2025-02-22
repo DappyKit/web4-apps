@@ -9,7 +9,7 @@
     "migrate": "knex migrate:latest --knexfile src/knexfile.ts",
     "migrate:rollback": "knex migrate:rollback --knexfile src/knexfile.ts",
     "migrate:make": "knex migrate:make -x ts --knexfile src/knexfile.ts",
-    "test": "jest"
+    "test": "jest --detectOpenHandles --runInBand"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

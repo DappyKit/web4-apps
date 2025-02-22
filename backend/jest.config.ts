@@ -6,7 +6,8 @@ const config: Config = {
   testMatch: ['**/tests/**/*.test.ts'],
   setupFiles: ['dotenv/config'],
   testTimeout: 10000,
-  forceExit: true
+  forceExit: false,
+  detectOpenHandles: true
 };
 
 export default config; 
