@@ -18,8 +18,9 @@ export function createAppsRouter(db: Knex) {
   // Get apps by owner
   router.get('/my-apps', requireAuth, (async (req: Request, res: Response) => {
     try {
+      const userAddress = (req as AuthRequest).address.toLowerCase();
       const apps = await db<App>('apps')
-        .where({ owner_address: (req as AuthRequest).address })
+        .where({ owner_address: userAddress })
         .orderBy('created_at', 'desc');
 
       res.json(apps);
@@ -32,15 +33,20 @@ export function createAppsRouter(db: Knex) {
   // Create new app
   router.post('/my-apps', requireAuth, (async (req: Request, res: Response) => {
     try {
-      const { name, description, signature, message }: CreateAppDTO = req.body;
+      const body = req.body;
+      if (!body || typeof body !== 'object') {
+        return res.status(400).json({ error: 'Invalid request body' });
+      }
+
+      const { name, description, signature } = body as CreateAppDTO;
 
       // First check if name exists and is not empty
-      if (!name || name.trim().length === 0) {
+      if (!name || typeof name !== 'string' || name.trim().length === 0) {
         return res.status(400).json({ error: 'Name is required' });
       }
 
       // Then check other required fields
-      if (!message || !signature) {
+      if (!signature || typeof signature !== 'string') {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
@@ -50,13 +56,17 @@ export function createAppsRouter(db: Knex) {
       }
 
       // Validate description length if provided
-      if (description && description.length > MAX_DESCRIPTION_LENGTH) {
+      if (description && (typeof description !== 'string' || description.length > MAX_DESCRIPTION_LENGTH)) {
         return res.status(400).json({ error: 'Description must be less than 1000 characters' });
       }
 
-      // Verify signature
+      const userAddress = (req as AuthRequest).address.toLowerCase();
+      const trimmedName = name.trim();
+
+      // Construct message and verify signature
+      const message = `Create app: ${trimmedName}`;
       try {
-        if (!verifySignature(message, signature, (req as AuthRequest).address)) {
+        if (!verifySignature(message, signature, userAddress)) {
           return res.status(401).json({ error: 'Invalid signature' });
         }
       } catch (error) {
@@ -65,17 +75,59 @@ export function createAppsRouter(db: Knex) {
 
       // Create new app
       const newApp: Partial<App> = {
-        name: name.trim(),
-        description,
-        owner_address: (req as AuthRequest).address
+        name: trimmedName,
+        description: description && typeof description === 'string' ? description : undefined,
+        owner_address: userAddress
       };
 
       const [appId] = await db<App>('apps').insert(newApp);
-      const app = await db<App>('apps').where('id', appId).first();
+      const app = await db<App>('apps').where({ id: appId }).first();
 
       res.status(201).json(app);
     } catch (error: unknown) {
       console.error('Error creating app:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }) as RequestHandler);
+
+  // Delete app
+  router.delete('/my-apps/:id', requireAuth, (async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { signature } = req.body;
+
+      const appId = parseInt(id, 10);
+      if (isNaN(appId)) {
+        return res.status(400).json({ error: 'Invalid app ID' });
+      }
+
+      if (!signature || typeof signature !== 'string') {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      const userAddress = (req as AuthRequest).address.toLowerCase();
+
+      // Check if app exists and belongs to user
+      const app = await db<App>('apps')
+        .where({ 
+          id: appId,
+          owner_address: userAddress
+        })
+        .first();
+
+      if (!app) {
+        return res.status(404).json({ error: 'App not found or unauthorized' });
+      }
+
+      const deleteMessage = `Delete application #${String(appId)}`;
+      if (!verifySignature(deleteMessage, signature, userAddress)) {
+        return res.status(401).json({ error: 'Invalid signature' });
+      }
+
+      await db<App>('apps').where({ id: appId }).delete();
+      res.status(200).json({ message: 'App deleted successfully' });
+    } catch (err: unknown) {
+      console.error('Error deleting app:', err);
       res.status(500).json({ error: 'Internal server error' });
     }
   }) as RequestHandler);

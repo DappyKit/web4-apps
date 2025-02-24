@@ -99,22 +99,22 @@ describe('Apps API', () => {
 
   describe('POST /api/my-apps', () => {
     it('should create new app with valid signature', async () => {
-      const message = 'Create app: Test App';
+      const name = 'Test App';
+      const message = `Create app: ${name}`;
       const signature = await testWallet.signMessage(message);
       
       const response = await request(app)
         .post('/api/my-apps')
         .set('x-wallet-address', testWallet.address)
         .send({
-          name: 'Test App',
+          name: name,
           description: 'Test Description',
-          message,
           signature
         });
 
       expect(response.status).toBe(201);
       expect(response.body).toMatchObject({
-        name: 'Test App',
+        name: name,
         description: 'Test Description',
         owner_address: testWallet.address
       });
@@ -126,16 +126,16 @@ describe('Apps API', () => {
     });
 
     it('should reject invalid signature', async () => {
-      const message = 'Create app: Test App';
+      const name = 'Test App';
+      const message = `Create app: ${name}`;
       const signature = await otherWallet.signMessage(message);
       
       const response = await request(app)
         .post('/api/my-apps')
         .set('x-wallet-address', testWallet.address)
         .send({
-          name: 'Test App',
+          name: name,
           description: 'Test Description',
-          message,
           signature
         });
 
@@ -149,16 +149,16 @@ describe('Apps API', () => {
 
     describe('signature validation', () => {
       it('should reject signature from different wallet', async () => {
-        const message = 'Create app: Test App';
+        const name = 'Test App';
+        const message = `Create app: ${name}`;
         const signature = await otherWallet.signMessage(message);
         
         const response = await request(app)
           .post('/api/my-apps')
           .set('x-wallet-address', testWallet.address)
           .send({
-            name: 'Test App',
+            name: name,
             description: 'Test Description',
-            message,
             signature
           });
 
@@ -166,17 +166,17 @@ describe('Apps API', () => {
         expect(response.body.error).toBe('Invalid signature');
       });
 
-      it('should reject tampered message', async () => {
-        const message = 'Create app: Test App';
+      it('should reject tampered name', async () => {
+        const name = 'Test App';
+        const message = `Create app: Different App`; // Sign for a different name
         const signature = await testWallet.signMessage(message);
         
         const response = await request(app)
           .post('/api/my-apps')
           .set('x-wallet-address', testWallet.address)
           .send({
-            name: 'Test App',
+            name: name, // Send original name
             description: 'Test Description',
-            message: 'Create app: Different App', // Changed message
             signature
           });
 
@@ -191,7 +191,6 @@ describe('Apps API', () => {
           .send({
             name: 'Test App',
             description: 'Test Description',
-            message: 'Create app: Test App',
             signature: 'invalid_signature'
           });
 
@@ -202,16 +201,16 @@ describe('Apps API', () => {
 
     describe('data validation', () => {
       it('should reject empty name', async () => {
-        const message = 'Create app: ';
+        const name = '';
+        const message = `Create app: ${name}`;
         const signature = await testWallet.signMessage(message);
         
         const response = await request(app)
           .post('/api/my-apps')
           .set('x-wallet-address', testWallet.address)
           .send({
-            name: '',
+            name: name,
             description: 'Test Description',
-            message,
             signature
           });
 
@@ -220,17 +219,16 @@ describe('Apps API', () => {
       });
 
       it('should reject too long name', async () => {
-        const longName = 'A'.repeat(256);
-        const message = `Create app: ${longName}`;
+        const name = 'A'.repeat(256);
+        const message = `Create app: ${name}`;
         const signature = await testWallet.signMessage(message);
         
         const response = await request(app)
           .post('/api/my-apps')
           .set('x-wallet-address', testWallet.address)
           .send({
-            name: longName,
+            name: name,
             description: 'Test Description',
-            message,
             signature
           });
 
@@ -239,17 +237,16 @@ describe('Apps API', () => {
       });
 
       it('should reject too long description', async () => {
-        const longDescription = 'A'.repeat(1001);
-        const message = 'Create app: Test App';
+        const name = 'Test App';
+        const message = `Create app: ${name}`;
         const signature = await testWallet.signMessage(message);
         
         const response = await request(app)
           .post('/api/my-apps')
           .set('x-wallet-address', testWallet.address)
           .send({
-            name: 'Test App',
-            description: longDescription,
-            message,
+            name: name,
+            description: 'A'.repeat(1001),
             signature
           });
 
@@ -269,6 +266,138 @@ describe('Apps API', () => {
         expect(response.status).toBe(400);
         expect(response.body.error).toBe('Missing required fields');
       });
+    });
+  });
+
+  describe('DELETE /api/my-apps/:id', () => {
+    it('should delete app with valid signature', async () => {
+      // Create an app first
+      const createMessage = 'Create app: Test App';
+      const createSignature = await testWallet.signMessage(createMessage);
+      
+      const createResponse = await request(app)
+        .post('/api/my-apps')
+        .set('x-wallet-address', testWallet.address)
+        .send({
+          name: 'Test App',
+          description: 'Test Description',
+          message: createMessage,
+          signature: createSignature
+        });
+
+      expect(createResponse.status).toBe(201);
+      const appId = createResponse.body.id;
+
+      // Now delete the app
+      const deleteMessage = `Delete application #${String(appId)}`;
+      const deleteSignature = await testWallet.signMessage(deleteMessage);
+
+      const deleteResponse = await request(app)
+        .delete(`/api/my-apps/${String(appId)}`)
+        .set('x-wallet-address', testWallet.address)
+        .send({ signature: deleteSignature });
+
+      expect(deleteResponse.status).toBe(200);
+      expect(deleteResponse.body.message).toBe('App deleted successfully');
+
+      // Verify app was deleted
+      const apps = await db('apps').where({ id: appId }).select();
+      expect(apps).toHaveLength(0);
+    });
+
+    it('should reject deletion with invalid signature', async () => {
+      // Create an app first
+      const createMessage = 'Create app: Test App';
+      const createSignature = await testWallet.signMessage(createMessage);
+      
+      const createResponse = await request(app)
+        .post('/api/my-apps')
+        .set('x-wallet-address', testWallet.address)
+        .send({
+          name: 'Test App',
+          description: 'Test Description',
+          message: createMessage,
+          signature: createSignature
+        });
+
+      const appId = createResponse.body.id;
+
+      // Try to delete with wrong signature
+      const wrongSignature = await otherWallet.signMessage(`Delete application #${String(appId)}`);
+
+      const deleteResponse = await request(app)
+        .delete(`/api/my-apps/${String(appId)}`)
+        .set('x-wallet-address', testWallet.address)
+        .send({ signature: wrongSignature });
+
+      expect(deleteResponse.status).toBe(401);
+      expect(deleteResponse.body.error).toBe('Invalid signature');
+
+      // Verify app was not deleted
+      const apps = await db('apps').where({ id: appId }).select();
+      expect(apps).toHaveLength(1);
+    });
+
+    it('should reject deletion of non-existent app', async () => {
+      const nonExistentId = 99999;
+      const deleteMessage = `Delete application #${String(nonExistentId)}`;
+      const deleteSignature = await testWallet.signMessage(deleteMessage);
+
+      const response = await request(app)
+        .delete(`/api/my-apps/${String(nonExistentId)}`)
+        .set('x-wallet-address', testWallet.address)
+        .send({ signature: deleteSignature });
+
+      expect(response.status).toBe(404);
+      expect(response.body.error).toBe('App not found or unauthorized');
+    });
+
+    it('should reject deletion of app owned by different user', async () => {
+      // Create an app with the first wallet
+      const createMessage = 'Create app: Test App';
+      const createSignature = await testWallet.signMessage(createMessage);
+      
+      const createResponse = await request(app)
+        .post('/api/my-apps')
+        .set('x-wallet-address', testWallet.address)
+        .send({
+          name: 'Test App',
+          description: 'Test Description',
+          message: createMessage,
+          signature: createSignature
+        });
+
+      const appId = createResponse.body.id;
+
+      // Try to delete with different wallet
+      const deleteMessage = `Delete application #${String(appId)}`;
+      const deleteSignature = await otherWallet.signMessage(deleteMessage);
+
+      const deleteResponse = await request(app)
+        .delete(`/api/my-apps/${String(appId)}`)
+        .set('x-wallet-address', otherWallet.address)
+        .send({ signature: deleteSignature });
+
+      expect(deleteResponse.status).toBe(404);
+      expect(deleteResponse.body.error).toBe('App not found or unauthorized');
+
+      // Verify app was not deleted
+      const apps = await db('apps').where({ id: appId }).select();
+      expect(apps).toHaveLength(1);
+    });
+
+    it('should reject deletion with invalid app ID format', async () => {
+      const invalidId = 'not-a-number';
+      const deleteMessage = `Delete application #${String(invalidId)}`;
+      const deleteSignature = await testWallet.signMessage(deleteMessage);
+
+      const response = await request(app)
+        .delete(`/api/my-apps/${String(invalidId)}`)
+        .set('x-wallet-address', testWallet.address)
+        .send({ signature: deleteSignature });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Invalid app ID');
     });
   });
 }); 
