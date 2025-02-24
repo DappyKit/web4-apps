@@ -1,0 +1,9 @@
+---
+description: 
+globs: 
+---
+
+# In end of task do these steps
+
+- Run in [package.json](mdc:package.json) "npm run lint:check" and "npm run test" and fix errors if exists
+- Run in [package.json](mdc:backend/package.json) "npm run test" and fix errors
