@@ -13,6 +13,7 @@ interface FormData {
 }
 
 interface FormErrors {
+  [key: string]: string | undefined;
   name?: string;
   description?: string;
 }
@@ -20,7 +21,7 @@ interface FormErrors {
 export function MyApps() {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
-  
+
   const [formData, setFormData] = useState<FormData>({
     name: '',
     description: ''
@@ -87,10 +88,10 @@ export function MyApps() {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     // Clear error when user starts typing
-    if (errors[name as keyof FormErrors]) {
+    if (errors[name]) {
       setErrors(prev => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { [name]: removed, ...rest } = prev;
+        const { [name]: _, ...rest } = prev;
         return rest;
       });
     }
@@ -111,13 +112,13 @@ export function MyApps() {
           <div className="card">
             <div className="card-body">
               <h5 className="card-title mb-3">Create New App</h5>
-              
+
               {error && (
                 <Alert variant="danger" onClose={() => { setError(null); }} dismissible>
                   {error}
                 </Alert>
               )}
-              
+
               {success && (
                 <Alert variant="success" onClose={() => { setSuccess(null); }} dismissible>
                   {success}
@@ -176,8 +177,8 @@ export function MyApps() {
                   </Form.Text>
                 </Form.Group>
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   variant="primary"
                   disabled={isCreating}
                 >
@@ -204,4 +205,4 @@ export function MyApps() {
       </div>
     </div>
   );
-} 
+}

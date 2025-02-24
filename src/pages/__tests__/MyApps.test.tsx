@@ -112,7 +112,7 @@ describe('MyApps Component', () => {
     });
   });
 
-  it('validates trimmed description length', async () => {
+  it('validates trimmed description length', () => {
     render(<MyApps />);
     
     const nameInput = screen.getByLabelText(/App Name/);
@@ -125,7 +125,7 @@ describe('MyApps Component', () => {
     expect(screen.getByText(`(999/${String(1000)})`)).toBeInTheDocument();
   });
 
-  it('shows character count for name and description', async () => {
+  it('shows character count for name and description', () => {
     render(<MyApps />);
     
     const nameInput = screen.getByLabelText(/App Name/);
