@@ -19,7 +19,7 @@ function AppContent() {
 
   useEffect(() => {
     if (auth.isAuthenticated && auth.address) {
-      void checkUserRegistration(auth.address);
+      checkUserRegistration(auth.address);
     }
   }, [auth.isAuthenticated, auth.address]);
 
@@ -29,19 +29,13 @@ function AppContent() {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        const errorMessage = typeof errorData.error === 'string' ? errorData.error : 'Unknown error';
-        throw new Error(`${String(errorMessage)} (Status: ${String(response.status)})`);
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
-      const isRegistered = data?.isRegistered;
-      if (typeof isRegistered === 'boolean') {
-        setUserRegistered(isRegistered);
-        console.log('User registration status:', data);
-      } else {
-        throw new Error('Invalid response format');
-      }
-    } catch (error) {
+      setUserRegistered(data.isRegistered);
+      console.log('User registration status:', data);
+    } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error('Error checking registration:', errorMessage);
       setUserRegistered(null);
