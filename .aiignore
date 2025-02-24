@@ -1,0 +1,21 @@
+# Environment files
+.env
+.env.*
+*.env
+
+# Other sensitive files
+**/config/secrets.*
+**/credentials.*
+**/private.*
+
+# Logs
+logs/
+*.log
+
+# Build output
+dist/
+build/
+out/
+
+# Dependencies
+node_modules/ 
