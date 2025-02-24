@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint'
 import react from 'eslint-plugin-react'
 
 export default tseslint.config(
-    {ignores: ['dist', 'coverage']},
+    {ignores: ['dist', 'coverage', '**/*.css', '**/*.css.map']},
     // Frontend configuration
     {
         settings: { react: { version: '18.3' } },
@@ -56,7 +56,7 @@ export default tseslint.config(
             "indent": ["error", 2],
             '@typescript-eslint/no-unsafe-assignment': 'off',
             '@typescript-eslint/no-unsafe-member-access': 'off',
-            '@typescript-eslint/no-unused-vars': ['error', { 
+            '@typescript-eslint/no-unused-vars': ['error', {
                 'argsIgnorePattern': '^_',
                 'varsIgnorePattern': '^_',
                 'ignoreRestSiblings': true,
