@@ -1,13 +1,10 @@
-import type { Config } from 'jest';
-
-const config: Config = {
+export default {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  testMatch: ['**/tests/**/*.test.ts'],
-  setupFiles: ['dotenv/config'],
-  testTimeout: 10000,
-  forceExit: false,
-  detectOpenHandles: true
-};
-
-export default config; 
+  testMatch: ['**/*.test.ts'],
+  verbose: true,
+  forceExit: true,
+  clearMocks: true,
+  resetMocks: true,
+  restoreMocks: true,
+}; 

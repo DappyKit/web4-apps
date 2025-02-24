@@ -8,9 +8,9 @@ type AuthRequest = Request & {
 
 export function verifySignature(message: string, signature: string, address: string): boolean {
   try {
-    const signerAddr = ethers.verifyMessage(message, signature);
-    return signerAddr.toLowerCase() === address.toLowerCase();
-  } catch (error) {
+    const recoveredAddress = ethers.verifyMessage(message, signature);
+    return recoveredAddress.toLowerCase() === address.toLowerCase();
+  } catch {
     return false;
   }
 }

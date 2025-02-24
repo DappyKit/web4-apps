@@ -4,6 +4,7 @@ import * as dotenv from 'dotenv';
 import knexConfig from './knexfile';
 import { createAppsRouter } from './routes/apps';
 import { createUsersRouter } from './routes/users';
+import { createTemplatesRouter } from './routes/templates';
 import cors from 'cors';
 
 // Load environment variables
@@ -42,6 +43,7 @@ app.use((_err: unknown, _req: express.Request, res: express.Response, _next: exp
 // Routes
 app.use('/api', createAppsRouter(db));
 app.use('/api', createUsersRouter(db));
+app.use('/api/templates', createTemplatesRouter(db));
 
 const port = process.env.PORT || 3001;
 app.listen(port, () => {
