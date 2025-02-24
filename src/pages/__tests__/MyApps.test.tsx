@@ -16,6 +16,8 @@ vi.mock('wagmi', () => ({
 // Mock API services
 vi.mock('../../services/api', () => ({
   createApp: vi.fn(),
+  getMyApps: vi.fn(),
+  deleteApp: vi.fn(),
 }));
 
 describe('MyApps Component', () => {
@@ -30,6 +32,8 @@ describe('MyApps Component', () => {
       .mockReturnValue({ address: mockAddress, isConnected: true });
     (wagmi.useSignMessage as Mock)
       .mockReturnValue({ signMessageAsync: mockSignMessage });
+    (api.getMyApps as Mock)
+      .mockResolvedValue([]);
   });
 
   it('renders the create app form', () => {
@@ -150,6 +154,9 @@ describe('MyApps Component', () => {
 
     mockSignMessage.mockResolvedValueOnce('mock-signature');
     (api.createApp as Mock).mockResolvedValueOnce(newApp);
+    (api.getMyApps as Mock)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([newApp]);
 
     render(<MyApps />);
     
@@ -223,6 +230,101 @@ describe('MyApps Component', () => {
 
     await waitFor(() => {
       expect(createButton).toBeDisabled();
+    });
+  });
+
+  it('displays apps list', async () => {
+    const mockApps = [
+      { 
+        id: '1', 
+        name: 'Test App 1', 
+        description: 'Test Description 1', 
+        created_at: new Date().toISOString(),
+        owner_address: mockAddress,
+        updated_at: new Date().toISOString()
+      },
+      { 
+        id: '2', 
+        name: 'Test App 2', 
+        description: 'Test Description 2', 
+        created_at: new Date().toISOString(),
+        owner_address: mockAddress,
+        updated_at: new Date().toISOString()
+      }
+    ];
+
+    (api.getMyApps as Mock).mockResolvedValue(mockApps);
+
+    render(<MyApps />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Your Apps')).toBeInTheDocument();
+      expect(screen.getByText('Test App 1')).toBeInTheDocument();
+      expect(screen.getByText('Test App 2')).toBeInTheDocument();
+      expect(screen.getByText('Test Description 1')).toBeInTheDocument();
+      expect(screen.getByText('Test Description 2')).toBeInTheDocument();
+    });
+  });
+
+  it('handles app deletion', async () => {
+    const mockApps = [
+      { 
+        id: '1', 
+        name: 'Test App', 
+        description: 'Test Description', 
+        created_at: new Date().toISOString(),
+        owner_address: mockAddress,
+        updated_at: new Date().toISOString()
+      }
+    ];
+
+    (api.getMyApps as Mock)
+      .mockResolvedValueOnce(mockApps)
+      .mockResolvedValueOnce([]);
+    mockSignMessage.mockResolvedValueOnce('mock-signature');
+    (api.deleteApp as Mock).mockResolvedValueOnce(true);
+
+    render(<MyApps />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Test App')).toBeInTheDocument();
+    });
+
+    const deleteButton = screen.getByText('Delete');
+    fireEvent.click(deleteButton);
+
+    await waitFor(() => {
+      expect(api.deleteApp).toHaveBeenCalledWith(
+        mockAddress,
+        1,
+        'mock-signature'
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Test App')).not.toBeInTheDocument();
+    });
+  });
+
+  it('shows loading state while fetching apps', () => {
+    (api.getMyApps as Mock).mockImplementation(() => new Promise(resolve => {
+      setTimeout(() => {
+        resolve([]);
+      }, 100);
+    }));
+
+    render(<MyApps />);
+
+    expect(screen.getByRole('status')).toBeInTheDocument();
+  });
+
+  it('shows empty state when no apps exist', async () => {
+    (api.getMyApps as Mock).mockResolvedValue([]);
+
+    render(<MyApps />);
+
+    await waitFor(() => {
+      expect(screen.getByText("You don't have any apps yet. Create one using the form above!")).toBeInTheDocument();
     });
   });
 }); 

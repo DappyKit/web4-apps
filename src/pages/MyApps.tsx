@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useSignMessage } from 'wagmi';
 import { Alert, Button, Form, Spinner } from 'react-bootstrap';
-import { createApp } from '../services/api';
+import { createApp, getMyApps, deleteApp } from '../services/api';
+import type { App } from '../services/api';
 
 // Constants matching backend limitations
 const MAX_NAME_LENGTH = 255;
@@ -30,6 +31,29 @@ export function MyApps() {
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [apps, setApps] = useState<App[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<number | null>(null);
+
+  const loadApps = useCallback(async () => {
+    if (!address) return;
+    
+    setIsLoading(true);
+    try {
+      const myApps = await getMyApps(address);
+      setApps(myApps);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load apps';
+      setError(errorMessage);
+      console.error('Error loading apps:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [address]);
+
+  useEffect(() => {
+    loadApps().catch(console.error);
+  }, [loadApps]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -77,6 +101,7 @@ export function MyApps() {
 
       setSuccess('App created successfully!');
       setFormData({ name: '', description: '' });
+      await loadApps(); // Reload the apps list after creating a new app
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to create app');
     } finally {
@@ -96,6 +121,45 @@ export function MyApps() {
       });
     }
   };
+
+  const handleDeleteApp = async (appId: number) => {
+    if (!address || isDeleting !== null) return;
+
+    setIsDeleting(appId);
+    setError(null);
+
+    try {
+      const message = `Delete application #${String(appId)}`;
+      const signature = await signMessageAsync({ message });
+
+      await deleteApp(address, appId, signature);
+      await loadApps();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete app';
+      setError(errorMessage);
+      console.error('Error deleting app:', error);
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
+  const renderAppCard = (app: App) => (
+    <div key={app.id} className="col">
+      <div className="card h-100">
+        <div className="card-body">
+          <h5 className="card-title">{app.name}</h5>
+          <p className="card-text">{app.description ?? 'No description'}</p>
+          <button
+            className="btn btn-danger"
+            onClick={() => { void handleDeleteApp(Number(app.id)); }}
+            disabled={isDeleting === Number(app.id)}
+          >
+            {isDeleting === Number(app.id) ? 'Deleting...' : 'Delete'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   // Add character count display
   const nameCharCount = formData.name.trim().length;
@@ -202,6 +266,25 @@ export function MyApps() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="mt-4">
+        <h2>Your Apps</h2>
+        {isLoading ? (
+          <div className="text-center">
+            <Spinner animation="border" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </Spinner>
+          </div>
+        ) : apps.length === 0 ? (
+          <Alert variant="info">
+            You don&apos;t have any apps yet. Create one using the form above!
+          </Alert>
+        ) : (
+          <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {apps.map(renderAppCard)}
+          </div>
+        )}
       </div>
     </div>
   );
