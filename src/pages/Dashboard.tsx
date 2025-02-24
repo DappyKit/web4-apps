@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useSignMessage } from 'wagmi';
 import { checkUserRegistration, registerUser, getMyApps, deleteApp } from '../services/api';
 import type { App } from '../services/api';
+import { AppList } from '../components/AppList';
 
 const REGISTRATION_MESSAGE = "Web4 Apps Registration";
 
@@ -97,24 +98,6 @@ export function Dashboard() {
     }
   };
 
-  const renderAppCard = (app: App) => (
-    <div key={app.id} className="col">
-      <div className="card h-100">
-        <div className="card-body">
-          <h5 className="card-title">{app.name}</h5>
-          <p className="card-text">{app.description ?? 'No description'}</p>
-          <button
-            className="btn btn-danger"
-            onClick={() => { void handleDeleteApp(Number(app.id)); }}
-            disabled={isDeleting === Number(app.id)}
-          >
-            {isDeleting === Number(app.id) ? 'Deleting...' : 'Delete'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div>
       <div className="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -145,21 +128,13 @@ export function Dashboard() {
             <h2>My Apps</h2>
           </div>
 
-          {isLoading ? (
-            <div className="text-center">
-              <div className="spinner-border" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
-            </div>
-          ) : apps.length === 0 ? (
-            <div className="alert alert-info">
-              You don&apos;t have any apps yet. Create one to get started!
-            </div>
-          ) : (
-            <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-              {apps.map(renderAppCard)}
-            </div>
-          )}
+          <AppList
+            apps={apps}
+            isLoading={isLoading}
+            onDeleteApp={handleDeleteApp}
+            isDeleting={isDeleting}
+            showEmptyMessage="You don't have any apps yet. Create one to get started!"
+          />
 
           {error && (
             <div className="alert alert-danger mt-3" role="alert">

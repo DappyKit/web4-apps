@@ -3,6 +3,7 @@ import { useAccount, useSignMessage } from 'wagmi';
 import { Alert, Button, Form, Spinner } from 'react-bootstrap';
 import { createApp, getMyApps, deleteApp } from '../services/api';
 import type { App } from '../services/api';
+import { AppList } from '../components/AppList';
 
 // Constants matching backend limitations
 const MAX_NAME_LENGTH = 255;
@@ -143,24 +144,6 @@ export function MyApps() {
     }
   };
 
-  const renderAppCard = (app: App) => (
-    <div key={app.id} className="col">
-      <div className="card h-100">
-        <div className="card-body">
-          <h5 className="card-title">{app.name}</h5>
-          <p className="card-text">{app.description ?? 'No description'}</p>
-          <button
-            className="btn btn-danger"
-            onClick={() => { void handleDeleteApp(Number(app.id)); }}
-            disabled={isDeleting === Number(app.id)}
-          >
-            {isDeleting === Number(app.id) ? 'Deleting...' : 'Delete'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
   // Add character count display
   const nameCharCount = formData.name.trim().length;
   const descriptionCharCount = formData.description.trim().length;
@@ -270,21 +253,13 @@ export function MyApps() {
 
       <div className="mt-4">
         <h2>Your Apps</h2>
-        {isLoading ? (
-          <div className="text-center">
-            <Spinner animation="border" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </Spinner>
-          </div>
-        ) : apps.length === 0 ? (
-          <Alert variant="info">
-            You don&apos;t have any apps yet. Create one using the form above!
-          </Alert>
-        ) : (
-          <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-            {apps.map(renderAppCard)}
-          </div>
-        )}
+        <AppList
+          apps={apps}
+          isLoading={isLoading}
+          onDeleteApp={handleDeleteApp}
+          isDeleting={isDeleting}
+          showEmptyMessage="You don't have any apps yet. Create one using the form above!"
+        />
       </div>
     </div>
   );
