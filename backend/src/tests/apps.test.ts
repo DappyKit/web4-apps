@@ -116,7 +116,7 @@ describe('Apps API', () => {
       expect(response.body).toMatchObject({
         name: name,
         description: 'Test Description',
-        owner_address: testWallet.address
+        owner_address: testWallet.address.toLowerCase()
       });
 
       // Verify app was created in database
