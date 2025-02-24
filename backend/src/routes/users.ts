@@ -1,4 +1,4 @@
-import { Router, RequestHandler } from 'express';
+import { Router } from 'express';
 import { Knex } from 'knex';
 import { verifySignature } from '../utils/auth';
 import { CreateUserDTO, User } from '../types';

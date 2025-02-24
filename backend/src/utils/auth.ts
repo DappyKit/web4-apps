@@ -26,4 +26,4 @@ export function requireAuth(
   }
   (req as AuthRequest).address = walletAddress;
   next();
-} 
+}

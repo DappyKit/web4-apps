@@ -24,7 +24,7 @@ db.raw('SELECT 1')
   .then(() => {
     console.log('Database connected successfully');
   })
-  .catch((err) => {
+  .catch((err: unknown) => {
     console.error('Database connection failed:', err);
     process.exit(1);
   });
@@ -34,9 +34,9 @@ app.use(cors());
 app.use(express.json());
 
 // Add error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error', details: err.message });
+app.use((_err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('Unhandled error:', _err);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 // Routes

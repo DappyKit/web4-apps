@@ -2,7 +2,7 @@ import { Router, Request, Response, RequestHandler } from 'express';
 import { Knex } from 'knex';
 import { requireAuth } from '../utils/auth';
 import { verifySignature } from '../utils/auth';
-import { CreateAppDTO, App, User } from '../types';
+import { CreateAppDTO, App } from '../types';
 
 // Define a custom request type that includes our address property
 type AuthRequest = Request & {
@@ -16,21 +16,21 @@ export function createAppsRouter(db: Knex) {
   const router = Router();
 
   // Get apps by owner
-  router.get('/my-apps', requireAuth, (async (req, res) => {
+  router.get('/my-apps', requireAuth, (async (req: Request, res: Response) => {
     try {
       const apps = await db<App>('apps')
         .where({ owner_address: (req as AuthRequest).address })
         .orderBy('created_at', 'desc');
-      
+
       res.json(apps);
-    } catch (error) {
-      console.error('Error fetching apps:', error);
+    } catch (err: unknown) {
+      console.error('Error fetching apps:', err);
       res.status(500).json({ error: 'Internal server error' });
     }
   }) as RequestHandler);
 
   // Create new app
-  router.post('/my-apps', requireAuth, (async (req, res) => {
+  router.post('/my-apps', requireAuth, (async (req: Request, res: Response) => {
     try {
       const { name, description, signature, message }: CreateAppDTO = req.body;
 
@@ -74,11 +74,11 @@ export function createAppsRouter(db: Knex) {
       const app = await db<App>('apps').where('id', appId).first();
 
       res.status(201).json(app);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating app:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   }) as RequestHandler);
 
   return router;
-} 
+}
