@@ -61,13 +61,11 @@ describe('Users API', () => {
         });
 
       expect(response.status).toBe(201);
-      expect(response.body).toMatchObject({
-        address: testWallet.address
-      });
+      expect(response.body.address).toBe(testWallet.address.toLowerCase());
 
       // Verify user was created
       const user = await db('users')
-        .where('address', testWallet.address)
+        .where('address', testWallet.address.toLowerCase())
         .first();
       expect(user).toBeTruthy();
     });
@@ -125,17 +123,64 @@ describe('Users API', () => {
       });
 
       it('should reject invalid signature', async () => {
+        const message = 'Wrong message';
+        const signature = await testWallet.signMessage(message);
+        
         const response = await request(app)
           .post('/api/register')
           .send({
             address: testWallet.address,
-            message: REGISTRATION_MESSAGE,
-            signature: 'invalid_signature'
+            signature
           });
 
         expect(response.status).toBe(401);
         expect(response.body.error).toBe('Invalid signature');
       });
+    });
+  });
+
+  describe('GET /api/check/:address', () => {
+    it('should return true for registered user', async () => {
+      // Register a user first
+      const message = "Web4 Apps Registration";
+      const signature = await testWallet.signMessage(message);
+      
+      await request(app)
+        .post('/api/register')
+        .send({
+          address: testWallet.address,
+          message,
+          signature
+        });
+
+      // Check registration status
+      const response = await request(app)
+        .get(`/api/check/${testWallet.address}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        isRegistered: true,
+        address: testWallet.address.toLowerCase()
+      });
+    });
+
+    it('should return false for unregistered user', async () => {
+      const response = await request(app)
+        .get(`/api/check/${testWallet.address}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        isRegistered: false,
+        address: testWallet.address.toLowerCase()
+      });
+    });
+
+    it('should reject invalid address format', async () => {
+      const response = await request(app)
+        .get('/api/check/invalid-address');
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Invalid address format');
     });
   });
 }); 
