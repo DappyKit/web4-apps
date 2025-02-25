@@ -87,6 +87,12 @@ export function createAppsRouter(db: Knex): Router {
         return res.status(401).json({ error: 'Invalid signature' })
       }
 
+      // Check if template exists
+      const template = await db('templates').where({ id: template_id }).first()
+      if (!template) {
+        return res.status(404).json({ error: `Template with ID ${String(template_id)} not found` })
+      }
+
       // Create new app
       const newApp: Partial<App> = {
         name: trimmedName,

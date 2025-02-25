@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAccount, useSignMessage } from 'wagmi'
-import { Alert, Button, Form, Spinner } from 'react-bootstrap'
-import { createApp, getMyApps, deleteApp } from '../services/api'
-import type { App } from '../services/api'
+import { Alert, Button, Form, Spinner, Modal, Table } from 'react-bootstrap'
+import { createApp, getMyApps, deleteApp, getMyTemplates } from '../services/api'
+import type { App, Template } from '../services/api'
 import { AppList } from '../components/AppList'
 
 // Constants matching backend limitations
@@ -42,6 +42,8 @@ export function MyApps(): React.JSX.Element {
   const [apps, setApps] = useState<App[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isDeleting, setIsDeleting] = useState<number | null>(null)
+  const [templates, setTemplates] = useState<Template[]>([])
+  const [showTemplateModal, setShowTemplateModal] = useState(false)
 
   const loadApps = useCallback(async () => {
     if (!address) return
@@ -59,9 +61,26 @@ export function MyApps(): React.JSX.Element {
     }
   }, [address])
 
+  const loadTemplates = useCallback(async () => {
+    if (!address) return
+    
+    setIsLoading(true)
+    try {
+      const templates = await getMyTemplates(address)
+      setTemplates(templates)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load templates'
+      setError(errorMessage)
+      console.error('Error loading templates:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [address])
+
   useEffect(() => {
     loadApps().catch(console.error)
-  }, [loadApps])
+    loadTemplates().catch(console.error)
+  }, [loadApps, loadTemplates])
 
   /**
    * Validates the form data
@@ -150,7 +169,14 @@ export function MyApps(): React.JSX.Element {
       })
       await loadApps()
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to create app')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create app'
+      
+      // Only check for invalid signature, pass through all other errors directly
+      if (errorMessage.includes('Invalid signature')) {
+        setError('Authentication error: Invalid signature. Please try again.')
+      } else {
+        setError(errorMessage)
+      }
     } finally {
       setIsCreating(false)
     }
@@ -297,16 +323,26 @@ export function MyApps(): React.JSX.Element {
                   <Form.Label htmlFor="templateId">
                     Template ID
                   </Form.Label>
-                  <Form.Control
-                    type="text"
-                    id="templateId"
-                    name="templateId"
-                    value={formData.templateId}
-                    onChange={handleChange}
-                    isInvalid={!!errors.templateId}
-                    disabled={isCreating}
-                    placeholder="Enter template ID"
-                  />
+                  <div className="d-flex">
+                    <Form.Control
+                      type="text"
+                      id="templateId"
+                      name="templateId"
+                      value={formData.templateId}
+                      onChange={handleChange}
+                      isInvalid={!!errors.templateId}
+                      disabled={isCreating}
+                      placeholder="Enter template ID"
+                      className="me-2"
+                    />
+                    <Button 
+                      variant="outline-secondary"
+                      onClick={() => { setShowTemplateModal(true) }}
+                      disabled={isCreating}
+                    >
+                      Browse
+                    </Button>
+                  </div>
                   <Form.Control.Feedback type="invalid">
                     {errors.templateId}
                   </Form.Control.Feedback>
@@ -390,6 +426,64 @@ export function MyApps(): React.JSX.Element {
           showEmptyMessage="You don't have any apps yet. Create one using the form above!"
         />
       </div>
+
+      {/* Template Selection Modal */}
+      <Modal 
+        show={showTemplateModal} 
+        onHide={() => { setShowTemplateModal(false) }}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Select a Template</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {templates.length === 0 ? (
+            <p className="text-center">No templates available. Please create a template first.</p>
+          ) : (
+            <Table striped bordered hover responsive>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Title</th>
+                  <th>Description</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {templates.map(template => (
+                  <tr key={template.id}>
+                    <td>{template.id}</td>
+                    <td>{template.title}</td>
+                    <td>{template.description ?? '-'}</td>
+                    <td>
+                      <Button 
+                        variant="primary" 
+                        size="sm"
+                        onClick={() => {
+                          setFormData(prev => ({
+                            ...prev,
+                            templateId: String(template.id),
+                            jsonData: template.json_data
+                          }))
+                          setShowTemplateModal(false)
+                        }}
+                      >
+                        Select
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => { setShowTemplateModal(false) }}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   )
 }

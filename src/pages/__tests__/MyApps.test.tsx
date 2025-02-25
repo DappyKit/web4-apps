@@ -19,6 +19,8 @@ vi.mock('../../services/api', () => ({
   registerUser: vi.fn(),
   getMyApps: vi.fn(),
   deleteApp: vi.fn(),
+  createApp: vi.fn(),
+  getMyTemplates: vi.fn(),
 }))
 
 describe('MyApps Component', () => {
@@ -26,22 +28,27 @@ describe('MyApps Component', () => {
   const mockSignMessage = vi.fn()
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.clearAllMocks()
     
     // Default mock implementations
-    (wagmi.useAccount as Mock).mockReturnValue({ 
+    ;(wagmi.useAccount as Mock).mockReturnValue({ 
       address: mockAddress, 
       isConnected: true 
-    });
-    (wagmi.useSignMessage as Mock).mockReturnValue({ 
+    })
+    ;(wagmi.useSignMessage as Mock).mockReturnValue({ 
       signMessageAsync: mockSignMessage 
-    });
-    (api.checkUserRegistration as Mock).mockResolvedValue(true)
+    })
+    ;(api.checkUserRegistration as Mock).mockResolvedValue(true)
+    ;(api.getMyApps as Mock).mockResolvedValue([])
+    ;(api.getMyTemplates as Mock).mockResolvedValue([])
   })
 
   it('displays loading state initially', () => {
+    ;(api.getMyApps as Mock).mockReturnValue(new Promise(() => { /* never resolves */ }))
+    ;(api.getMyTemplates as Mock).mockReturnValue(new Promise(() => { /* never resolves */ }))
+    
     render(<MyApps />)
-    expect(screen.getByText(/Loading/)).toBeInTheDocument()
+    expect(screen.getByRole('status')).toBeInTheDocument()
   })
 
   it('displays apps when loaded', async () => {
@@ -54,9 +61,9 @@ describe('MyApps Component', () => {
         owner_address: mockAddress,
         updated_at: new Date().toISOString()
       }
-    ];
+    ]
 
-    (api.getMyApps as Mock).mockResolvedValue(mockApps)
+    ;(api.getMyApps as Mock).mockResolvedValue(mockApps)
 
     render(<MyApps />)
 
@@ -76,11 +83,11 @@ describe('MyApps Component', () => {
         owner_address: mockAddress,
         updated_at: new Date().toISOString()
       }
-    ];
+    ]
 
-    (api.getMyApps as Mock).mockResolvedValue(mockApps)
-    mockSignMessage.mockResolvedValueOnce('mock-signature');
-    (api.deleteApp as Mock).mockResolvedValueOnce(true)
+    ;(api.getMyApps as Mock).mockResolvedValue(mockApps)
+    mockSignMessage.mockResolvedValueOnce('mock-signature')
+    ;(api.deleteApp as Mock).mockResolvedValueOnce(true)
 
     render(<MyApps />)
 
