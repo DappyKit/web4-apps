@@ -1,5 +1,9 @@
 import { CreateTemplateDTO, TEMPLATE_VALIDATION } from '../types/template';
 
+/**
+ * Custom error class for template validation errors
+ * @extends Error
+ */
 export class ValidationError extends Error {
   constructor(message: string) {
     super(message);
@@ -7,6 +11,12 @@ export class ValidationError extends Error {
   }
 }
 
+/**
+ * Validates a template against predefined rules
+ * @param {CreateTemplateDTO} template - The template data to validate
+ * @throws {ValidationError} If any validation rules are violated
+ * @returns {void}
+ */
 export function validateTemplate(template: CreateTemplateDTO): void {
   // Validate title
   if (!template.title || !template.title.trim()) {

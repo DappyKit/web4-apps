@@ -4,14 +4,28 @@ import { requireAuth } from '../utils/auth';
 import { verifySignature } from '../utils/auth';
 import { CreateAppDTO, App } from '../types';
 
-// Define a custom request type that includes our address property
+/**
+ * Extended Request type that includes the authenticated wallet address
+ */
 type AuthRequest = Request & {
   address: string;
 };
 
+/**
+ * Maximum length allowed for app name
+ */
 const MAX_NAME_LENGTH = 255;
+
+/**
+ * Maximum length allowed for app description
+ */
 const MAX_DESCRIPTION_LENGTH = 1000;
 
+/**
+ * Creates and configures the apps router
+ * @param {Knex} db - The database connection instance
+ * @returns {Router} Express router configured with app routes
+ */
 export function createAppsRouter(db: Knex) {
   const router = Router();
 

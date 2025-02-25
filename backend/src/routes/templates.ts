@@ -4,6 +4,10 @@ import { verifySignature, requireAuth } from '../utils/auth';
 import { validateTemplate, ValidationError } from '../utils/templateValidation';
 import { Template, CreateTemplateDTO } from '../types/template';
 
+/**
+ * Extended request interface for template creation
+ * @extends Request
+ */
 interface CreateTemplateRequest extends Request {
   body: {
     title: string;
@@ -15,6 +19,10 @@ interface CreateTemplateRequest extends Request {
   }
 }
 
+/**
+ * Extended request interface for template deletion
+ * @extends Request
+ */
 interface DeleteTemplateRequest extends Request {
   body: {
     address: string;
@@ -22,6 +30,11 @@ interface DeleteTemplateRequest extends Request {
   }
 }
 
+/**
+ * Creates and configures the templates router
+ * @param {Knex} db - The database connection instance
+ * @returns {Router} Express router configured with template routes
+ */
 export function createTemplatesRouter(db: Knex) {
   const router = Router();
 

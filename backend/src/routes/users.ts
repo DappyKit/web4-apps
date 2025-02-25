@@ -3,8 +3,16 @@ import { Knex } from 'knex';
 import { verifySignature } from '../utils/auth';
 import { CreateUserDTO, User } from '../types';
 
+/**
+ * Message that must be signed by the user during registration
+ */
 const REGISTRATION_MESSAGE = "Web4 Apps Registration";
 
+/**
+ * Creates and configures the users router
+ * @param {Knex} db - The database connection instance
+ * @returns {Router} Express router configured with user routes
+ */
 export function createUsersRouter(db: Knex) {
   const router = Router();
 
