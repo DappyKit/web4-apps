@@ -105,11 +105,17 @@ export function createTemplatesRouter(db: Knex): Router {
   // Delete template
   router.delete('/:id', requireAuth, async (req: DeleteTemplateRequest, res: Response) => {
     try {
-      const { address, signature } = req.body;
+      const { signature } = req.body;
+      const address = req.body.address || req.headers['x-wallet-address'] as string;
       const templateId = Number(req.params.id);
 
       if (isNaN(templateId)) {
         return res.status(400).json({ error: 'Invalid template ID' });
+      }
+
+      // Validate address
+      if (!address) {
+        return res.status(400).json({ error: 'Address is required' });
       }
 
       // Check if template exists and belongs to the user
