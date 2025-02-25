@@ -90,6 +90,33 @@ export default tseslint.config(
             '@typescript-eslint/no-unnecessary-type-assertion': 'off',
         },
     },
+    // Migrations configuration
+    {
+        extends: [js.configs.recommended, ...tseslint.configs.strictTypeChecked],
+        files: ['backend/migrations/**/*.ts'],
+        languageOptions: {
+            ecmaVersion: 2020,
+            parserOptions: {
+                project: ['./backend/tsconfig.json'],
+                tsconfigRootDir: import.meta.dirname,
+            },
+        },
+        rules: {
+            'object-curly-spacing': ["error", "always"],
+            "indent": ["error", 2],
+            'semi': ["error", "never"],
+            '@typescript-eslint/explicit-function-return-type': ["error", {
+                "allowExpressions": true,
+                "allowTypedFunctionExpressions": true,
+                "allowHigherOrderFunctions": true,
+                "allowDirectConstAssertionInArrowFunctions": true
+            }],
+            '@typescript-eslint/no-unsafe-assignment': 'off',
+            '@typescript-eslint/no-unsafe-member-access': 'off',
+            '@typescript-eslint/no-explicit-any': 'warn',
+            '@typescript-eslint/require-await': 'off',
+        },
+    },
     // Config files configuration
     {
         extends: [js.configs.recommended],

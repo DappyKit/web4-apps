@@ -14,7 +14,8 @@ describe('Apps API', () => {
   let db: Knex
   let testWallet: ethers.HDNodeWallet
   let otherWallet: ethers.HDNodeWallet
-  
+  let templateId: number
+
   beforeAll(async () => {
     // Initialize database connection once
     db = knex(knexConfig['development'])
@@ -23,12 +24,12 @@ describe('Apps API', () => {
   beforeEach(async () => {
     testWallet = ethers.Wallet.createRandom() as ethers.HDNodeWallet
     otherWallet = ethers.Wallet.createRandom() as ethers.HDNodeWallet
-    
+
     try {
       // Rollback and migrate
       await db.migrate.rollback()
       await db.migrate.latest()
-      
+
       // Create test users
       await db('users').insert([
         {
@@ -38,7 +39,17 @@ describe('Apps API', () => {
           address: otherWallet.address
         }
       ])
-      
+
+      // Create a test template
+      const [id] = await db('templates').insert({
+        title: 'Test Template',
+        description: 'A template for testing',
+        url: 'https://example.com/template',
+        json_data: JSON.stringify({ schema: { type: 'object' } }),
+        owner_address: testWallet.address
+      })
+      templateId = id
+
       // Setup express app
       app = express()
       app.use(express.json())
@@ -48,7 +59,7 @@ describe('Apps API', () => {
       throw error
     }
   })
-  
+
   afterEach(async () => {
     try {
       await db.migrate.rollback()
@@ -56,7 +67,7 @@ describe('Apps API', () => {
       console.error('Cleanup failed:', error)
     }
   })
-  
+
   afterAll(async () => {
     // Close database connection
     await db.destroy()
@@ -67,7 +78,7 @@ describe('Apps API', () => {
       const response = await request(app)
         .get('/api/my-apps')
         .set('x-wallet-address', testWallet.address)
-      
+
       expect(response.status).toBe(200)
       expect(response.body).toEqual([])
     })
@@ -78,22 +89,25 @@ describe('Apps API', () => {
         {
           name: 'Test App 1',
           description: 'Description 1',
-          owner_address: testWallet.address
+          owner_address: testWallet.address,
+          template_id: templateId
         },
         {
           name: 'Test App 2',
           description: 'Description 2',
-          owner_address: otherWallet.address
+          owner_address: otherWallet.address,
+          template_id: templateId
         }
       ])
 
       const response = await request(app)
         .get('/api/my-apps')
         .set('x-wallet-address', testWallet.address)
-      
+
       expect(response.status).toBe(200)
       expect(response.body).toHaveLength(1)
       expect(response.body[0].name).toBe('Test App 1')
+      expect(response.body[0].template_id).toBe(templateId)
     })
   })
 
@@ -102,34 +116,43 @@ describe('Apps API', () => {
       const name = 'Test App'
       const message = `Create app: ${name}`
       const signature = await testWallet.signMessage(message)
-      
+      const jsonData = '{"key":"value"}'
+
       const response = await request(app)
         .post('/api/my-apps')
         .set('x-wallet-address', testWallet.address)
         .send({
           name: name,
           description: 'Test Description',
-          signature
+          signature,
+          template_id: templateId,
+          json_data: jsonData
         })
 
       expect(response.status).toBe(201)
       expect(response.body).toMatchObject({
         name: name,
         description: 'Test Description',
-        owner_address: testWallet.address.toLowerCase()
+        owner_address: testWallet.address.toLowerCase(),
+        template_id: templateId,
+        json_data: jsonData
       })
 
       // Verify app was created in database
       const apps = await db('apps')
         .where('owner_address', testWallet.address)
       expect(apps).toHaveLength(1)
+      expect(apps[0]).toMatchObject({
+        template_id: templateId,
+        json_data: jsonData
+      })
     })
 
-    it('should reject invalid signature', async () => {
+    it('should reject request without template_id', async () => {
       const name = 'Test App'
       const message = `Create app: ${name}`
-      const signature = await otherWallet.signMessage(message)
-      
+      const signature = await testWallet.signMessage(message)
+
       const response = await request(app)
         .post('/api/my-apps')
         .set('x-wallet-address', testWallet.address)
@@ -137,10 +160,35 @@ describe('Apps API', () => {
           name: name,
           description: 'Test Description',
           signature
+          // Missing template_id
+        })
+
+      expect(response.status).toBe(400)
+      expect(response.body.error).toBe('Missing required fields')
+
+      // Verify no app was created
+      const apps = await db('apps')
+        .where('owner_address', testWallet.address)
+      expect(apps).toHaveLength(0)
+    })
+
+    it('should reject invalid signature', async () => {
+      const name = 'Test App'
+      const message = `Create app: ${name}`
+      const signature = await otherWallet.signMessage(message)
+
+      const response = await request(app)
+        .post('/api/my-apps')
+        .set('x-wallet-address', testWallet.address)
+        .send({
+          name: name,
+          description: 'Test Description',
+          signature,
+          template_id: templateId
         })
 
       expect(response.status).toBe(401)
-      
+
       // Verify no app was created
       const apps = await db('apps')
         .where('owner_address', testWallet.address)
@@ -152,14 +200,15 @@ describe('Apps API', () => {
         const name = 'Test App'
         const message = `Create app: ${name}`
         const signature = await otherWallet.signMessage(message)
-        
+
         const response = await request(app)
           .post('/api/my-apps')
           .set('x-wallet-address', testWallet.address)
           .send({
             name: name,
             description: 'Test Description',
-            signature
+            signature,
+            template_id: templateId
           })
 
         expect(response.status).toBe(401)
@@ -170,14 +219,15 @@ describe('Apps API', () => {
         const name = 'Test App'
         const message = `Create app: Different App` // Sign for a different name
         const signature = await testWallet.signMessage(message)
-        
+
         const response = await request(app)
           .post('/api/my-apps')
           .set('x-wallet-address', testWallet.address)
           .send({
             name: name, // Send original name
             description: 'Test Description',
-            signature
+            signature,
+            template_id: templateId
           })
 
         expect(response.status).toBe(401)
@@ -191,7 +241,8 @@ describe('Apps API', () => {
           .send({
             name: 'Test App',
             description: 'Test Description',
-            signature: 'invalid_signature'
+            signature: 'invalid_signature',
+            template_id: templateId
           })
 
         expect(response.status).toBe(401)
@@ -204,14 +255,15 @@ describe('Apps API', () => {
         const name = ''
         const message = `Create app: ${name}`
         const signature = await testWallet.signMessage(message)
-        
+
         const response = await request(app)
           .post('/api/my-apps')
           .set('x-wallet-address', testWallet.address)
           .send({
             name: name,
             description: 'Test Description',
-            signature
+            signature,
+            template_id: templateId
           })
 
         expect(response.status).toBe(400)
@@ -222,14 +274,15 @@ describe('Apps API', () => {
         const name = 'A'.repeat(256)
         const message = `Create app: ${name}`
         const signature = await testWallet.signMessage(message)
-        
+
         const response = await request(app)
           .post('/api/my-apps')
           .set('x-wallet-address', testWallet.address)
           .send({
             name: name,
             description: 'Test Description',
-            signature
+            signature,
+            template_id: templateId
           })
 
         expect(response.status).toBe(400)
@@ -240,14 +293,15 @@ describe('Apps API', () => {
         const name = 'Test App'
         const message = `Create app: ${name}`
         const signature = await testWallet.signMessage(message)
-        
+
         const response = await request(app)
           .post('/api/my-apps')
           .set('x-wallet-address', testWallet.address)
           .send({
             name: name,
             description: 'A'.repeat(1001),
-            signature
+            signature,
+            template_id: templateId
           })
 
         expect(response.status).toBe(400)
@@ -274,15 +328,15 @@ describe('Apps API', () => {
       // Create an app first
       const createMessage = 'Create app: Test App'
       const createSignature = await testWallet.signMessage(createMessage)
-      
+
       const createResponse = await request(app)
         .post('/api/my-apps')
         .set('x-wallet-address', testWallet.address)
         .send({
           name: 'Test App',
           description: 'Test Description',
-          message: createMessage,
-          signature: createSignature
+          signature: createSignature,
+          template_id: templateId
         })
 
       expect(createResponse.status).toBe(201)
@@ -309,15 +363,15 @@ describe('Apps API', () => {
       // Create an app first
       const createMessage = 'Create app: Test App'
       const createSignature = await testWallet.signMessage(createMessage)
-      
+
       const createResponse = await request(app)
         .post('/api/my-apps')
         .set('x-wallet-address', testWallet.address)
         .send({
           name: 'Test App',
           description: 'Test Description',
-          message: createMessage,
-          signature: createSignature
+          signature: createSignature,
+          template_id: templateId
         })
 
       const appId = createResponse.body.id
@@ -356,15 +410,15 @@ describe('Apps API', () => {
       // Create an app with the first wallet
       const createMessage = 'Create app: Test App'
       const createSignature = await testWallet.signMessage(createMessage)
-      
+
       const createResponse = await request(app)
         .post('/api/my-apps')
         .set('x-wallet-address', testWallet.address)
         .send({
           name: 'Test App',
           description: 'Test Description',
-          message: createMessage,
-          signature: createSignature
+          signature: createSignature,
+          template_id: templateId
         })
 
       const appId = createResponse.body.id
@@ -400,4 +454,4 @@ describe('Apps API', () => {
       expect(response.body.error).toBe('Invalid app ID')
     })
   })
-}) 
+})

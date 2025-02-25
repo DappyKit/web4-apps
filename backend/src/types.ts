@@ -2,6 +2,8 @@ export interface CreateAppDTO {
   name: string;
   description?: string;
   signature: string;
+  template_id: number;
+  json_data?: string;
 }
 
 export interface App {
@@ -11,6 +13,8 @@ export interface App {
   owner_address: string;
   created_at: string;
   updated_at: string;
+  template_id: number;
+  json_data?: string;
 }
 
 export interface CreateUserDTO {

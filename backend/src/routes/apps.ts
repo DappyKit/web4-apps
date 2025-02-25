@@ -52,7 +52,7 @@ export function createAppsRouter(db: Knex): Router {
         return res.status(400).json({ error: 'Invalid request body' })
       }
 
-      const { name, description, signature } = body as CreateAppDTO
+      const { name, description, signature, template_id, json_data } = body as CreateAppDTO
 
       // First check if name exists and is not empty
       if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -60,7 +60,7 @@ export function createAppsRouter(db: Knex): Router {
       }
 
       // Then check other required fields
-      if (!signature || typeof signature !== 'string') {
+      if (!signature || typeof signature !== 'string' || !template_id || typeof template_id !== 'number') {
         return res.status(400).json({ error: 'Missing required fields' })
       }
 
@@ -91,7 +91,9 @@ export function createAppsRouter(db: Knex): Router {
       const newApp: Partial<App> = {
         name: trimmedName,
         description: description && typeof description === 'string' ? description : undefined,
-        owner_address: userAddress
+        owner_address: userAddress,
+        template_id,
+        json_data: json_data && typeof json_data === 'string' ? json_data : undefined
       }
 
       const [appId] = await db<App>('apps').insert(newApp)
