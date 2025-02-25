@@ -278,4 +278,26 @@ export async function deleteTemplate(address: string, id: number, signature: str
     console.error('Error deleting template:', error)
     throw error
   }
+}
+
+/**
+ * Get app by ID
+ * @param {number} id - The ID of the app to retrieve
+ * @returns {Promise<App>} The app data
+ */
+export async function getAppById(id: number): Promise<App> {
+  try {
+    const response = await fetch(`/api/apps/${String(id)}`)
+    
+    if (!response.ok) {
+      const errorData = await response.json() as ApiErrorResponse
+      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`)
+    }
+    
+    const data = await response.json() as App
+    return data
+  } catch (error) {
+    console.error('Error fetching app:', error)
+    throw error
+  }
 } 

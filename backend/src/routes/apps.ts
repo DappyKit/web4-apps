@@ -154,5 +154,30 @@ export function createAppsRouter(db: Knex): Router {
     }
   }) as RequestHandler)
 
+  // Get app by ID (public endpoint)
+  router.get('/apps/:id', async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params
+      const appId = Number(id)
+      
+      if (isNaN(appId)) {
+        return res.status(400).json({ error: 'Invalid app ID' })
+      }
+
+      const app = await db<App>('apps')
+        .where({ id: appId })
+        .first()
+
+      if (!app) {
+        return res.status(404).json({ error: 'App not found' })
+      }
+
+      res.json(app)
+    } catch (err: unknown) {
+      console.error('Error fetching app:', err)
+      res.status(500).json({ error: 'Internal server error' })
+    }
+  })
+
   return router
 }

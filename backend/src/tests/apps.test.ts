@@ -454,4 +454,55 @@ describe('Apps API', () => {
       expect(response.body.error).toBe('Invalid app ID')
     })
   })
+
+  describe('GET /api/apps/:id', () => {
+    it('should return app by ID', async () => {
+      // Create a test app first
+      const createMessage = 'Create app: Test App'
+      const createSignature = await testWallet.signMessage(createMessage)
+
+      const createResponse = await request(app)
+        .post('/api/my-apps')
+        .set('x-wallet-address', testWallet.address)
+        .send({
+          name: 'Test App',
+          description: 'Test Description',
+          signature: createSignature,
+          template_id: templateId
+        })
+
+      expect(createResponse.status).toBe(201)
+      const appId = createResponse.body.id
+
+      // Get the app by ID
+      const response = await request(app)
+        .get(`/api/apps/${String(appId)}`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        id: appId,
+        name: 'Test App',
+        description: 'Test Description',
+        owner_address: testWallet.address.toLowerCase(),
+        template_id: templateId
+      })
+    })
+
+    it('should return 404 for non-existent app', async () => {
+      const nonExistentId = 99999
+      const response = await request(app)
+        .get(`/api/apps/${String(nonExistentId)}`)
+
+      expect(response.status).toBe(404)
+      expect(response.body.error).toBe('App not found')
+    })
+
+    it('should return 400 for invalid app ID', async () => {
+      const response = await request(app)
+        .get('/api/apps/invalid-id')
+
+      expect(response.status).toBe(400)
+      expect(response.body.error).toBe('Invalid app ID')
+    })
+  })
 })

@@ -1,6 +1,15 @@
-import { Spinner, Alert } from 'react-bootstrap'
+import { Spinner, Alert, Button } from 'react-bootstrap'
+import { Link } from 'react-router-dom'
 import type { App } from '../services/api'
 import { OverlayTrigger, Tooltip } from 'react-bootstrap'
+
+const TITLE_MAX_LENGTH = 50
+const DESCRIPTION_MAX_LENGTH = 100
+
+function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text
+  return `${text.slice(0, maxLength)}...`
+}
 
 interface AppListProps {
   apps: App[];
@@ -8,14 +17,6 @@ interface AppListProps {
   onDeleteApp?: (appId: number) => Promise<void>;
   isDeleting?: number | null;
   showEmptyMessage?: string;
-}
-
-const TITLE_MAX_LENGTH = 100
-const DESCRIPTION_MAX_LENGTH = 150
-
-const truncateText = (text: string, maxLength: number): string => {
-  if (!text) return ''
-  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
 }
 
 export function AppList({ apps, isLoading, onDeleteApp, isDeleting, showEmptyMessage = "No apps available." }: AppListProps): React.JSX.Element {
@@ -41,15 +42,24 @@ export function AppList({ apps, isLoading, onDeleteApp, isDeleting, showEmptyMes
             </p>
           </OverlayTrigger>
 
-          {onDeleteApp && (
-            <button
-              className="btn btn-danger"
-              onClick={() => { void onDeleteApp(Number(app.id)) }}
-              disabled={isDeleting === Number(app.id)}
+          <div className="d-flex gap-2">
+            <Link 
+              to={`/apps/${String(app.id)}`}
+              className="btn btn-primary"
             >
-              {isDeleting === Number(app.id) ? 'Deleting...' : 'Delete'}
-            </button>
-          )}
+              View
+            </Link>
+
+            {onDeleteApp && (
+              <Button
+                variant="danger"
+                onClick={() => { void onDeleteApp(Number(app.id)) }}
+                disabled={isDeleting === Number(app.id)}
+              >
+                {isDeleting === Number(app.id) ? 'Deleting...' : 'Delete'}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>
