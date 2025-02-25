@@ -12,7 +12,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
-    "analyze:code": "./scripts/analyze-code.sh"
+    "code:lines": "./scripts/analyze-code.sh"
   },
   "dependencies": {
     "@dappykit/sdk": "^3.0.1",
