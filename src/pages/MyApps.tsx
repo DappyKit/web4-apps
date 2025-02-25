@@ -8,16 +8,21 @@ import { AppList } from '../components/AppList'
 // Constants matching backend limitations
 const MAX_NAME_LENGTH = 255
 const MAX_DESCRIPTION_LENGTH = 1000
+const MAX_JSON_DATA_LENGTH = 10000 // Adjust based on your backend limits
 
 interface FormData {
   name: string;
   description: string;
+  templateId: string; // Using string for form input, will convert to number
+  jsonData: string;
 }
 
 interface FormErrors {
   [key: string]: string | undefined;
   name?: string;
   description?: string;
+  templateId?: string;
+  jsonData?: string;
 }
 
 export function MyApps(): React.JSX.Element {
@@ -26,7 +31,9 @@ export function MyApps(): React.JSX.Element {
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
-    description: ''
+    description: '',
+    templateId: '',
+    jsonData: '{}'
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [isCreating, setIsCreating] = useState(false)
@@ -56,11 +63,18 @@ export function MyApps(): React.JSX.Element {
     loadApps().catch(console.error)
   }, [loadApps])
 
+  /**
+   * Validates the form data
+   * @returns {boolean} True if form is valid, false otherwise
+   */
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
     const trimmedName = formData.name.trim()
     const trimmedDescription = formData.description.trim()
+    const templateId = formData.templateId.trim()
+    const jsonData = formData.jsonData.trim()
 
+    // Validate name
     if (!trimmedName) {
       newErrors.name = 'App name is required'
     } else if (trimmedName.length < 3) {
@@ -69,8 +83,30 @@ export function MyApps(): React.JSX.Element {
       newErrors.name = `App name must be less than ${String(MAX_NAME_LENGTH)} characters`
     }
 
+    // Validate description
     if (trimmedDescription && trimmedDescription.length > MAX_DESCRIPTION_LENGTH) {
       newErrors.description = `Description must be less than ${String(MAX_DESCRIPTION_LENGTH)} characters`
+    }
+
+    // Validate templateId
+    if (!templateId) {
+      newErrors.templateId = 'Template ID is required'
+    } else if (!/^\d+$/.test(templateId)) {
+      newErrors.templateId = 'Template ID must be a number'
+    }
+
+    // Validate jsonData
+    if (!jsonData) {
+      newErrors.jsonData = 'JSON data is required'
+    } else {
+      try {
+        JSON.parse(jsonData)
+        if (jsonData.length > MAX_JSON_DATA_LENGTH) {
+          newErrors.jsonData = `JSON data must be less than ${String(MAX_JSON_DATA_LENGTH)} characters`
+        }
+      } catch {
+        newErrors.jsonData = 'Invalid JSON format'
+      }
     }
 
     setErrors(newErrors)
@@ -89,19 +125,29 @@ export function MyApps(): React.JSX.Element {
     setIsCreating(true)
 
     try {
+      const templateId = Number(formData.templateId.trim())
+      const message = `Create app: ${formData.name.trim()}`
+      
       const signature = await signMessageAsync({
-        message: `Create app: ${formData.name.trim()}`
+        message
       })
 
       await createApp(
         address as string,
         formData.name.trim(),
         formData.description.trim() || undefined,
-        signature
+        signature,
+        templateId,
+        formData.jsonData.trim()
       )
 
       setSuccess('App created successfully!')
-      setFormData({ name: '', description: '' })
+      setFormData({ 
+        name: '', 
+        description: '', 
+        templateId: '', 
+        jsonData: '{}' 
+      })
       await loadApps()
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to create app')
@@ -123,6 +169,28 @@ export function MyApps(): React.JSX.Element {
     }
   }
 
+  const formatJsonData = (): void => {
+    try {
+      const formatted = JSON.stringify(JSON.parse(formData.jsonData), null, 2)
+      setFormData(prev => ({ ...prev, jsonData: formatted }))
+      
+      // Clear error if JSON is now valid
+      if (errors.jsonData) {
+        setErrors(prev => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { jsonData: _, ...rest } = prev
+          return rest
+        })
+      }
+    } catch {
+      // JSON parsing failed
+      setErrors(prev => ({ 
+        ...prev, 
+        jsonData: 'Invalid JSON format' 
+      }))
+    }
+  }
+
   const handleDeleteApp = async (appId: number): Promise<void> => {
     if (!address || isDeleting !== null) return
 
@@ -135,10 +203,10 @@ export function MyApps(): React.JSX.Element {
 
       await deleteApp(address, appId, signature)
       await loadApps()
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete app'
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete app'
       setError(errorMessage)
-      console.error('Error deleting app:', error)
+      console.error('Error deleting app:', err)
     } finally {
       setIsDeleting(null)
     }
@@ -147,6 +215,7 @@ export function MyApps(): React.JSX.Element {
   // Add character count display
   const nameCharCount = formData.name.trim().length
   const descriptionCharCount = formData.description.trim().length
+  const jsonDataCharCount = formData.jsonData.trim().length
 
   return (
     <div>
@@ -155,7 +224,7 @@ export function MyApps(): React.JSX.Element {
       </div>
 
       <div className="row">
-        <div className="col-md-6">
+        <div className="col-md-8">
           <div className="card">
             <div className="card-body">
               <h5 className="card-title mb-3">Create New App</h5>
@@ -222,6 +291,66 @@ export function MyApps(): React.JSX.Element {
                   <Form.Text className="text-muted">
                     Maximum {MAX_DESCRIPTION_LENGTH} characters
                   </Form.Text>
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label htmlFor="templateId">
+                    Template ID
+                  </Form.Label>
+                  <Form.Control
+                    type="text"
+                    id="templateId"
+                    name="templateId"
+                    value={formData.templateId}
+                    onChange={handleChange}
+                    isInvalid={!!errors.templateId}
+                    disabled={isCreating}
+                    placeholder="Enter template ID"
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.templateId}
+                  </Form.Control.Feedback>
+                  <Form.Text className="text-muted">
+                    Enter the ID of the template you want to use
+                  </Form.Text>
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label htmlFor="jsonData">
+                    JSON Data
+                    <span className="text-muted ms-2">
+                      ({jsonDataCharCount}/{MAX_JSON_DATA_LENGTH})
+                    </span>
+                  </Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    id="jsonData"
+                    name="jsonData"
+                    value={formData.jsonData}
+                    onChange={handleChange}
+                    rows={8}
+                    disabled={isCreating}
+                    isInvalid={!!errors.jsonData}
+                    maxLength={MAX_JSON_DATA_LENGTH}
+                    style={{ fontFamily: 'monospace' }}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.jsonData}
+                  </Form.Control.Feedback>
+                  <div className="d-flex justify-content-between">
+                    <Form.Text className="text-muted">
+                      Enter valid JSON data for your app
+                    </Form.Text>
+                    <Button 
+                      variant="outline-secondary" 
+                      size="sm" 
+                      onClick={formatJsonData}
+                      disabled={isCreating}
+                      className="mt-1"
+                    >
+                      Format JSON
+                    </Button>
+                  </div>
                 </Form.Group>
 
                 <Button

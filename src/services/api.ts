@@ -19,6 +19,8 @@ export interface App {
   owner_address: string;
   created_at: string;
   updated_at: string;
+  template_id: number;
+  json_data?: string;
 }
 
 interface CreateAppResponse {
@@ -26,6 +28,8 @@ interface CreateAppResponse {
   name: string;
   description?: string;
   owner_address: string;
+  template_id: number;
+  json_data?: string;
 }
 
 export interface Template {
@@ -115,7 +119,9 @@ export async function createApp(
   address: string,
   name: string,
   description: string | undefined,
-  signature: string
+  signature: string,
+  templateId: number,
+  jsonData: string
 ): Promise<CreateAppResponse> {
   if (!address) {
     throw new Error('Wallet address is required')
@@ -132,6 +138,8 @@ export async function createApp(
         name,
         description,
         signature,
+        template_id: templateId,
+        json_data: jsonData
       }),
     })
     
