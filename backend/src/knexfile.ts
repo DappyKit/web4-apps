@@ -1,8 +1,8 @@
-import type { Knex } from "knex";
-import * as dotenv from 'dotenv';
-import path from 'path';
+import type { Knex } from "knex"
+import * as dotenv from 'dotenv'
+import path from 'path'
 
-dotenv.config();
+dotenv.config()
 
 const config: { [key: string]: Knex.Config } = {
   development: {
@@ -31,6 +31,6 @@ const config: { [key: string]: Knex.Config } = {
       extension: 'ts'
     }
   }
-};
+}
 
-export default config; 
+export default config 

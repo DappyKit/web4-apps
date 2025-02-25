@@ -24,4 +24,4 @@ export const TEMPLATE_VALIDATION = {
   INVALID_URL: 'Invalid URL format',
   INVALID_JSON: 'Invalid JSON format',
   JSON_TOO_LONG: 'JSON data must be less than 10000 characters',
-} as const; 
+} as const 

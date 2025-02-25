@@ -1,13 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useAccount, useSignMessage } from 'wagmi';
-import { Alert, Button, Form, Spinner } from 'react-bootstrap';
-import { createApp, getMyApps, deleteApp } from '../services/api';
-import type { App } from '../services/api';
-import { AppList } from '../components/AppList';
+import { useState, useEffect, useCallback } from 'react'
+import { useAccount, useSignMessage } from 'wagmi'
+import { Alert, Button, Form, Spinner } from 'react-bootstrap'
+import { createApp, getMyApps, deleteApp } from '../services/api'
+import type { App } from '../services/api'
+import { AppList } from '../components/AppList'
 
 // Constants matching backend limitations
-const MAX_NAME_LENGTH = 255;
-const MAX_DESCRIPTION_LENGTH = 1000;
+const MAX_NAME_LENGTH = 255
+const MAX_DESCRIPTION_LENGTH = 1000
 
 interface FormData {
   name: string;
@@ -21,132 +21,132 @@ interface FormErrors {
 }
 
 export function MyApps(): React.JSX.Element {
-  const { address } = useAccount();
-  const { signMessageAsync } = useSignMessage();
+  const { address } = useAccount()
+  const { signMessageAsync } = useSignMessage()
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
     description: ''
-  });
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [isCreating, setIsCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [apps, setApps] = useState<App[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDeleting, setIsDeleting] = useState<number | null>(null);
+  })
+  const [errors, setErrors] = useState<FormErrors>({})
+  const [isCreating, setIsCreating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [apps, setApps] = useState<App[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isDeleting, setIsDeleting] = useState<number | null>(null)
 
   const loadApps = useCallback(async () => {
-    if (!address) return;
+    if (!address) return
     
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const myApps = await getMyApps(address);
-      setApps(myApps);
+      const myApps = await getMyApps(address)
+      setApps(myApps)
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load apps';
-      setError(errorMessage);
-      console.error('Error loading apps:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load apps'
+      setError(errorMessage)
+      console.error('Error loading apps:', error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [address]);
+  }, [address])
 
   useEffect(() => {
-    loadApps().catch(console.error);
-  }, [loadApps]);
+    loadApps().catch(console.error)
+  }, [loadApps])
 
   const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-    const trimmedName = formData.name.trim();
-    const trimmedDescription = formData.description.trim();
+    const newErrors: FormErrors = {}
+    const trimmedName = formData.name.trim()
+    const trimmedDescription = formData.description.trim()
 
     if (!trimmedName) {
-      newErrors.name = 'App name is required';
+      newErrors.name = 'App name is required'
     } else if (trimmedName.length < 3) {
-      newErrors.name = 'App name must be at least 3 characters';
+      newErrors.name = 'App name must be at least 3 characters'
     } else if (trimmedName.length > MAX_NAME_LENGTH) {
-      newErrors.name = `App name must be less than ${String(MAX_NAME_LENGTH)} characters`;
+      newErrors.name = `App name must be less than ${String(MAX_NAME_LENGTH)} characters`
     }
 
     if (trimmedDescription && trimmedDescription.length > MAX_DESCRIPTION_LENGTH) {
-      newErrors.description = `Description must be less than ${String(MAX_DESCRIPTION_LENGTH)} characters`;
+      newErrors.description = `Description must be less than ${String(MAX_DESCRIPTION_LENGTH)} characters`
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
-    event.preventDefault();
-    setError(null);
-    setSuccess(null);
+    event.preventDefault()
+    setError(null)
+    setSuccess(null)
 
     if (!validateForm()) {
-      return;
+      return
     }
 
-    setIsCreating(true);
+    setIsCreating(true)
 
     try {
       const signature = await signMessageAsync({
         message: `Create app: ${formData.name.trim()}`
-      });
+      })
 
       await createApp(
         address as string,
         formData.name.trim(),
         formData.description.trim() || undefined,
         signature
-      );
+      )
 
-      setSuccess('App created successfully!');
-      setFormData({ name: '', description: '' });
-      await loadApps();
+      setSuccess('App created successfully!')
+      setFormData({ name: '', description: '' })
+      await loadApps()
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to create app');
+      setError(error instanceof Error ? error.message : 'Failed to create app')
     } finally {
-      setIsCreating(false);
+      setIsCreating(false)
     }
-  };
+  }
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
-    const { name, value } = event.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value } = event.target
+    setFormData(prev => ({ ...prev, [name]: value }))
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { [name]: _, ...rest } = prev;
-        return rest;
-      });
+        const { [name]: _, ...rest } = prev
+        return rest
+      })
     }
-  };
+  }
 
   const handleDeleteApp = async (appId: number): Promise<void> => {
-    if (!address || isDeleting !== null) return;
+    if (!address || isDeleting !== null) return
 
-    setIsDeleting(appId);
-    setError(null);
+    setIsDeleting(appId)
+    setError(null)
 
     try {
-      const message = `Delete application #${String(appId)}`;
-      const signature = await signMessageAsync({ message });
+      const message = `Delete application #${String(appId)}`
+      const signature = await signMessageAsync({ message })
 
-      await deleteApp(address, appId, signature);
-      await loadApps();
+      await deleteApp(address, appId, signature)
+      await loadApps()
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete app';
-      setError(errorMessage);
-      console.error('Error deleting app:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete app'
+      setError(errorMessage)
+      console.error('Error deleting app:', error)
     } finally {
-      setIsDeleting(null);
+      setIsDeleting(null)
     }
-  };
+  }
 
   // Add character count display
-  const nameCharCount = formData.name.trim().length;
-  const descriptionCharCount = formData.description.trim().length;
+  const nameCharCount = formData.name.trim().length
+  const descriptionCharCount = formData.description.trim().length
 
   return (
     <div>
@@ -161,18 +161,18 @@ export function MyApps(): React.JSX.Element {
               <h5 className="card-title mb-3">Create New App</h5>
 
               {error && (
-                <Alert variant="danger" onClose={() => { setError(null); }} dismissible>
+                <Alert variant="danger" onClose={() => { setError(null) }} dismissible>
                   {error}
                 </Alert>
               )}
 
               {success && (
-                <Alert variant="success" onClose={() => { setSuccess(null); }} dismissible>
+                <Alert variant="success" onClose={() => { setSuccess(null) }} dismissible>
                   {success}
                 </Alert>
               )}
 
-              <Form onSubmit={(e) => { void handleSubmit(e); }}>
+              <Form onSubmit={(e) => { void handleSubmit(e) }}>
                 <Form.Group className="mb-3">
                   <Form.Label htmlFor="name">
                     App Name
@@ -262,5 +262,5 @@ export function MyApps(): React.JSX.Element {
         />
       </div>
     </div>
-  );
+  )
 }

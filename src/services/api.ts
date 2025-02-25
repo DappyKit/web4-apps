@@ -42,18 +42,18 @@ export interface Template {
 // User registration methods
 export async function checkUserRegistration(address: string): Promise<boolean> {
   try {
-    const response = await fetch(`/api/check/${address}`);
+    const response = await fetch(`/api/check/${address}`)
     
     if (!response.ok) {
-      const errorData = await response.json() as ApiErrorResponse;
-      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`);
+      const errorData = await response.json() as ApiErrorResponse
+      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`)
     }
     
-    const data = await response.json() as RegistrationCheckResponse;
-    return await Promise.resolve(data.isRegistered);
+    const data = await response.json() as RegistrationCheckResponse
+    return await Promise.resolve(data.isRegistered)
   } catch (error) {
-    console.error('Error checking registration:', error);
-    throw error;
+    console.error('Error checking registration:', error)
+    throw error
   }
 }
 
@@ -69,26 +69,26 @@ export async function registerUser(address: string, message: string, signature: 
         message,
         signature,
       }),
-    });
+    })
     
-    const data = await response.json();
+    const data = await response.json()
     
     if (!response.ok) {
-      const errorData = data as ApiErrorResponse;
-      throw new Error(errorData.error || 'Registration failed');
+      const errorData = data as ApiErrorResponse
+      throw new Error(errorData.error || 'Registration failed')
     }
     
-    return await Promise.resolve(data as RegistrationResponse);
+    return await Promise.resolve(data as RegistrationResponse)
   } catch (error) {
-    console.error('Error registering user:', error);
-    throw error;
+    console.error('Error registering user:', error)
+    throw error
   }
 }
 
 // Apps management methods
 export async function getMyApps(address: string): Promise<App[]> {
   if (!address) {
-    throw new Error('Wallet address is required');
+    throw new Error('Wallet address is required')
   }
 
   try {
@@ -96,18 +96,18 @@ export async function getMyApps(address: string): Promise<App[]> {
       headers: {
         'x-wallet-address': address,
       },
-    });
+    })
     
     if (!response.ok) {
-      const errorData = await response.json() as ApiErrorResponse;
-      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`);
+      const errorData = await response.json() as ApiErrorResponse
+      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`)
     }
     
-    const data = await response.json() as App[];
-    return await Promise.resolve(data);
+    const data = await response.json() as App[]
+    return await Promise.resolve(data)
   } catch (error) {
-    console.error('Error fetching apps:', error);
-    throw error;
+    console.error('Error fetching apps:', error)
+    throw error
   }
 }
 
@@ -118,7 +118,7 @@ export async function createApp(
   signature: string
 ): Promise<CreateAppResponse> {
   if (!address) {
-    throw new Error('Wallet address is required');
+    throw new Error('Wallet address is required')
   }
 
   try {
@@ -133,25 +133,25 @@ export async function createApp(
         description,
         signature,
       }),
-    });
+    })
     
-    const data = await response.json();
+    const data = await response.json()
     
     if (!response.ok) {
-      const errorData = data as ApiErrorResponse;
-      throw new Error(errorData.error || 'Failed to create app');
+      const errorData = data as ApiErrorResponse
+      throw new Error(errorData.error || 'Failed to create app')
     }
     
-    return data as CreateAppResponse;
+    return data as CreateAppResponse
   } catch (error) {
-    console.error('Error creating app:', error);
-    throw error;
+    console.error('Error creating app:', error)
+    throw error
   }
 }
 
 export async function deleteApp(address: string, id: number, signature: string): Promise<void> {
   if (!address) {
-    throw new Error('Wallet address is required');
+    throw new Error('Wallet address is required')
   }
 
   try {
@@ -164,22 +164,22 @@ export async function deleteApp(address: string, id: number, signature: string):
       body: JSON.stringify({
         signature,
       }),
-    });
+    })
     
     if (!response.ok) {
-      const errorData = await response.json() as ApiErrorResponse;
-      throw new Error(errorData.error || 'Failed to delete app');
+      const errorData = await response.json() as ApiErrorResponse
+      throw new Error(errorData.error || 'Failed to delete app')
     }
   } catch (error) {
-    console.error('Error deleting app:', error);
-    throw error;
+    console.error('Error deleting app:', error)
+    throw error
   }
 }
 
 // Template management methods
 export async function getMyTemplates(address: string): Promise<Template[]> {
   if (!address) {
-    throw new Error('Wallet address is required');
+    throw new Error('Wallet address is required')
   }
 
   try {
@@ -187,18 +187,18 @@ export async function getMyTemplates(address: string): Promise<Template[]> {
       headers: {
         'x-wallet-address': address,
       },
-    });
+    })
     
     if (!response.ok) {
-      const errorData = await response.json() as ApiErrorResponse;
-      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`);
+      const errorData = await response.json() as ApiErrorResponse
+      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`)
     }
     
-    const data = await response.json() as Template[];
-    return await Promise.resolve(data);
+    const data = await response.json() as Template[]
+    return await Promise.resolve(data)
   } catch (error) {
-    console.error('Error fetching templates:', error);
-    throw error;
+    console.error('Error fetching templates:', error)
+    throw error
   }
 }
 
@@ -211,7 +211,7 @@ export async function createTemplate(
   signature: string
 ): Promise<Template> {
   if (!address) {
-    throw new Error('Wallet address is required');
+    throw new Error('Wallet address is required')
   }
 
   try {
@@ -229,25 +229,25 @@ export async function createTemplate(
         signature,
         address,
       }),
-    });
+    })
     
-    const data = await response.json();
+    const data = await response.json()
     
     if (!response.ok) {
-      const errorData = data as ApiErrorResponse;
-      throw new Error(errorData.error || 'Failed to create template');
+      const errorData = data as ApiErrorResponse
+      throw new Error(errorData.error || 'Failed to create template')
     }
     
-    return data as Template;
+    return data as Template
   } catch (error) {
-    console.error('Error creating template:', error);
-    throw error;
+    console.error('Error creating template:', error)
+    throw error
   }
 }
 
 export async function deleteTemplate(address: string, id: number, signature: string): Promise<void> {
   if (!address) {
-    throw new Error('Wallet address is required');
+    throw new Error('Wallet address is required')
   }
 
   try {
@@ -260,14 +260,14 @@ export async function deleteTemplate(address: string, id: number, signature: str
       body: JSON.stringify({
         signature,
       }),
-    });
+    })
     
     if (!response.ok) {
-      const errorData = await response.json() as ApiErrorResponse;
-      throw new Error(errorData.error || 'Failed to delete template');
+      const errorData = await response.json() as ApiErrorResponse
+      throw new Error(errorData.error || 'Failed to delete template')
     }
   } catch (error) {
-    console.error('Error deleting template:', error);
-    throw error;
+    console.error('Error deleting template:', error)
+    throw error
   }
 } 

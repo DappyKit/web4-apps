@@ -1,5 +1,5 @@
-import { ethers } from 'ethers';
-import { Request, Response, NextFunction } from 'express';
+import { ethers } from 'ethers'
+import { Request, Response, NextFunction } from 'express'
 
 /**
  * Extended Request type that includes the authenticated wallet address
@@ -17,10 +17,10 @@ type AuthRequest = Request & {
  */
 export function verifySignature(message: string, signature: string, address: string): boolean {
   try {
-    const recoveredAddress = ethers.verifyMessage(message, signature);
-    return recoveredAddress.toLowerCase() === address.toLowerCase();
+    const recoveredAddress = ethers.verifyMessage(message, signature)
+    return recoveredAddress.toLowerCase() === address.toLowerCase()
   } catch {
-    return false;
+    return false
   }
 }
 
@@ -36,10 +36,10 @@ export function requireAuth(
   res: Response,
   next: NextFunction
 ): Response | undefined {
-  const walletAddress = req.headers['x-wallet-address'];
+  const walletAddress = req.headers['x-wallet-address']
   if (!walletAddress || typeof walletAddress !== 'string') {
-    return res.status(401).json({ error: 'Unauthorized - Wallet address required' });
+    return res.status(401).json({ error: 'Unauthorized - Wallet address required' })
   }
-  (req as AuthRequest).address = walletAddress;
-  next();
+  (req as AuthRequest).address = walletAddress
+  next()
 }

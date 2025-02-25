@@ -1,6 +1,6 @@
-import { Spinner, Alert } from 'react-bootstrap';
-import type { App } from '../services/api';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Spinner, Alert } from 'react-bootstrap'
+import type { App } from '../services/api'
+import { OverlayTrigger, Tooltip } from 'react-bootstrap'
 
 interface AppListProps {
   apps: App[];
@@ -10,13 +10,13 @@ interface AppListProps {
   showEmptyMessage?: string;
 }
 
-const TITLE_MAX_LENGTH = 100;
-const DESCRIPTION_MAX_LENGTH = 150;
+const TITLE_MAX_LENGTH = 100
+const DESCRIPTION_MAX_LENGTH = 150
 
 const truncateText = (text: string, maxLength: number): string => {
-  if (!text) return '';
-  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-};
+  if (!text) return ''
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
+}
 
 export function AppList({ apps, isLoading, onDeleteApp, isDeleting, showEmptyMessage = "No apps available." }: AppListProps): React.JSX.Element {
   const renderAppCard = (app: App): React.JSX.Element => (
@@ -44,7 +44,7 @@ export function AppList({ apps, isLoading, onDeleteApp, isDeleting, showEmptyMes
           {onDeleteApp && (
             <button
               className="btn btn-danger"
-              onClick={() => { void onDeleteApp(Number(app.id)); }}
+              onClick={() => { void onDeleteApp(Number(app.id)) }}
               disabled={isDeleting === Number(app.id)}
             >
               {isDeleting === Number(app.id) ? 'Deleting...' : 'Delete'}
@@ -53,7 +53,7 @@ export function AppList({ apps, isLoading, onDeleteApp, isDeleting, showEmptyMes
         </div>
       </div>
     </div>
-  );
+  )
 
   if (isLoading) {
     return (
@@ -62,7 +62,7 @@ export function AppList({ apps, isLoading, onDeleteApp, isDeleting, showEmptyMes
           <span className="visually-hidden">Loading...</span>
         </Spinner>
       </div>
-    );
+    )
   }
 
   if (apps.length === 0) {
@@ -70,12 +70,12 @@ export function AppList({ apps, isLoading, onDeleteApp, isDeleting, showEmptyMes
       <Alert variant="info">
         {showEmptyMessage}
       </Alert>
-    );
+    )
   }
 
   return (
     <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
       {apps.map(renderAppCard)}
     </div>
-  );
+  )
 } 

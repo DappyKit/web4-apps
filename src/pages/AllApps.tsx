@@ -7,5 +7,5 @@ export function AllApps(): React.JSX.Element {
 
       All Apps content
     </div>
-  );
+  )
 } 

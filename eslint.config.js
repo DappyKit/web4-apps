@@ -31,7 +31,7 @@ export default tseslint.config(
             ...reactHooks.configs.recommended.rules,
             'object-curly-spacing': ["error", "always"],
             "indent": ["error", 2],
-            'semi': "off",
+            'semi': ["error", "never"],
             '@typescript-eslint/explicit-function-return-type': ["error", {
                 "allowExpressions": true,
                 "allowTypedFunctionExpressions": true,
@@ -61,7 +61,7 @@ export default tseslint.config(
         rules: {
             'object-curly-spacing': ["error", "always"],
             "indent": ["error", 2],
-            'semi': "off",
+            'semi': ["error", "never"],
             '@typescript-eslint/explicit-function-return-type': ["error", {
                 "allowExpressions": true,
                 "allowTypedFunctionExpressions": true,

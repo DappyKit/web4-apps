@@ -1,14 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useAccount, useSignMessage } from 'wagmi';
-import { Alert, Button, Form, Spinner } from 'react-bootstrap';
-import { createTemplate, getMyTemplates, deleteTemplate } from '../services/api';
-import type { Template } from '../services/api';
-import { TemplateList } from '../components/TemplateList';
+import { useState, useEffect, useCallback } from 'react'
+import { useAccount, useSignMessage } from 'wagmi'
+import { Alert, Button, Form, Spinner } from 'react-bootstrap'
+import { createTemplate, getMyTemplates, deleteTemplate } from '../services/api'
+import type { Template } from '../services/api'
+import { TemplateList } from '../components/TemplateList'
 
 // Constants matching backend limitations
-const MAX_TITLE_LENGTH = 255;
-const MAX_DESCRIPTION_LENGTH = 1000;
-const MAX_JSON_LENGTH = 10000;
+const MAX_TITLE_LENGTH = 255
+const MAX_DESCRIPTION_LENGTH = 1000
+const MAX_JSON_LENGTH = 10000
 
 interface FormData {
   title: string;
@@ -26,102 +26,102 @@ interface FormErrors {
 }
 
 export function MyTemplates(): React.JSX.Element {
-  const { address } = useAccount();
-  const { signMessageAsync } = useSignMessage();
+  const { address } = useAccount()
+  const { signMessageAsync } = useSignMessage()
 
   const [formData, setFormData] = useState<FormData>({
     title: '',
     description: '',
     url: '',
     jsonData: ''
-  });
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [isCreating, setIsCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDeleting, setIsDeleting] = useState<number | null>(null);
+  })
+  const [errors, setErrors] = useState<FormErrors>({})
+  const [isCreating, setIsCreating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [templates, setTemplates] = useState<Template[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isDeleting, setIsDeleting] = useState<number | null>(null)
 
   const loadTemplates = useCallback(async () => {
-    if (!address) return;
+    if (!address) return
     
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const myTemplates = await getMyTemplates(address);
-      setTemplates(myTemplates);
+      const myTemplates = await getMyTemplates(address)
+      setTemplates(myTemplates)
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load templates';
-      setError(errorMessage);
-      console.error('Error loading templates:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load templates'
+      setError(errorMessage)
+      console.error('Error loading templates:', error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [address]);
+  }, [address])
 
   useEffect(() => {
-    loadTemplates().catch(console.error);
-  }, [loadTemplates]);
+    loadTemplates().catch(console.error)
+  }, [loadTemplates])
 
   const validateForm = useCallback((): boolean => {
-    const newErrors: FormErrors = {};
-    const trimmedTitle = formData.title.trim();
-    const trimmedDescription = formData.description.trim();
-    const trimmedUrl = formData.url.trim();
-    const trimmedJsonData = formData.jsonData.trim();
+    const newErrors: FormErrors = {}
+    const trimmedTitle = formData.title.trim()
+    const trimmedDescription = formData.description.trim()
+    const trimmedUrl = formData.url.trim()
+    const trimmedJsonData = formData.jsonData.trim()
 
     if (!trimmedTitle) {
-      newErrors.title = 'Template title is required';
+      newErrors.title = 'Template title is required'
     } else if (trimmedTitle.length > MAX_TITLE_LENGTH) {
-      newErrors.title = `Title must be less than ${String(MAX_TITLE_LENGTH)} characters`;
+      newErrors.title = `Title must be less than ${String(MAX_TITLE_LENGTH)} characters`
     }
 
     if (trimmedDescription && trimmedDescription.length > MAX_DESCRIPTION_LENGTH) {
-      newErrors.description = `Description must be less than ${String(MAX_DESCRIPTION_LENGTH)} characters`;
+      newErrors.description = `Description must be less than ${String(MAX_DESCRIPTION_LENGTH)} characters`
     }
 
     if (!trimmedUrl) {
-      newErrors.url = 'Template URL is required';
+      newErrors.url = 'Template URL is required'
     } else {
       try {
-        new URL(trimmedUrl);
+        new URL(trimmedUrl)
       } catch {
-        newErrors.url = 'Invalid URL format';
+        newErrors.url = 'Invalid URL format'
       }
     }
 
     if (!trimmedJsonData) {
-      newErrors.jsonData = 'Template JSON data is required';
+      newErrors.jsonData = 'Template JSON data is required'
     } else {
       try {
-        JSON.parse(trimmedJsonData);
+        JSON.parse(trimmedJsonData)
         if (trimmedJsonData.length > MAX_JSON_LENGTH) {
-          newErrors.jsonData = `JSON data must be less than ${String(MAX_JSON_LENGTH)} characters`;
+          newErrors.jsonData = `JSON data must be less than ${String(MAX_JSON_LENGTH)} characters`
         }
       } catch {
-        newErrors.jsonData = 'Invalid JSON format';
+        newErrors.jsonData = 'Invalid JSON format'
       }
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [formData]);
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }, [formData])
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(null);
+    e.preventDefault()
+    setError(null)
+    setSuccess(null)
 
     if (!validateForm()) {
-      return;
+      return
     }
 
-    setIsCreating(true);
+    setIsCreating(true)
 
     try {
       const signature = await signMessageAsync({
         message: `Create template: ${formData.title.trim()}`
-      });
+      })
 
       await createTemplate(
         address as string,
@@ -130,73 +130,73 @@ export function MyTemplates(): React.JSX.Element {
         formData.url.trim(),
         formData.jsonData.trim(),
         signature
-      );
+      )
 
-      setSuccess('Template created successfully!');
-      setFormData({ title: '', description: '', url: '', jsonData: '' });
-      await loadTemplates();
+      setSuccess('Template created successfully!')
+      setFormData({ title: '', description: '', url: '', jsonData: '' })
+      await loadTemplates()
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to create template');
+      setError(error instanceof Error ? error.message : 'Failed to create template')
     } finally {
-      setIsCreating(false);
+      setIsCreating(false)
     }
-  }, [address, formData, loadTemplates, signMessageAsync, validateForm]);
+  }, [address, formData, loadTemplates, signMessageAsync, validateForm])
 
   const handleFormSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    void handleSubmit(e);
-  }, [handleSubmit]);
+    e.preventDefault()
+    void handleSubmit(e)
+  }, [handleSubmit])
 
   const handleDeleteTemplate = useCallback(async (templateId: number) => {
-    if (!address || isDeleting !== null) return;
+    if (!address || isDeleting !== null) return
 
-    setIsDeleting(templateId);
-    setError(null);
+    setIsDeleting(templateId)
+    setError(null)
 
     try {
-      const message = `Delete template #${String(templateId)}`;
-      const signature = await signMessageAsync({ message });
+      const message = `Delete template #${String(templateId)}`
+      const signature = await signMessageAsync({ message })
 
-      await deleteTemplate(address, templateId, signature);
-      await loadTemplates();
+      await deleteTemplate(address, templateId, signature)
+      await loadTemplates()
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete template';
-      setError(errorMessage);
-      console.error('Error deleting template:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete template'
+      setError(errorMessage)
+      console.error('Error deleting template:', error)
     } finally {
-      setIsDeleting(null);
+      setIsDeleting(null)
     }
-  }, [address, isDeleting, loadTemplates, signMessageAsync]);
+  }, [address, isDeleting, loadTemplates, signMessageAsync])
 
   const handleTemplateDelete = useCallback((templateId: number) => {
-    void handleDeleteTemplate(templateId);
-  }, [handleDeleteTemplate]);
+    void handleDeleteTemplate(templateId)
+  }, [handleDeleteTemplate])
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { [name]: _, ...rest } = prev;
-        return rest;
-      });
+        const { [name]: _, ...rest } = prev
+        return rest
+      })
     }
-  }, [errors]);
+  }, [errors])
 
   // Add character count display
-  const titleCharCount = formData.title.trim().length;
-  const descriptionCharCount = formData.description.trim().length;
-  const jsonCharCount = formData.jsonData.trim().length;
+  const titleCharCount = formData.title.trim().length
+  const descriptionCharCount = formData.description.trim().length
+  const jsonCharCount = formData.jsonData.trim().length
 
   const handleErrorClose = useCallback(() => {
-    setError(null);
-  }, []);
+    setError(null)
+  }, [])
 
   const handleSuccessClose = useCallback(() => {
-    setSuccess(null);
-  }, []);
+    setSuccess(null)
+  }, [])
 
   return (
     <div>
@@ -351,5 +351,5 @@ export function MyTemplates(): React.JSX.Element {
         />
       </div>
     </div>
-  );
+  )
 } 

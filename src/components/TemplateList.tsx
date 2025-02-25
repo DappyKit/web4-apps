@@ -1,5 +1,5 @@
-import { Button, Card, Spinner } from 'react-bootstrap';
-import type { Template } from '../services/api';
+import { Button, Card, Spinner } from 'react-bootstrap'
+import type { Template } from '../services/api'
 
 interface TemplateListProps {
   templates: Template[];
@@ -23,7 +23,7 @@ export function TemplateList({
           <span className="visually-hidden">Loading...</span>
         </Spinner>
       </div>
-    );
+    )
   }
 
   if (!templates.length) {
@@ -31,7 +31,7 @@ export function TemplateList({
       <div className="text-center text-muted p-4">
         {showEmptyMessage}
       </div>
-    );
+    )
   }
 
   return (
@@ -59,7 +59,7 @@ export function TemplateList({
                   variant="outline-danger"
                   size="sm"
                   onClick={() => {
-                    onDeleteTemplate(template.id);
+                    onDeleteTemplate(template.id)
                   }}
                   disabled={isDeleting === template.id}
                 >
@@ -85,5 +85,5 @@ export function TemplateList({
         </div>
       ))}
     </div>
-  );
+  )
 } 

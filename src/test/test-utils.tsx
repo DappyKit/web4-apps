@@ -1,5 +1,5 @@
-import { WagmiProvider } from 'wagmi';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { WagmiProvider } from 'wagmi'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 /**
  * Mock provider for Wagmi
@@ -7,7 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
  * @returns React component wrapped in WagmiProvider
  */
 function MockWagmiProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return <WagmiProvider>{children}</WagmiProvider>;
+  return <WagmiProvider>{children}</WagmiProvider>
 }
 
 /**
@@ -22,13 +22,13 @@ function AllTheProviders({ children }: { children: React.ReactNode }): React.JSX
         retry: false,
       },
     },
-  });
+  })
 
   return (
     <QueryClientProvider client={queryClient}>
       <MockWagmiProvider>{children}</MockWagmiProvider>
     </QueryClientProvider>
-  );
+  )
 }
 
-export { MockWagmiProvider, AllTheProviders };
+export { MockWagmiProvider, AllTheProviders }

@@ -1,5 +1,5 @@
-import { render, RenderOptions, RenderResult } from '@testing-library/react';
-import { AllTheProviders } from './test-utils';
+import { render, RenderOptions, RenderResult } from '@testing-library/react'
+import { AllTheProviders } from './test-utils'
 
 /**
  * Custom render function that wraps component with necessary providers
@@ -14,5 +14,5 @@ export const customRender = (
   return render(ui, {
     wrapper: AllTheProviders,
     ...options,
-  });
-}; 
+  })
+} 
