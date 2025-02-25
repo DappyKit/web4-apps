@@ -9,9 +9,9 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:check": "eslint 'src/**/*.{ts,tsx}' 'backend/src/**/*.ts' --max-warnings 0",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:ui": "vitest --ui",
+    "ui-test": "vitest run",
+    "ui-test:coverage": "vitest run --coverage",
+    "ui-test:ui": "vitest --ui",
     "code:lines": "./scripts/analyze-code.sh"
   },
   "dependencies": {
