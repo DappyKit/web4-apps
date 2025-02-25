@@ -45,20 +45,17 @@ export function createTemplatesRouter(db: Knex) {
       // Validate template data
       validateTemplate(templateData);
 
-      // Insert template
-      await db('templates')
+      // Insert template and get the id
+      const [insertedId] = await db('templates')
         .insert({
           ...templateData,
           owner_address: address,
-        });
+        })
+        .returning('id');
 
       // Get the inserted template
       const template = await db('templates')
-        .where({
-          title: templateData.title,
-          owner_address: address
-        })
-        .orderBy('created_at', 'desc')
+        .where({ id: insertedId })
         .first();
 
       res.status(201).json(template);
@@ -103,7 +100,7 @@ export function createTemplatesRouter(db: Knex) {
       }
 
       // Check if template exists and belongs to the user
-      const template = await db('templates')
+      const template = await db<Template>('templates')
         .where({ id: templateId })
         .first();
 

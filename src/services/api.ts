@@ -28,6 +28,17 @@ interface CreateAppResponse {
   owner_address: string;
 }
 
+export interface Template {
+  id: number;
+  title: string;
+  description?: string;
+  url: string;
+  json_data: string;
+  owner_address: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // User registration methods
 export async function checkUserRegistration(address: string): Promise<boolean> {
   try {
@@ -161,6 +172,102 @@ export async function deleteApp(address: string, id: number, signature: string):
     }
   } catch (error) {
     console.error('Error deleting app:', error);
+    throw error;
+  }
+}
+
+// Template management methods
+export async function getMyTemplates(address: string): Promise<Template[]> {
+  if (!address) {
+    throw new Error('Wallet address is required');
+  }
+
+  try {
+    const response = await fetch(`/api/templates/my?address=${address}`, {
+      headers: {
+        'x-wallet-address': address,
+      },
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json() as ApiErrorResponse;
+      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`);
+    }
+    
+    const data = await response.json() as Template[];
+    return await Promise.resolve(data);
+  } catch (error) {
+    console.error('Error fetching templates:', error);
+    throw error;
+  }
+}
+
+export async function createTemplate(
+  address: string,
+  title: string,
+  description: string | undefined,
+  url: string,
+  jsonData: string,
+  signature: string
+): Promise<Template> {
+  if (!address) {
+    throw new Error('Wallet address is required');
+  }
+
+  try {
+    const response = await fetch('/api/templates', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-wallet-address': address,
+      },
+      body: JSON.stringify({
+        title,
+        description,
+        url,
+        json_data: jsonData,
+        signature,
+        address,
+      }),
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      const errorData = data as ApiErrorResponse;
+      throw new Error(errorData.error || 'Failed to create template');
+    }
+    
+    return data as Template;
+  } catch (error) {
+    console.error('Error creating template:', error);
+    throw error;
+  }
+}
+
+export async function deleteTemplate(address: string, id: number, signature: string): Promise<void> {
+  if (!address) {
+    throw new Error('Wallet address is required');
+  }
+
+  try {
+    const response = await fetch(`/api/templates/${String(id)}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-wallet-address': address,
+      },
+      body: JSON.stringify({
+        signature,
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json() as ApiErrorResponse;
+      throw new Error(errorData.error || 'Failed to delete template');
+    }
+  } catch (error) {
+    console.error('Error deleting template:', error);
     throw error;
   }
 } 

@@ -8,6 +8,19 @@ import * as dotenv from 'dotenv';
 import knexConfig from '../knexfile';
 import { ethers } from 'ethers';
 
+interface DbUser {
+  address: string;
+}
+
+interface DbTemplate {
+  id: number;
+  title: string;
+  description?: string;
+  url: string;
+  json_data: string;
+  owner_address: string;
+}
+
 dotenv.config();
 
 describe('Templates API', () => {
@@ -31,7 +44,7 @@ describe('Templates API', () => {
       await db.migrate.latest();
 
       // Create test users
-      await db('users').insert([
+      await db<DbUser>('users').insert([
         {
           address: testWallet.address
         },
@@ -44,8 +57,8 @@ describe('Templates API', () => {
       app = express();
       app.use(express.json());
       app.use('/api/templates', createTemplatesRouter(db));
-    } catch (error) {
-      console.error('Setup failed:', error);
+    } catch (error: unknown) {
+      console.error('Setup failed:', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   });
@@ -53,8 +66,8 @@ describe('Templates API', () => {
   afterEach(async () => {
     try {
       await db.migrate.rollback();
-    } catch (error) {
-      console.error('Cleanup failed:', error);
+    } catch (error: unknown) {
+      console.error('Cleanup failed:', error instanceof Error ? error.message : 'Unknown error');
     }
   });
 
@@ -87,13 +100,13 @@ describe('Templates API', () => {
       expect(response.status).toBe(201);
       
       // Get the created template from the database
-      const templates = await db('templates')
+      const templates = await db<DbTemplate>('templates')
         .whereRaw('LOWER(owner_address) = ?', [testWallet.address.toLowerCase()])
         .select();
       expect(templates).toHaveLength(1);
       expect(templates[0]).toMatchObject({
         ...validTemplate,
-        owner_address: expect.any(String)
+        owner_address: expect.any(String) as string
       });
       expect(templates[0].owner_address.toLowerCase()).toBe(testWallet.address.toLowerCase());
     }, 30000);
@@ -174,7 +187,7 @@ describe('Templates API', () => {
   describe('GET /my', () => {
     beforeEach(async () => {
       // Insert test templates
-      await db('templates').insert([
+      await db<DbTemplate>('templates').insert([
         {
           title: 'Template 1',
           url: 'https://example.com/1',
@@ -205,8 +218,9 @@ describe('Templates API', () => {
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
       expect(response.body).toHaveLength(2);
-      expect(response.body.every((t: any) => 
-        t.owner_address.toLowerCase() === testWallet.address.toLowerCase()
+      const templates = response.body as DbTemplate[];
+      expect(templates.every((template) => 
+        template.owner_address.toLowerCase() === testWallet.address.toLowerCase()
       )).toBe(true);
     }, 30000);
 
@@ -236,7 +250,7 @@ describe('Templates API', () => {
 
     beforeEach(async () => {
       // Insert a test template
-      await db('templates')
+      await db<DbTemplate>('templates')
         .insert({
           title: 'Test Template',
           url: 'https://example.com',
@@ -245,12 +259,17 @@ describe('Templates API', () => {
         });
 
       // Get the inserted template ID
-      const template = await db('templates')
+      const template = await db<DbTemplate>('templates')
         .where({
           owner_address: testWallet.address,
           title: 'Test Template'
         })
         .first();
+
+      if (!template) {
+        throw new Error('Template not found');
+      }
+
       templateId = template.id;
     });
 
@@ -269,7 +288,9 @@ describe('Templates API', () => {
       expect(response.status).toBe(204);
 
       // Verify template was deleted
-      const deletedTemplate = await db('templates').where({ id: templateId }).first();
+      const deletedTemplate = await db<DbTemplate>('templates')
+        .where({ id: templateId })
+        .first();
       expect(deletedTemplate).toBeUndefined();
     }, 30000);
 
@@ -308,7 +329,7 @@ describe('Templates API', () => {
 
     it('should fail when deleting template owned by another user', async () => {
       // Create template owned by different address
-      await db('templates')
+      await db<DbTemplate>('templates')
         .insert({
           title: 'Test Template',
           description: 'Test Description',
@@ -318,18 +339,22 @@ describe('Templates API', () => {
         });
 
       // Get the inserted template ID
-      const otherTemplate = await db('templates')
+      const template = await db<DbTemplate>('templates')
         .where({
           owner_address: otherWallet.address,
           title: 'Test Template'
         })
         .first();
 
-      const message = `Delete template #${otherTemplate.id}`;
+      if (!template) {
+        throw new Error('Template not found');
+      }
+
+      const message = `Delete template #${String(template.id)}`;
       const signature = await testWallet.signMessage(message);
 
       const response = await request(app)
-        .delete(`/api/templates/${otherTemplate.id}`)
+        .delete(`/api/templates/${String(template.id)}`)
         .set('x-wallet-address', testWallet.address)
         .send({
           address: testWallet.address,
