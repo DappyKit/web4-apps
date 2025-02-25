@@ -1,4 +1,4 @@
-export function Header() {
+export function Header(): React.JSX.Element {
   return (
     <header>
       <div className="w-lg-75 mx-2 mx-lg-auto position-relative z-2 px-lg-3 py-0 shadow-5 rounded-3 rounded-lg-pill bg-dark">

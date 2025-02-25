@@ -18,8 +18,8 @@ const truncateText = (text: string, maxLength: number): string => {
   return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 };
 
-export function AppList({ apps, isLoading, onDeleteApp, isDeleting, showEmptyMessage = "No apps available." }: AppListProps) {
-  const renderAppCard = (app: App) => (
+export function AppList({ apps, isLoading, onDeleteApp, isDeleting, showEmptyMessage = "No apps available." }: AppListProps): React.JSX.Element {
+  const renderAppCard = (app: App): React.JSX.Element => (
     <div key={app.id} className="col">
       <div className="card h-100">
         <div className="card-body">

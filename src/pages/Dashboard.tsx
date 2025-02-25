@@ -6,7 +6,7 @@ import { AppList } from '../components/AppList';
 
 const REGISTRATION_MESSAGE = "Web4 Apps Registration";
 
-export function Dashboard() {
+export function Dashboard(): React.JSX.Element {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
@@ -16,7 +16,7 @@ export function Dashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
 
-  const checkRegistrationStatus = useCallback(async () => {
+  const checkRegistrationStatus = useCallback(async (): Promise<void> => {
     if (!address) return;
     
     try {
@@ -28,7 +28,7 @@ export function Dashboard() {
     }
   }, [address]);
 
-  const loadApps = useCallback(async () => {
+  const loadApps = useCallback(async (): Promise<void> => {
     if (!isRegistered || !address) return;
     
     setIsLoading(true);
@@ -54,7 +54,7 @@ export function Dashboard() {
     loadApps().catch(console.error);
   }, [loadApps]);
 
-  const handleRegister = async () => {
+  const handleRegister = async (): Promise<void> => {
     if (!address || isRegistering) return;
 
     setIsRegistering(true);
@@ -76,7 +76,7 @@ export function Dashboard() {
     }
   };
 
-  const handleDeleteApp = async (appId: number) => {
+  const handleDeleteApp = async (appId: number): Promise<void> => {
     if (!address || isDeleting !== null) return;
 
     setIsDeleting(appId);

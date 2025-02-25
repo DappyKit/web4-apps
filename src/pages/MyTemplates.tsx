@@ -25,7 +25,7 @@ interface FormErrors {
   jsonData?: string;
 }
 
-export function MyTemplates() {
+export function MyTemplates(): React.JSX.Element {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
 

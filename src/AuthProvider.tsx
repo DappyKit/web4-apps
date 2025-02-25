@@ -10,7 +10,7 @@ import { login, logout } from './redux/reducers/authSlice.ts'
  * @param {ReactNode} props.children - Child components to be rendered
  * @returns {ReactNode} The wrapped children components
  */
-const AuthProvider = ({ children }: { children: ReactNode }) => {
+const AuthProvider = ({ children }: { children: ReactNode }): ReactNode => {
   const { address, isConnected } = useAccount()
   const dispatch = useDispatch()
 

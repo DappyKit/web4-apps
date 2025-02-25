@@ -1,4 +1,4 @@
-export function FooterLogged() {
+export function FooterLogged(): React.JSX.Element {
   return (
     <footer className="px-md-4">
       <hr className="w-100 my-4"/>

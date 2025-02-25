@@ -13,7 +13,7 @@ const REGISTRATION_MESSAGE = "Web4 Apps Registration";
  * @param {Knex} db - The database connection instance
  * @returns {Router} Express router configured with user routes
  */
-export function createUsersRouter(db: Knex) {
+export function createUsersRouter(db: Knex): Router {
   const router = Router();
 
   router.get('/check/:address', async (req, res) => {

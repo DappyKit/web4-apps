@@ -35,7 +35,7 @@ interface DeleteTemplateRequest extends Request {
  * @param {Knex} db - The database connection instance
  * @returns {Router} Express router configured with template routes
  */
-export function createTemplatesRouter(db: Knex) {
+export function createTemplatesRouter(db: Knex): Router {
   const router = Router();
 
   // Create template

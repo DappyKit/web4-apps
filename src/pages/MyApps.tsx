@@ -20,7 +20,7 @@ interface FormErrors {
   description?: string;
 }
 
-export function MyApps() {
+export function MyApps(): React.JSX.Element {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
 
@@ -77,8 +77,8 @@ export function MyApps() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
+    event.preventDefault();
     setError(null);
     setSuccess(null);
 
@@ -102,7 +102,7 @@ export function MyApps() {
 
       setSuccess('App created successfully!');
       setFormData({ name: '', description: '' });
-      await loadApps(); // Reload the apps list after creating a new app
+      await loadApps();
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to create app');
     } finally {
@@ -110,8 +110,8 @@ export function MyApps() {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
+    const { name, value } = event.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     // Clear error when user starts typing
     if (errors[name]) {
@@ -123,7 +123,7 @@ export function MyApps() {
     }
   };
 
-  const handleDeleteApp = async (appId: number) => {
+  const handleDeleteApp = async (appId: number): Promise<void> => {
     if (!address || isDeleting !== null) return;
 
     setIsDeleting(appId);

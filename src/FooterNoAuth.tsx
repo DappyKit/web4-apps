@@ -1,4 +1,4 @@
-export function FooterNoAuth() {
+export function FooterNoAuth(): React.JSX.Element {
   return (
     <footer className="pt-24 pb-10">
       <div className="container mw-screen-xl">

@@ -1,6 +1,6 @@
 import { describe, it, vi, expect, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { render } from '../../test/test-utils';
+import { customRender as render } from '../../test/test-utils-helpers';
 import { Dashboard } from '../Dashboard';
 import * as wagmi from 'wagmi';
 import * as api from '../../services/api';
@@ -10,7 +10,7 @@ import type { Mock } from 'vitest';
 vi.mock('wagmi', () => ({
   useAccount: vi.fn(),
   useSignMessage: vi.fn(),
-  WagmiConfig: ({ children }: { children: React.ReactNode }) => children,
+  WagmiProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 // Mock API services
@@ -28,13 +28,15 @@ describe('Dashboard Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
-    // Default mock implementations
-    (wagmi.useAccount as Mock)
-      .mockReturnValue({ address: mockAddress, isConnected: true });
-    (wagmi.useSignMessage as Mock)
-      .mockReturnValue({ signMessageAsync: mockSignMessage });
-    (api.checkUserRegistration as Mock)
-      .mockResolvedValue(false);
+    // Default mock implementations with proper typing
+    (wagmi.useAccount as Mock).mockReturnValue({ 
+      address: mockAddress, 
+      isConnected: true 
+    });
+    (wagmi.useSignMessage as Mock).mockReturnValue({ 
+      signMessageAsync: mockSignMessage 
+    });
+    (api.checkUserRegistration as Mock).mockResolvedValue(false);
   });
 
   it('displays registration prompt when not registered', async () => {
@@ -58,11 +60,9 @@ describe('Dashboard Component', () => {
       }
     ];
 
-    // Set user as registered
-    (api.checkUserRegistration as Mock)
-      .mockResolvedValue(true);
-    (api.getMyApps as Mock)
-      .mockResolvedValue(mockApps);
+    // Set user as registered with proper typing
+    (api.checkUserRegistration as Mock).mockResolvedValue(true);
+    (api.getMyApps as Mock).mockResolvedValue(mockApps);
 
     render(<Dashboard />);
 
@@ -88,14 +88,11 @@ describe('Dashboard Component', () => {
       }
     ];
 
-    // Set user as registered
-    (api.checkUserRegistration as Mock)
-      .mockResolvedValue(true);
-    (api.getMyApps as Mock)
-      .mockResolvedValue(mockApps);
+    // Set user as registered with proper typing
+    (api.checkUserRegistration as Mock).mockResolvedValue(true);
+    (api.getMyApps as Mock).mockResolvedValue(mockApps);
     mockSignMessage.mockResolvedValueOnce('mock-signature');
-    (api.deleteApp as Mock)
-      .mockResolvedValueOnce(true);
+    (api.deleteApp as Mock).mockResolvedValueOnce(true);
 
     render(<Dashboard />);
 

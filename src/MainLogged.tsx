@@ -15,9 +15,9 @@ import { useDisconnect } from 'wagmi'
 /**
  * Main component for authenticated users
  * Provides navigation sidebar and routes to different sections of the application
- * @returns {JSX.Element} The main authenticated user interface
+ * @returns {React.JSX.Element} The main authenticated user interface
  */
-export function MainLogged() {
+export function MainLogged(): React.JSX.Element {
   const { disconnect } = useDisconnect()
   const dispatch = useDispatch()
 
@@ -25,7 +25,7 @@ export function MainLogged() {
    * Handles user logout with confirmation
    * Disconnects wallet and clears authentication state
    */
-  const handleLogout = () => {
+  const handleLogout = (): void => {
     if (window.confirm('Are you sure you want to logout?')) {
       disconnect()
       dispatch(logout())

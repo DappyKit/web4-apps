@@ -10,9 +10,9 @@ import { BrowserRouter, Navigate, useLocation } from 'react-router-dom'
 
 /**
  * Main content component that handles authentication state and routing
- * @returns {JSX.Element} The main content of the application with conditional rendering based on auth state
+ * @returns {React.JSX.Element} The main content of the application with conditional rendering based on auth state
  */
-function AppContent() {
+function AppContent(): React.JSX.Element {
   const auth = useAppSelector(selectAuth)
   const location = useLocation()
 
@@ -37,9 +37,9 @@ function AppContent() {
 /**
  * Root component of the application
  * Initializes and sets up routing
- * @returns {JSX.Element} The root application component wrapped in router
+ * @returns {React.JSX.Element} The root application component wrapped in router
  */
-function App() {
+function App(): React.JSX.Element {
   useEffect(() => {
     const sdk = new SDK(Config.optimismMainnetConfig)
     console.log('sdk', sdk)

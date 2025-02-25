@@ -29,13 +29,13 @@ export function verifySignature(message: string, signature: string, address: str
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
  * @param {NextFunction} next - Express next function
- * @returns {void | Response} Proceeds to next middleware or returns error response
+ * @returns {Response | undefined} Returns error response or undefined if successful
  */
 export function requireAuth(
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): Response | undefined {
   const walletAddress = req.headers['x-wallet-address'];
   if (!walletAddress || typeof walletAddress !== 'string') {
     return res.status(401).json({ error: 'Unauthorized - Wallet address required' });

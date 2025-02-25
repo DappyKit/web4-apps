@@ -26,7 +26,7 @@ const MAX_DESCRIPTION_LENGTH = 1000;
  * @param {Knex} db - The database connection instance
  * @returns {Router} Express router configured with app routes
  */
-export function createAppsRouter(db: Knex) {
+export function createAppsRouter(db: Knex): Router {
   const router = Router();
 
   // Get apps by owner

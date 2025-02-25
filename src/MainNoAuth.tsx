@@ -1,9 +1,9 @@
 /**
  * Main component for unauthenticated users
  * Displays the landing page with Web4 Apps introduction
- * @returns {JSX.Element} The landing page component
+ * @returns {React.JSX.Element} The landing page component
  */
-export function MainNoAuth() {
+export function MainNoAuth(): React.JSX.Element {
   // const dispatch = useAppDispatch()
 
   return (

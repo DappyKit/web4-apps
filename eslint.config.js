@@ -31,6 +31,13 @@ export default tseslint.config(
             ...reactHooks.configs.recommended.rules,
             'object-curly-spacing': ["error", "always"],
             "indent": ["error", 2],
+            'semi': "off",
+            '@typescript-eslint/explicit-function-return-type': ["error", {
+                "allowExpressions": true,
+                "allowTypedFunctionExpressions": true,
+                "allowHigherOrderFunctions": true,
+                "allowDirectConstAssertionInArrowFunctions": true
+            }],
             'react-refresh/only-export-components': [
                 'warn',
                 {allowConstantExport: true},
@@ -54,6 +61,13 @@ export default tseslint.config(
         rules: {
             'object-curly-spacing': ["error", "always"],
             "indent": ["error", 2],
+            'semi': "off",
+            '@typescript-eslint/explicit-function-return-type': ["error", {
+                "allowExpressions": true,
+                "allowTypedFunctionExpressions": true,
+                "allowHigherOrderFunctions": true,
+                "allowDirectConstAssertionInArrowFunctions": true
+            }],
             '@typescript-eslint/no-unsafe-assignment': 'off',
             '@typescript-eslint/no-unsafe-member-access': 'off',
             '@typescript-eslint/no-unused-vars': ['error', {

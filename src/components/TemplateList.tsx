@@ -15,7 +15,7 @@ export function TemplateList({
   onDeleteTemplate,
   isDeleting,
   showEmptyMessage = 'No templates found'
-}: TemplateListProps) {
+}: TemplateListProps): React.JSX.Element {
   if (isLoading) {
     return (
       <div className="text-center p-4">
