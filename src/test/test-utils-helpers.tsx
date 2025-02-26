@@ -7,12 +7,9 @@ import { AllTheProviders } from './test-utils'
  * @param options - Additional render options
  * @returns Rendered component with all necessary providers
  */
-export const customRender = (
-  ui: React.ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>
-): RenderResult => {
+export const customRender = (ui: React.ReactElement, options?: Omit<RenderOptions, 'wrapper'>): RenderResult => {
   return render(ui, {
     wrapper: AllTheProviders,
     ...options,
   })
-} 
+}

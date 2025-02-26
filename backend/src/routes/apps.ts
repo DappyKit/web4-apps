@@ -8,8 +8,8 @@ import { CreateAppDTO, App } from '../types'
  * Extended Request type that includes the authenticated wallet address
  */
 type AuthRequest = Request & {
-  address: string;
-};
+  address: string
+}
 
 /**
  * Maximum length allowed for app name
@@ -33,9 +33,7 @@ export function createAppsRouter(db: Knex): Router {
   router.get('/my-apps', requireAuth, (async (req: Request, res: Response) => {
     try {
       const userAddress = (req as AuthRequest).address.toLowerCase()
-      const apps = await db<App>('apps')
-        .where({ owner_address: userAddress })
-        .orderBy('created_at', 'desc')
+      const apps = await db<App>('apps').where({ owner_address: userAddress }).orderBy('created_at', 'desc')
 
       res.json(apps)
     } catch (err: unknown) {
@@ -99,7 +97,7 @@ export function createAppsRouter(db: Knex): Router {
         description: description && typeof description === 'string' ? description : undefined,
         owner_address: userAddress,
         template_id,
-        json_data: json_data && typeof json_data === 'string' ? json_data : undefined
+        json_data: json_data && typeof json_data === 'string' ? json_data : undefined,
       }
 
       const [appId] = await db<App>('apps').insert(newApp)
@@ -131,9 +129,9 @@ export function createAppsRouter(db: Knex): Router {
 
       // Check if app exists and belongs to user
       const app = await db<App>('apps')
-        .where({ 
+        .where({
           id: appId,
-          owner_address: userAddress
+          owner_address: userAddress,
         })
         .first()
 
@@ -159,14 +157,12 @@ export function createAppsRouter(db: Knex): Router {
     try {
       const { id } = req.params
       const appId = Number(id)
-      
+
       if (isNaN(appId)) {
         return res.status(400).json({ error: 'Invalid app ID' })
       }
 
-      const app = await db<App>('apps')
-        .where({ id: appId })
-        .first()
+      const app = await db<App>('apps').where({ id: appId }).first()
 
       if (!app) {
         return res.status(404).json({ error: 'App not found' })

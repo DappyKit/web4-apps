@@ -11,18 +11,18 @@ const MAX_DESCRIPTION_LENGTH = 1000
 const MAX_JSON_DATA_LENGTH = 10000 // Adjust based on your backend limits
 
 interface FormData {
-  name: string;
-  description: string;
-  templateId: string; // Using string for form input, will convert to number
-  jsonData: string;
+  name: string
+  description: string
+  templateId: string // Using string for form input, will convert to number
+  jsonData: string
 }
 
 interface FormErrors {
-  [key: string]: string | undefined;
-  name?: string;
-  description?: string;
-  templateId?: string;
-  jsonData?: string;
+  [key: string]: string | undefined
+  name?: string
+  description?: string
+  templateId?: string
+  jsonData?: string
 }
 
 export function MyApps(): React.JSX.Element {
@@ -33,7 +33,7 @@ export function MyApps(): React.JSX.Element {
     name: '',
     description: '',
     templateId: '',
-    jsonData: '{}'
+    jsonData: '{}',
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [isCreating, setIsCreating] = useState(false)
@@ -47,7 +47,7 @@ export function MyApps(): React.JSX.Element {
 
   const loadApps = useCallback(async () => {
     if (!address) return
-    
+
     setIsLoading(true)
     try {
       const myApps = await getMyApps(address)
@@ -63,7 +63,7 @@ export function MyApps(): React.JSX.Element {
 
   const loadTemplates = useCallback(async () => {
     if (!address) return
-    
+
     setIsLoading(true)
     try {
       const templates = await getMyTemplates(address)
@@ -146,9 +146,9 @@ export function MyApps(): React.JSX.Element {
     try {
       const templateId = Number(formData.templateId.trim())
       const message = `Create app: ${formData.name.trim()}`
-      
+
       const signature = await signMessageAsync({
-        message
+        message,
       })
 
       await createApp(
@@ -157,20 +157,20 @@ export function MyApps(): React.JSX.Element {
         formData.description.trim() || undefined,
         signature,
         templateId,
-        formData.jsonData.trim()
+        formData.jsonData.trim(),
       )
 
       setSuccess('App created successfully!')
-      setFormData({ 
-        name: '', 
-        description: '', 
-        templateId: '', 
-        jsonData: '{}' 
+      setFormData({
+        name: '',
+        description: '',
+        templateId: '',
+        jsonData: '{}',
       })
       await loadApps()
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create app'
-      
+
       // Only check for invalid signature, pass through all other errors directly
       if (errorMessage.includes('Invalid signature')) {
         setError('Authentication error: Invalid signature. Please try again.')
@@ -199,7 +199,7 @@ export function MyApps(): React.JSX.Element {
     try {
       const formatted = JSON.stringify(JSON.parse(formData.jsonData), null, 2)
       setFormData(prev => ({ ...prev, jsonData: formatted }))
-      
+
       // Clear error if JSON is now valid
       if (errors.jsonData) {
         setErrors(prev => {
@@ -210,9 +210,9 @@ export function MyApps(): React.JSX.Element {
       }
     } catch {
       // JSON parsing failed
-      setErrors(prev => ({ 
-        ...prev, 
-        jsonData: 'Invalid JSON format' 
+      setErrors(prev => ({
+        ...prev,
+        jsonData: 'Invalid JSON format',
       }))
     }
   }
@@ -256,18 +256,34 @@ export function MyApps(): React.JSX.Element {
               <h5 className="card-title mb-3">Create New App</h5>
 
               {error && (
-                <Alert variant="danger" onClose={() => { setError(null) }} dismissible>
+                <Alert
+                  variant="danger"
+                  onClose={() => {
+                    setError(null)
+                  }}
+                  dismissible
+                >
                   {error}
                 </Alert>
               )}
 
               {success && (
-                <Alert variant="success" onClose={() => { setSuccess(null) }} dismissible>
+                <Alert
+                  variant="success"
+                  onClose={() => {
+                    setSuccess(null)
+                  }}
+                  dismissible
+                >
                   {success}
                 </Alert>
               )}
 
-              <Form onSubmit={(e) => { void handleSubmit(e) }}>
+              <Form
+                onSubmit={e => {
+                  void handleSubmit(e)
+                }}
+              >
                 <Form.Group className="mb-3">
                   <Form.Label htmlFor="name">
                     App Name
@@ -285,12 +301,8 @@ export function MyApps(): React.JSX.Element {
                     disabled={isCreating}
                     maxLength={MAX_NAME_LENGTH}
                   />
-                  <Form.Control.Feedback type="invalid">
-                    {errors.name}
-                  </Form.Control.Feedback>
-                  <Form.Text className="text-muted">
-                    Name must be between 3 and {MAX_NAME_LENGTH} characters
-                  </Form.Text>
+                  <Form.Control.Feedback type="invalid">{errors.name}</Form.Control.Feedback>
+                  <Form.Text className="text-muted">Name must be between 3 and {MAX_NAME_LENGTH} characters</Form.Text>
                 </Form.Group>
 
                 <Form.Group className="mb-3">
@@ -311,18 +323,12 @@ export function MyApps(): React.JSX.Element {
                     isInvalid={!!errors.description}
                     maxLength={MAX_DESCRIPTION_LENGTH}
                   />
-                  <Form.Control.Feedback type="invalid">
-                    {errors.description}
-                  </Form.Control.Feedback>
-                  <Form.Text className="text-muted">
-                    Maximum {MAX_DESCRIPTION_LENGTH} characters
-                  </Form.Text>
+                  <Form.Control.Feedback type="invalid">{errors.description}</Form.Control.Feedback>
+                  <Form.Text className="text-muted">Maximum {MAX_DESCRIPTION_LENGTH} characters</Form.Text>
                 </Form.Group>
 
                 <Form.Group className="mb-3">
-                  <Form.Label htmlFor="templateId">
-                    Template ID
-                  </Form.Label>
+                  <Form.Label htmlFor="templateId">Template ID</Form.Label>
                   <div className="d-flex">
                     <Form.Control
                       type="text"
@@ -335,20 +341,18 @@ export function MyApps(): React.JSX.Element {
                       placeholder="Enter template ID"
                       className="me-2"
                     />
-                    <Button 
+                    <Button
                       variant="outline-secondary"
-                      onClick={() => { setShowTemplateModal(true) }}
+                      onClick={() => {
+                        setShowTemplateModal(true)
+                      }}
                       disabled={isCreating}
                     >
                       Browse
                     </Button>
                   </div>
-                  <Form.Control.Feedback type="invalid">
-                    {errors.templateId}
-                  </Form.Control.Feedback>
-                  <Form.Text className="text-muted">
-                    Enter the ID of the template you want to use
-                  </Form.Text>
+                  <Form.Control.Feedback type="invalid">{errors.templateId}</Form.Control.Feedback>
+                  <Form.Text className="text-muted">Enter the ID of the template you want to use</Form.Text>
                 </Form.Group>
 
                 <Form.Group className="mb-3">
@@ -370,16 +374,12 @@ export function MyApps(): React.JSX.Element {
                     maxLength={MAX_JSON_DATA_LENGTH}
                     style={{ fontFamily: 'monospace' }}
                   />
-                  <Form.Control.Feedback type="invalid">
-                    {errors.jsonData}
-                  </Form.Control.Feedback>
+                  <Form.Control.Feedback type="invalid">{errors.jsonData}</Form.Control.Feedback>
                   <div className="d-flex justify-content-between">
-                    <Form.Text className="text-muted">
-                      Enter valid JSON data for your app
-                    </Form.Text>
-                    <Button 
-                      variant="outline-secondary" 
-                      size="sm" 
+                    <Form.Text className="text-muted">Enter valid JSON data for your app</Form.Text>
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
                       onClick={formatJsonData}
                       disabled={isCreating}
                       className="mt-1"
@@ -389,11 +389,7 @@ export function MyApps(): React.JSX.Element {
                   </div>
                 </Form.Group>
 
-                <Button
-                  type="submit"
-                  variant="primary"
-                  disabled={isCreating}
-                >
+                <Button type="submit" variant="primary" disabled={isCreating}>
                   {isCreating ? (
                     <>
                       <Spinner
@@ -428,9 +424,11 @@ export function MyApps(): React.JSX.Element {
       </div>
 
       {/* Template Selection Modal */}
-      <Modal 
-        show={showTemplateModal} 
-        onHide={() => { setShowTemplateModal(false) }}
+      <Modal
+        show={showTemplateModal}
+        onHide={() => {
+          setShowTemplateModal(false)
+        }}
         size="lg"
         centered
       >
@@ -457,14 +455,14 @@ export function MyApps(): React.JSX.Element {
                     <td>{template.title}</td>
                     <td>{template.description ?? '-'}</td>
                     <td>
-                      <Button 
-                        variant="primary" 
+                      <Button
+                        variant="primary"
                         size="sm"
                         onClick={() => {
                           setFormData(prev => ({
                             ...prev,
                             templateId: String(template.id),
-                            jsonData: template.json_data
+                            jsonData: template.json_data,
                           }))
                           setShowTemplateModal(false)
                         }}
@@ -479,7 +477,12 @@ export function MyApps(): React.JSX.Element {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => { setShowTemplateModal(false) }}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowTemplateModal(false)
+            }}
+          >
             Close
           </Button>
         </Modal.Footer>

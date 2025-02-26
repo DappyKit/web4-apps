@@ -7,7 +7,7 @@ const queryClient = new QueryClient()
 // Mock minimal wagmi config for testing
 const mockConfig: Config = {
   chains: [],
-  transports: {}
+  transports: {},
 }
 
 /**
@@ -16,11 +16,7 @@ const mockConfig: Config = {
  * @returns React component wrapped in WagmiProvider
  */
 export function MockWagmiProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return (
-    <WagmiProvider config={mockConfig}>
-      {children}
-    </WagmiProvider>
-  )
+  return <WagmiProvider config={mockConfig}>{children}</WagmiProvider>
 }
 
 /**
@@ -32,9 +28,7 @@ export function AllTheProviders({ children }: { children: React.ReactNode }): Re
   return (
     <QueryClientProvider client={queryClient}>
       <MockWagmiProvider>
-        <BrowserRouter>
-          {children}
-        </BrowserRouter>
+        <BrowserRouter>{children}</BrowserRouter>
       </MockWagmiProvider>
     </QueryClientProvider>
   )

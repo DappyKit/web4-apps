@@ -2,11 +2,11 @@ import { Button, Card, Spinner } from 'react-bootstrap'
 import type { Template } from '../services/api'
 
 interface TemplateListProps {
-  templates: Template[];
-  isLoading: boolean;
-  onDeleteTemplate: (id: number) => void;
-  isDeleting: number | null;
-  showEmptyMessage?: string;
+  templates: Template[]
+  isLoading: boolean
+  onDeleteTemplate: (id: number) => void
+  isDeleting: number | null
+  showEmptyMessage?: string
 }
 
 export function TemplateList({
@@ -14,7 +14,7 @@ export function TemplateList({
   isLoading,
   onDeleteTemplate,
   isDeleting,
-  showEmptyMessage = 'No templates found'
+  showEmptyMessage = 'No templates found',
 }: TemplateListProps): React.JSX.Element {
   if (isLoading) {
     return (
@@ -27,25 +27,17 @@ export function TemplateList({
   }
 
   if (!templates.length) {
-    return (
-      <div className="text-center text-muted p-4">
-        {showEmptyMessage}
-      </div>
-    )
+    return <div className="text-center text-muted p-4">{showEmptyMessage}</div>
   }
 
   return (
     <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-      {templates.map((template) => (
+      {templates.map(template => (
         <div key={template.id} className="col">
           <Card>
             <Card.Body>
               <Card.Title>{template.title}</Card.Title>
-              {template.description && (
-                <Card.Text className="text-muted">
-                  {template.description}
-                </Card.Text>
-              )}
+              {template.description && <Card.Text className="text-muted">{template.description}</Card.Text>}
               <div className="d-flex justify-content-between align-items-center">
                 <a
                   href={template.url}
@@ -86,4 +78,4 @@ export function TemplateList({
       ))}
     </div>
   )
-} 
+}

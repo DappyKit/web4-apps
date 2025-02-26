@@ -15,7 +15,9 @@ export function Header(): React.JSX.Element {
                 <a
                   className="sign-in-header nav-item nav-link rounded-pill d-none d-lg-block"
                   href="#"
-                  onClick={e => { e.preventDefault() }}
+                  onClick={e => {
+                    e.preventDefault()
+                  }}
                 >
                   <appkit-button />
                 </a>

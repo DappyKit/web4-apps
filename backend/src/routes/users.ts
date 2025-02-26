@@ -6,7 +6,7 @@ import { CreateUserDTO, User } from '../types'
 /**
  * Message that must be signed by the user during registration
  */
-const REGISTRATION_MESSAGE = "Web4 Apps Registration"
+const REGISTRATION_MESSAGE = 'Web4 Apps Registration'
 
 /**
  * Creates and configures the users router
@@ -28,9 +28,7 @@ export function createUsersRouter(db: Knex): Router {
         return res.status(400).json({ error: 'Invalid Ethereum address format' })
       }
 
-      const user = await db<User>('users')
-        .where({ address: address.toLowerCase() })
-        .first()
+      const user = await db<User>('users').where({ address: address.toLowerCase() }).first()
 
       res.json({ isRegistered: !!user, address: address.toLowerCase() })
     } catch (error: unknown) {
@@ -60,9 +58,7 @@ export function createUsersRouter(db: Knex): Router {
         return res.status(401).json({ error: 'Invalid signature' })
       }
 
-      const existingUser = await db<User>('users')
-        .where({ address: address.toLowerCase() })
-        .first()
+      const existingUser = await db<User>('users').where({ address: address.toLowerCase() }).first()
 
       if (existingUser) {
         return res.status(409).json({ error: 'User already registered' })

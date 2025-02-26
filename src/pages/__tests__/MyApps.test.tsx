@@ -29,14 +29,14 @@ describe('MyApps Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    
+
     // Default mock implementations
-    ;(wagmi.useAccount as Mock).mockReturnValue({ 
-      address: mockAddress, 
-      isConnected: true 
+    ;(wagmi.useAccount as Mock).mockReturnValue({
+      address: mockAddress,
+      isConnected: true,
     })
-    ;(wagmi.useSignMessage as Mock).mockReturnValue({ 
-      signMessageAsync: mockSignMessage 
+    ;(wagmi.useSignMessage as Mock).mockReturnValue({
+      signMessageAsync: mockSignMessage,
     })
     ;(api.checkUserRegistration as Mock).mockResolvedValue(true)
     ;(api.getMyApps as Mock).mockResolvedValue([])
@@ -44,23 +44,31 @@ describe('MyApps Component', () => {
   })
 
   it('displays loading state initially', () => {
-    ;(api.getMyApps as Mock).mockReturnValue(new Promise(() => { /* never resolves */ }))
-    ;(api.getMyTemplates as Mock).mockReturnValue(new Promise(() => { /* never resolves */ }))
-    
+    ;(api.getMyApps as Mock).mockReturnValue(
+      new Promise(() => {
+        /* never resolves */
+      }),
+    )
+    ;(api.getMyTemplates as Mock).mockReturnValue(
+      new Promise(() => {
+        /* never resolves */
+      }),
+    )
+
     render(<MyApps />)
     expect(screen.getByRole('status')).toBeInTheDocument()
   })
 
   it('displays apps when loaded', async () => {
     const mockApps = [
-      { 
-        id: '1', 
-        name: 'Test App', 
+      {
+        id: '1',
+        name: 'Test App',
         description: 'Test Description',
         created_at: new Date().toISOString(),
         owner_address: mockAddress,
-        updated_at: new Date().toISOString()
-      }
+        updated_at: new Date().toISOString(),
+      },
     ]
 
     ;(api.getMyApps as Mock).mockResolvedValue(mockApps)
@@ -75,14 +83,14 @@ describe('MyApps Component', () => {
 
   it('handles app deletion', async () => {
     const mockApps = [
-      { 
-        id: '1', 
-        name: 'Test App', 
+      {
+        id: '1',
+        name: 'Test App',
         description: 'Test Description',
         created_at: new Date().toISOString(),
         owner_address: mockAddress,
-        updated_at: new Date().toISOString()
-      }
+        updated_at: new Date().toISOString(),
+      },
     ]
 
     ;(api.getMyApps as Mock).mockResolvedValue(mockApps)
@@ -99,11 +107,7 @@ describe('MyApps Component', () => {
     fireEvent.click(deleteButton)
 
     await waitFor(() => {
-      expect(api.deleteApp).toHaveBeenCalledWith(
-        mockAddress,
-        1,
-        'mock-signature'
-      )
+      expect(api.deleteApp).toHaveBeenCalledWith(mockAddress, 1, 'mock-signature')
     })
   })
-}) 
+})

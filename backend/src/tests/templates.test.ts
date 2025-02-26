@@ -9,16 +9,16 @@ import knexConfig from '../knexfile'
 import { ethers } from 'ethers'
 
 interface DbUser {
-  address: string;
+  address: string
 }
 
 interface DbTemplate {
-  id: number;
-  title: string;
-  description?: string;
-  url: string;
-  json_data: string;
-  owner_address: string;
+  id: number
+  title: string
+  description?: string
+  url: string
+  json_data: string
+  owner_address: string
 }
 
 dotenv.config()
@@ -46,11 +46,11 @@ describe('Templates API', () => {
       // Create test users
       await db<DbUser>('users').insert([
         {
-          address: testWallet.address
+          address: testWallet.address,
         },
         {
-          address: otherWallet.address
-        }
+          address: otherWallet.address,
+        },
       ])
 
       // Setup express app
@@ -98,7 +98,7 @@ describe('Templates API', () => {
         })
 
       expect(response.status).toBe(201)
-      
+
       // Get the created template from the database
       const templates = await db<DbTemplate>('templates')
         .whereRaw('LOWER(owner_address) = ?', [testWallet.address.toLowerCase()])
@@ -106,7 +106,7 @@ describe('Templates API', () => {
       expect(templates).toHaveLength(1)
       expect(templates[0]).toMatchObject({
         ...validTemplate,
-        owner_address: expect.any(String) as string
+        owner_address: expect.any(String) as string,
       })
       expect(templates[0].owner_address.toLowerCase()).toBe(testWallet.address.toLowerCase())
     }, 30000)
@@ -219,9 +219,9 @@ describe('Templates API', () => {
       expect(Array.isArray(response.body)).toBe(true)
       expect(response.body).toHaveLength(2)
       const templates = response.body as DbTemplate[]
-      expect(templates.every((template) => 
-        template.owner_address.toLowerCase() === testWallet.address.toLowerCase()
-      )).toBe(true)
+      expect(
+        templates.every(template => template.owner_address.toLowerCase() === testWallet.address.toLowerCase()),
+      ).toBe(true)
     }, 30000)
 
     it('should return empty array for address with no templates', async () => {
@@ -236,9 +236,7 @@ describe('Templates API', () => {
     }, 30000)
 
     it('should fail without address parameter', async () => {
-      const response = await request(app)
-        .get('/api/templates/my')
-        .set('x-wallet-address', testWallet.address)
+      const response = await request(app).get('/api/templates/my').set('x-wallet-address', testWallet.address)
 
       expect(response.status).toBe(400)
       expect(response.body.error).toBe('Address parameter is required')
@@ -250,19 +248,18 @@ describe('Templates API', () => {
 
     beforeEach(async () => {
       // Insert a test template
-      await db<DbTemplate>('templates')
-        .insert({
-          title: 'Test Template',
-          url: 'https://example.com',
-          json_data: '{"key": "value"}',
-          owner_address: testWallet.address,
-        })
+      await db<DbTemplate>('templates').insert({
+        title: 'Test Template',
+        url: 'https://example.com',
+        json_data: '{"key": "value"}',
+        owner_address: testWallet.address,
+      })
 
       // Get the inserted template ID
       const template = await db<DbTemplate>('templates')
         .where({
           owner_address: testWallet.address,
-          title: 'Test Template'
+          title: 'Test Template',
         })
         .first()
 
@@ -288,9 +285,7 @@ describe('Templates API', () => {
       expect(response.status).toBe(204)
 
       // Verify template was deleted
-      const deletedTemplate = await db<DbTemplate>('templates')
-        .where({ id: templateId })
-        .first()
+      const deletedTemplate = await db<DbTemplate>('templates').where({ id: templateId }).first()
       expect(deletedTemplate).toBeUndefined()
     }, 30000)
 
@@ -329,20 +324,19 @@ describe('Templates API', () => {
 
     it('should fail when deleting template owned by another user', async () => {
       // Create template owned by different address
-      await db<DbTemplate>('templates')
-        .insert({
-          title: 'Test Template',
-          description: 'Test Description',
-          url: 'https://example.com',
-          json_data: JSON.stringify({ key: 'value' }),
-          owner_address: otherWallet.address,
-        })
+      await db<DbTemplate>('templates').insert({
+        title: 'Test Template',
+        description: 'Test Description',
+        url: 'https://example.com',
+        json_data: JSON.stringify({ key: 'value' }),
+        owner_address: otherWallet.address,
+      })
 
       // Get the inserted template ID
       const template = await db<DbTemplate>('templates')
         .where({
           owner_address: otherWallet.address,
-          title: 'Test Template'
+          title: 'Test Template',
         })
         .first()
 

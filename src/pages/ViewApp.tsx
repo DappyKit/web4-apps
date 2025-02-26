@@ -46,9 +46,7 @@ export function ViewApp(): React.JSX.Element {
   if (error) {
     return (
       <div className="p-3">
-        <Alert variant="danger">
-          {error}
-        </Alert>
+        <Alert variant="danger">{error}</Alert>
         <Link to="/my-apps" className="btn btn-primary">
           Back to My Apps
         </Link>
@@ -59,9 +57,7 @@ export function ViewApp(): React.JSX.Element {
   if (!app) {
     return (
       <div className="p-3">
-        <Alert variant="warning">
-          App not found
-        </Alert>
+        <Alert variant="warning">App not found</Alert>
         <Link to="/my-apps" className="btn btn-primary">
           Back to My Apps
         </Link>
@@ -97,14 +93,10 @@ export function ViewApp(): React.JSX.Element {
             <dd className="col-sm-9">{app.template_id}</dd>
 
             <dt className="col-sm-3">Created</dt>
-            <dd className="col-sm-9">
-              {new Date(app.created_at).toLocaleString()}
-            </dd>
+            <dd className="col-sm-9">{new Date(app.created_at).toLocaleString()}</dd>
 
             <dt className="col-sm-3">Last Updated</dt>
-            <dd className="col-sm-9">
-              {new Date(app.updated_at).toLocaleString()}
-            </dd>
+            <dd className="col-sm-9">{new Date(app.updated_at).toLocaleString()}</dd>
           </dl>
         </Card.Body>
       </Card>
@@ -114,13 +106,11 @@ export function ViewApp(): React.JSX.Element {
           <Card.Body>
             <Card.Title>App Configuration</Card.Title>
             <pre className="mb-0">
-              <code>
-                {JSON.stringify(JSON.parse(app.json_data), null, 2)}
-              </code>
+              <code>{JSON.stringify(JSON.parse(app.json_data), null, 2)}</code>
             </pre>
           </Card.Body>
         </Card>
       )}
     </div>
   )
-} 
+}

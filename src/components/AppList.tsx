@@ -12,14 +12,20 @@ function truncateText(text: string, maxLength: number): string {
 }
 
 interface AppListProps {
-  apps: App[];
-  isLoading: boolean;
-  onDeleteApp?: (appId: number) => Promise<void>;
-  isDeleting?: number | null;
-  showEmptyMessage?: string;
+  apps: App[]
+  isLoading: boolean
+  onDeleteApp?: (appId: number) => Promise<void>
+  isDeleting?: number | null
+  showEmptyMessage?: string
 }
 
-export function AppList({ apps, isLoading, onDeleteApp, isDeleting, showEmptyMessage = "No apps available." }: AppListProps): React.JSX.Element {
+export function AppList({
+  apps,
+  isLoading,
+  onDeleteApp,
+  isDeleting,
+  showEmptyMessage = 'No apps available.',
+}: AppListProps): React.JSX.Element {
   const renderAppCard = (app: App): React.JSX.Element => (
     <div key={app.id} className="col">
       <div className="card h-100">
@@ -28,32 +34,29 @@ export function AppList({ apps, isLoading, onDeleteApp, isDeleting, showEmptyMes
             placement="top"
             overlay={<Tooltip id={`title-tooltip-${String(app.id)}`}>{app.name}</Tooltip>}
           >
-            <h5 className="card-title text-truncate">
-              {truncateText(app.name, TITLE_MAX_LENGTH)}
-            </h5>
+            <h5 className="card-title text-truncate">{truncateText(app.name, TITLE_MAX_LENGTH)}</h5>
           </OverlayTrigger>
 
           <OverlayTrigger
             placement="top"
-            overlay={<Tooltip id={`description-tooltip-${String(app.id)}`}>{app.description ?? 'No description'}</Tooltip>}
+            overlay={
+              <Tooltip id={`description-tooltip-${String(app.id)}`}>{app.description ?? 'No description'}</Tooltip>
+            }
           >
-            <p className="card-text">
-              {truncateText(app.description ?? 'No description', DESCRIPTION_MAX_LENGTH)}
-            </p>
+            <p className="card-text">{truncateText(app.description ?? 'No description', DESCRIPTION_MAX_LENGTH)}</p>
           </OverlayTrigger>
 
           <div className="d-flex gap-2">
-            <Link 
-              to={`/apps/${String(app.id)}`}
-              className="btn btn-primary"
-            >
+            <Link to={`/apps/${String(app.id)}`} className="btn btn-primary">
               View
             </Link>
 
             {onDeleteApp && (
               <Button
                 variant="danger"
-                onClick={() => { void onDeleteApp(Number(app.id)) }}
+                onClick={() => {
+                  void onDeleteApp(Number(app.id))
+                }}
                 disabled={isDeleting === Number(app.id)}
               >
                 {isDeleting === Number(app.id) ? 'Deleting...' : 'Delete'}
@@ -76,16 +79,8 @@ export function AppList({ apps, isLoading, onDeleteApp, isDeleting, showEmptyMes
   }
 
   if (apps.length === 0) {
-    return (
-      <Alert variant="info">
-        {showEmptyMessage}
-      </Alert>
-    )
+    return <Alert variant="info">{showEmptyMessage}</Alert>
   }
 
-  return (
-    <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-      {apps.map(renderAppCard)}
-    </div>
-  )
-} 
+  return <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">{apps.map(renderAppCard)}</div>
+}

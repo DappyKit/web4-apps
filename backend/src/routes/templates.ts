@@ -10,12 +10,12 @@ import { Template, CreateTemplateDTO } from '../types/template'
  */
 interface CreateTemplateRequest extends Request {
   body: {
-    title: string;
-    description?: string;
-    url: string;
-    json_data: string;
-    address: string;
-    signature: string;
+    title: string
+    description?: string
+    url: string
+    json_data: string
+    address: string
+    signature: string
   }
 }
 
@@ -25,8 +25,8 @@ interface CreateTemplateRequest extends Request {
  */
 interface DeleteTemplateRequest extends Request {
   body: {
-    address: string;
-    signature: string;
+    address: string
+    signature: string
   }
 }
 
@@ -67,9 +67,7 @@ export function createTemplatesRouter(db: Knex): Router {
         .returning('id')
 
       // Get the inserted template
-      const template = await db('templates')
-        .where({ id: insertedId })
-        .first()
+      const template = await db('templates').where({ id: insertedId }).first()
 
       res.status(201).json(template)
     } catch (error) {
@@ -86,7 +84,7 @@ export function createTemplatesRouter(db: Knex): Router {
   router.get('/my', requireAuth, async (req: Request, res: Response) => {
     try {
       const { address } = req.query
-      
+
       if (!address || typeof address !== 'string') {
         return res.status(400).json({ error: 'Address parameter is required' })
       }
@@ -106,7 +104,7 @@ export function createTemplatesRouter(db: Knex): Router {
   router.delete('/:id', requireAuth, async (req: DeleteTemplateRequest, res: Response) => {
     try {
       const { signature } = req.body
-      const address = req.body.address || req.headers['x-wallet-address'] as string
+      const address = req.body.address || (req.headers['x-wallet-address'] as string)
       const templateId = Number(req.params.id)
 
       if (isNaN(templateId)) {
@@ -119,9 +117,7 @@ export function createTemplatesRouter(db: Knex): Router {
       }
 
       // Check if template exists and belongs to the user
-      const template = await db<Template>('templates')
-        .where({ id: templateId })
-        .first()
+      const template = await db<Template>('templates').where({ id: templateId }).first()
 
       if (!template) {
         return res.status(404).json({ error: 'Template not found' })
@@ -137,9 +133,7 @@ export function createTemplatesRouter(db: Knex): Router {
         return res.status(401).json({ error: 'Invalid signature' })
       }
 
-      await db('templates')
-        .where({ id: templateId })
-        .delete()
+      await db('templates').where({ id: templateId }).delete()
 
       res.status(204).send()
     } catch (error) {
@@ -149,4 +143,4 @@ export function createTemplatesRouter(db: Knex): Router {
   })
 
   return router
-} 
+}

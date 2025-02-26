@@ -33,11 +33,11 @@ describe('Apps API', () => {
       // Create test users
       await db('users').insert([
         {
-          address: testWallet.address
+          address: testWallet.address,
         },
         {
-          address: otherWallet.address
-        }
+          address: otherWallet.address,
+        },
       ])
 
       // Create a test template
@@ -46,7 +46,7 @@ describe('Apps API', () => {
         description: 'A template for testing',
         url: 'https://example.com/template',
         json_data: JSON.stringify({ schema: { type: 'object' } }),
-        owner_address: testWallet.address
+        owner_address: testWallet.address,
       })
       templateId = id
 
@@ -75,9 +75,7 @@ describe('Apps API', () => {
 
   describe('GET /api/my-apps', () => {
     it('should return empty array when no apps exist', async () => {
-      const response = await request(app)
-        .get('/api/my-apps')
-        .set('x-wallet-address', testWallet.address)
+      const response = await request(app).get('/api/my-apps').set('x-wallet-address', testWallet.address)
 
       expect(response.status).toBe(200)
       expect(response.body).toEqual([])
@@ -90,19 +88,17 @@ describe('Apps API', () => {
           name: 'Test App 1',
           description: 'Description 1',
           owner_address: testWallet.address,
-          template_id: templateId
+          template_id: templateId,
         },
         {
           name: 'Test App 2',
           description: 'Description 2',
           owner_address: otherWallet.address,
-          template_id: templateId
-        }
+          template_id: templateId,
+        },
       ])
 
-      const response = await request(app)
-        .get('/api/my-apps')
-        .set('x-wallet-address', testWallet.address)
+      const response = await request(app).get('/api/my-apps').set('x-wallet-address', testWallet.address)
 
       expect(response.status).toBe(200)
       expect(response.body).toHaveLength(1)
@@ -118,16 +114,13 @@ describe('Apps API', () => {
       const signature = await testWallet.signMessage(message)
       const jsonData = '{"key":"value"}'
 
-      const response = await request(app)
-        .post('/api/my-apps')
-        .set('x-wallet-address', testWallet.address)
-        .send({
-          name: name,
-          description: 'Test Description',
-          signature,
-          template_id: templateId,
-          json_data: jsonData
-        })
+      const response = await request(app).post('/api/my-apps').set('x-wallet-address', testWallet.address).send({
+        name: name,
+        description: 'Test Description',
+        signature,
+        template_id: templateId,
+        json_data: jsonData,
+      })
 
       expect(response.status).toBe(201)
       expect(response.body).toMatchObject({
@@ -135,16 +128,15 @@ describe('Apps API', () => {
         description: 'Test Description',
         owner_address: testWallet.address.toLowerCase(),
         template_id: templateId,
-        json_data: jsonData
+        json_data: jsonData,
       })
 
       // Verify app was created in database
-      const apps = await db('apps')
-        .where('owner_address', testWallet.address)
+      const apps = await db('apps').where('owner_address', testWallet.address)
       expect(apps).toHaveLength(1)
       expect(apps[0]).toMatchObject({
         template_id: templateId,
-        json_data: jsonData
+        json_data: jsonData,
       })
     })
 
@@ -153,22 +145,18 @@ describe('Apps API', () => {
       const message = `Create app: ${name}`
       const signature = await testWallet.signMessage(message)
 
-      const response = await request(app)
-        .post('/api/my-apps')
-        .set('x-wallet-address', testWallet.address)
-        .send({
-          name: name,
-          description: 'Test Description',
-          signature
-          // Missing template_id
-        })
+      const response = await request(app).post('/api/my-apps').set('x-wallet-address', testWallet.address).send({
+        name: name,
+        description: 'Test Description',
+        signature,
+        // Missing template_id
+      })
 
       expect(response.status).toBe(400)
       expect(response.body.error).toBe('Missing required fields')
 
       // Verify no app was created
-      const apps = await db('apps')
-        .where('owner_address', testWallet.address)
+      const apps = await db('apps').where('owner_address', testWallet.address)
       expect(apps).toHaveLength(0)
     })
 
@@ -177,21 +165,17 @@ describe('Apps API', () => {
       const message = `Create app: ${name}`
       const signature = await otherWallet.signMessage(message)
 
-      const response = await request(app)
-        .post('/api/my-apps')
-        .set('x-wallet-address', testWallet.address)
-        .send({
-          name: name,
-          description: 'Test Description',
-          signature,
-          template_id: templateId
-        })
+      const response = await request(app).post('/api/my-apps').set('x-wallet-address', testWallet.address).send({
+        name: name,
+        description: 'Test Description',
+        signature,
+        template_id: templateId,
+      })
 
       expect(response.status).toBe(401)
 
       // Verify no app was created
-      const apps = await db('apps')
-        .where('owner_address', testWallet.address)
+      const apps = await db('apps').where('owner_address', testWallet.address)
       expect(apps).toHaveLength(0)
     })
 
@@ -201,15 +185,12 @@ describe('Apps API', () => {
         const message = `Create app: ${name}`
         const signature = await otherWallet.signMessage(message)
 
-        const response = await request(app)
-          .post('/api/my-apps')
-          .set('x-wallet-address', testWallet.address)
-          .send({
-            name: name,
-            description: 'Test Description',
-            signature,
-            template_id: templateId
-          })
+        const response = await request(app).post('/api/my-apps').set('x-wallet-address', testWallet.address).send({
+          name: name,
+          description: 'Test Description',
+          signature,
+          template_id: templateId,
+        })
 
         expect(response.status).toBe(401)
         expect(response.body.error).toBe('Invalid signature')
@@ -220,30 +201,24 @@ describe('Apps API', () => {
         const message = `Create app: Different App` // Sign for a different name
         const signature = await testWallet.signMessage(message)
 
-        const response = await request(app)
-          .post('/api/my-apps')
-          .set('x-wallet-address', testWallet.address)
-          .send({
-            name: name, // Send original name
-            description: 'Test Description',
-            signature,
-            template_id: templateId
-          })
+        const response = await request(app).post('/api/my-apps').set('x-wallet-address', testWallet.address).send({
+          name: name, // Send original name
+          description: 'Test Description',
+          signature,
+          template_id: templateId,
+        })
 
         expect(response.status).toBe(401)
         expect(response.body.error).toBe('Invalid signature')
       })
 
       it('should reject invalid signature format', async () => {
-        const response = await request(app)
-          .post('/api/my-apps')
-          .set('x-wallet-address', testWallet.address)
-          .send({
-            name: 'Test App',
-            description: 'Test Description',
-            signature: 'invalid_signature',
-            template_id: templateId
-          })
+        const response = await request(app).post('/api/my-apps').set('x-wallet-address', testWallet.address).send({
+          name: 'Test App',
+          description: 'Test Description',
+          signature: 'invalid_signature',
+          template_id: templateId,
+        })
 
         expect(response.status).toBe(401)
         expect(response.body.error).toBe('Invalid signature')
@@ -256,15 +231,12 @@ describe('Apps API', () => {
         const message = `Create app: ${name}`
         const signature = await testWallet.signMessage(message)
 
-        const response = await request(app)
-          .post('/api/my-apps')
-          .set('x-wallet-address', testWallet.address)
-          .send({
-            name: name,
-            description: 'Test Description',
-            signature,
-            template_id: templateId
-          })
+        const response = await request(app).post('/api/my-apps').set('x-wallet-address', testWallet.address).send({
+          name: name,
+          description: 'Test Description',
+          signature,
+          template_id: templateId,
+        })
 
         expect(response.status).toBe(400)
         expect(response.body.error).toBe('Name is required')
@@ -275,15 +247,12 @@ describe('Apps API', () => {
         const message = `Create app: ${name}`
         const signature = await testWallet.signMessage(message)
 
-        const response = await request(app)
-          .post('/api/my-apps')
-          .set('x-wallet-address', testWallet.address)
-          .send({
-            name: name,
-            description: 'Test Description',
-            signature,
-            template_id: templateId
-          })
+        const response = await request(app).post('/api/my-apps').set('x-wallet-address', testWallet.address).send({
+          name: name,
+          description: 'Test Description',
+          signature,
+          template_id: templateId,
+        })
 
         expect(response.status).toBe(400)
         expect(response.body.error).toBe('Name must be less than 255 characters')
@@ -301,7 +270,7 @@ describe('Apps API', () => {
             name: name,
             description: 'A'.repeat(1001),
             signature,
-            template_id: templateId
+            template_id: templateId,
           })
 
         expect(response.status).toBe(400)
@@ -309,13 +278,10 @@ describe('Apps API', () => {
       })
 
       it('should reject missing required fields', async () => {
-        const response = await request(app)
-          .post('/api/my-apps')
-          .set('x-wallet-address', testWallet.address)
-          .send({
-            name: 'Test App'
-            // Missing other required fields
-          })
+        const response = await request(app).post('/api/my-apps').set('x-wallet-address', testWallet.address).send({
+          name: 'Test App',
+          // Missing other required fields
+        })
 
         expect(response.status).toBe(400)
         expect(response.body.error).toBe('Missing required fields')
@@ -329,15 +295,12 @@ describe('Apps API', () => {
       const createMessage = 'Create app: Test App'
       const createSignature = await testWallet.signMessage(createMessage)
 
-      const createResponse = await request(app)
-        .post('/api/my-apps')
-        .set('x-wallet-address', testWallet.address)
-        .send({
-          name: 'Test App',
-          description: 'Test Description',
-          signature: createSignature,
-          template_id: templateId
-        })
+      const createResponse = await request(app).post('/api/my-apps').set('x-wallet-address', testWallet.address).send({
+        name: 'Test App',
+        description: 'Test Description',
+        signature: createSignature,
+        template_id: templateId,
+      })
 
       expect(createResponse.status).toBe(201)
       const appId = createResponse.body.id
@@ -364,15 +327,12 @@ describe('Apps API', () => {
       const createMessage = 'Create app: Test App'
       const createSignature = await testWallet.signMessage(createMessage)
 
-      const createResponse = await request(app)
-        .post('/api/my-apps')
-        .set('x-wallet-address', testWallet.address)
-        .send({
-          name: 'Test App',
-          description: 'Test Description',
-          signature: createSignature,
-          template_id: templateId
-        })
+      const createResponse = await request(app).post('/api/my-apps').set('x-wallet-address', testWallet.address).send({
+        name: 'Test App',
+        description: 'Test Description',
+        signature: createSignature,
+        template_id: templateId,
+      })
 
       const appId = createResponse.body.id
 
@@ -411,15 +371,12 @@ describe('Apps API', () => {
       const createMessage = 'Create app: Test App'
       const createSignature = await testWallet.signMessage(createMessage)
 
-      const createResponse = await request(app)
-        .post('/api/my-apps')
-        .set('x-wallet-address', testWallet.address)
-        .send({
-          name: 'Test App',
-          description: 'Test Description',
-          signature: createSignature,
-          template_id: templateId
-        })
+      const createResponse = await request(app).post('/api/my-apps').set('x-wallet-address', testWallet.address).send({
+        name: 'Test App',
+        description: 'Test Description',
+        signature: createSignature,
+        template_id: templateId,
+      })
 
       const appId = createResponse.body.id
 
@@ -461,22 +418,18 @@ describe('Apps API', () => {
       const createMessage = 'Create app: Test App'
       const createSignature = await testWallet.signMessage(createMessage)
 
-      const createResponse = await request(app)
-        .post('/api/my-apps')
-        .set('x-wallet-address', testWallet.address)
-        .send({
-          name: 'Test App',
-          description: 'Test Description',
-          signature: createSignature,
-          template_id: templateId
-        })
+      const createResponse = await request(app).post('/api/my-apps').set('x-wallet-address', testWallet.address).send({
+        name: 'Test App',
+        description: 'Test Description',
+        signature: createSignature,
+        template_id: templateId,
+      })
 
       expect(createResponse.status).toBe(201)
       const appId = createResponse.body.id
 
       // Get the app by ID
-      const response = await request(app)
-        .get(`/api/apps/${String(appId)}`)
+      const response = await request(app).get(`/api/apps/${String(appId)}`)
 
       expect(response.status).toBe(200)
       expect(response.body).toMatchObject({
@@ -484,22 +437,20 @@ describe('Apps API', () => {
         name: 'Test App',
         description: 'Test Description',
         owner_address: testWallet.address.toLowerCase(),
-        template_id: templateId
+        template_id: templateId,
       })
     })
 
     it('should return 404 for non-existent app', async () => {
       const nonExistentId = 99999
-      const response = await request(app)
-        .get(`/api/apps/${String(nonExistentId)}`)
+      const response = await request(app).get(`/api/apps/${String(nonExistentId)}`)
 
       expect(response.status).toBe(404)
       expect(response.body.error).toBe('App not found')
     })
 
     it('should return 400 for invalid app ID', async () => {
-      const response = await request(app)
-        .get('/api/apps/invalid-id')
+      const response = await request(app).get('/api/apps/invalid-id')
 
       expect(response.status).toBe(400)
       expect(response.body.error).toBe('Invalid app ID')

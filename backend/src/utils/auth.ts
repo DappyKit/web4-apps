@@ -5,8 +5,8 @@ import { Request, Response, NextFunction } from 'express'
  * Extended Request type that includes the authenticated wallet address
  */
 type AuthRequest = Request & {
-  address: string;
-};
+  address: string
+}
 
 /**
  * Verifies an Ethereum signature against a message and address
@@ -31,15 +31,11 @@ export function verifySignature(message: string, signature: string, address: str
  * @param {NextFunction} next - Express next function
  * @returns {Response | undefined} Returns error response or undefined if successful
  */
-export function requireAuth(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Response | undefined {
+export function requireAuth(req: Request, res: Response, next: NextFunction): Response | undefined {
   const walletAddress = req.headers['x-wallet-address']
   if (!walletAddress || typeof walletAddress !== 'string') {
     return res.status(401).json({ error: 'Unauthorized - Wallet address required' })
   }
-  (req as AuthRequest).address = walletAddress
+  ;(req as AuthRequest).address = walletAddress
   next()
 }

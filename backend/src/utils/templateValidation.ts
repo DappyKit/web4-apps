@@ -58,4 +58,4 @@ export function validateTemplate(template: CreateTemplateDTO): void {
   } catch (error) {
     throw new ValidationError(TEMPLATE_VALIDATION.INVALID_JSON)
   }
-} 
+}

@@ -1,7 +1,7 @@
 export function FooterLogged(): React.JSX.Element {
   return (
     <footer className="px-md-4">
-      <hr className="w-100 my-4"/>
+      <hr className="w-100 my-4" />
       <div className="container-fluid px-0">
         <div className="row mb-4">
           <div className="col">
@@ -10,7 +10,8 @@ export function FooterLogged(): React.JSX.Element {
                 <a
                   target="_blank"
                   href="https://twitter.com/DappyKit"
-                  className="nav-link text-lg text-muted text-primary-hover" rel="noreferrer"
+                  className="nav-link text-lg text-muted text-primary-hover"
+                  rel="noreferrer"
                 >
                   <i className="bi bi-twitter-x"></i>
                 </a>
@@ -19,7 +20,8 @@ export function FooterLogged(): React.JSX.Element {
                 <a
                   target="_blank"
                   href="https://warpcast.com/DappyKit"
-                  className="nav-link text-lg text-muted text-primary-hover" rel="noreferrer"
+                  className="nav-link text-lg text-muted text-primary-hover"
+                  rel="noreferrer"
                 >
                   <i className="bi bi-eye"></i>
                 </a>

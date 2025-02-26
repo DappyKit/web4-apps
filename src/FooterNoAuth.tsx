@@ -9,7 +9,8 @@ export function FooterNoAuth(): React.JSX.Element {
                 <a
                   target="_blank"
                   href="https://twitter.com/DappyKit"
-                  className="nav-link text-lg text-muted text-primary-hover" rel="noreferrer"
+                  className="nav-link text-lg text-muted text-primary-hover"
+                  rel="noreferrer"
                 >
                   <i className="bi bi-twitter-x"></i>
                 </a>
@@ -18,7 +19,8 @@ export function FooterNoAuth(): React.JSX.Element {
                 <a
                   target="_blank"
                   href="https://warpcast.com/DappyKit"
-                  className="nav-link text-lg text-muted text-primary-hover" rel="noreferrer"
+                  className="nav-link text-lg text-muted text-primary-hover"
+                  rel="noreferrer"
                 >
                   <i className="bi bi-eye"></i>
                 </a>

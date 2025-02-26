@@ -4,7 +4,7 @@ import { checkUserRegistration, registerUser, getMyApps, deleteApp } from '../se
 import type { App } from '../services/api'
 import { AppList } from '../components/AppList'
 
-const REGISTRATION_MESSAGE = "Web4 Apps Registration"
+const REGISTRATION_MESSAGE = 'Web4 Apps Registration'
 
 export function Dashboard(): React.JSX.Element {
   const { address } = useAccount()
@@ -18,7 +18,7 @@ export function Dashboard(): React.JSX.Element {
 
   const checkRegistrationStatus = useCallback(async (): Promise<void> => {
     if (!address) return
-    
+
     try {
       const registered = await checkUserRegistration(address)
       setIsRegistered(registered)
@@ -30,7 +30,7 @@ export function Dashboard(): React.JSX.Element {
 
   const loadApps = useCallback(async (): Promise<void> => {
     if (!isRegistered || !address) return
-    
+
     setIsLoading(true)
     try {
       const myApps = await getMyApps(address)
@@ -62,7 +62,7 @@ export function Dashboard(): React.JSX.Element {
 
     try {
       const signature = await signMessageAsync({ message: REGISTRATION_MESSAGE })
-      
+
       await registerUser(address, REGISTRATION_MESSAGE, signature)
       await checkRegistrationStatus()
       alert('Registration successful!')
@@ -109,7 +109,9 @@ export function Dashboard(): React.JSX.Element {
           <p>You need to register to use Web4 Apps.</p>
           <button
             className="btn btn-primary"
-            onClick={() => { void handleRegister() }}
+            onClick={() => {
+              void handleRegister()
+            }}
             disabled={isRegistering}
           >
             {isRegistering ? 'Registering...' : 'Register Now'}
@@ -145,4 +147,4 @@ export function Dashboard(): React.JSX.Element {
       )}
     </div>
   )
-} 
+}

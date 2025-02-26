@@ -27,9 +27,9 @@ function AppContent(): React.JSX.Element {
 
   return (
     <div className={auth.isAuthenticated ? '' : 'overflow-x-hidden rounded-top-4 pt-2 pt-lg-4'}>
-      {!auth.isAuthenticated ? <Header/> : <></>}
-      {auth.isAuthenticated ? <MainLogged /> : <MainNoAuth/>}
-      {!auth.isAuthenticated ? <FooterNoAuth/> : <></>}
+      {!auth.isAuthenticated ? <Header /> : <></>}
+      {auth.isAuthenticated ? <MainLogged /> : <MainNoAuth />}
+      {!auth.isAuthenticated ? <FooterNoAuth /> : <></>}
     </div>
   )
 }

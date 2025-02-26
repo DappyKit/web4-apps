@@ -13,4 +13,4 @@ window.alert = vi.fn()
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
-}) 
+})

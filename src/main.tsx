@@ -21,7 +21,7 @@ const metadata = {
   name: 'Web4 Apps',
   description: 'AppKit Example',
   url: 'https://reown.com/appkit', // origin must match your domain & subdomain
-  icons: ['https://assets.reown.com/reown-profile-pic.png']
+  icons: ['https://assets.reown.com/reown-profile-pic.png'],
 }
 
 // 3. Set the networks
@@ -31,7 +31,7 @@ const networks = [optimism]
 const wagmiAdapter = new WagmiAdapter({
   networks,
   projectId,
-  ssr: true
+  ssr: true,
 })
 
 // 5. Create modal
@@ -41,8 +41,8 @@ createAppKit({
   projectId,
   metadata,
   features: {
-    analytics: true // Optional - defaults to your Cloud configuration
-  }
+    analytics: true, // Optional - defaults to your Cloud configuration
+  },
 })
 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -52,7 +52,7 @@ createRoot(document.getElementById('root')!).render(
       <QueryClientProvider client={queryClient}>
         <Provider store={store}>
           <AuthProvider>
-            <App/>
+            <App />
           </AuthProvider>
         </Provider>
       </QueryClientProvider>

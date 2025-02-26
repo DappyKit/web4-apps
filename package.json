@@ -13,7 +13,9 @@
     "ui-test": "vitest run",
     "ui-test:coverage": "vitest run --coverage",
     "ui-test:ui": "vitest --ui",
-    "code:lines": "./scripts/analyze-code.sh"
+    "code:lines": "./scripts/analyze-code.sh",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\" \"backend/src/**/*.ts\" \"backend/migrations/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"backend/src/**/*.ts\" \"backend/migrations/**/*.ts\""
   },
   "dependencies": {
     "@dappykit/sdk": "^3.0.1",
@@ -46,6 +48,7 @@
     "eslint-plugin-react-refresh": "^0.4.14",
     "globals": "^15.12.0",
     "jsdom": "^26.0.0",
+    "prettier": "^3.5.2",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.15.0",
     "vite": "^6.0.1",

@@ -1,7 +1,7 @@
 import { Knex } from 'knex'
 
 export async function up(knex: Knex): Promise<void> {
-  await knex.schema.createTable('templates', (table) => {
+  await knex.schema.createTable('templates', table => {
     table.increments('id').primary()
     table.string('title', 255).notNullable()
     table.text('description')
@@ -10,7 +10,7 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp('created_at').defaultTo(knex.fn.now())
     table.timestamp('updated_at').defaultTo(knex.fn.now())
     table.string('owner_address', 42).notNullable()
-    
+
     // Add indexes
     table.index('owner_address')
   })
@@ -18,4 +18,4 @@ export async function up(knex: Knex): Promise<void> {
 
 export async function down(knex: Knex): Promise<void> {
   await knex.schema.dropTable('templates')
-} 
+}
