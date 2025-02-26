@@ -9,12 +9,13 @@
     "migrate": "knex migrate:latest --knexfile src/knexfile.ts",
     "migrate:rollback": "knex migrate:rollback --knexfile src/knexfile.ts",
     "migrate:make": "knex migrate:make -x ts --knexfile src/knexfile.ts",
-    "test": "jest --detectOpenHandles --runInBand --forceExit --testTimeout=30000"
+    "test": "jest --detectOpenHandles --runInBand --forceExit --testTimeout=30000",
+    "seed": "knex seed:run --knexfile src/knexfile.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "ethers": "^6.11.1",
+    "ethers": "^6.13.5",
     "express": "^4.18.3",
     "knex": "^3.1.0",
     "mysql2": "^3.9.2",
