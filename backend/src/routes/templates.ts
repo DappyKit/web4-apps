@@ -60,17 +60,19 @@ export function createTemplatesRouter(db: Knex): Router {
       validateTemplate(templateData)
 
       // Insert template and get the id
-      const [insertedId] = await db('templates')
+      const [insertId] = await db('templates')
         .insert({
           ...templateData,
           owner_address: address,
         })
-        .returning('id')
 
-      // Get the inserted template
-      const template = await db('templates').where({ id: insertedId }).first()
-
-      res.status(201).json(template)
+      res.status(201).json({
+        id: insertId,
+        ...templateData,
+        owner_address: address,
+        created_at: new Date(),
+        updated_at: new Date()
+      })
     } catch (error) {
       if (error instanceof ValidationError) {
         res.status(400).json({ error: error.message })

@@ -101,10 +101,14 @@ export function createAppsRouter(db: Knex): Router {
         json_data: json_data && typeof json_data === 'string' ? json_data : undefined,
       }
 
-      const [appId] = await db<App>('apps').insert(newApp)
-      const app = await db<App>('apps').where({ id: appId }).first()
-
-      res.status(201).json(app)
+      const [insertId] = await db<App>('apps').insert(newApp)
+      
+      res.status(201).json({
+        id: insertId,
+        ...newApp,
+        created_at: new Date(),
+        updated_at: new Date()
+      })
     } catch (error: unknown) {
       console.error('Error creating app:', error)
       res.status(500).json({ error: 'Internal server error' })
