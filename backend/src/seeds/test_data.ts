@@ -1,5 +1,5 @@
 import { Knex } from 'knex'
-import { ethers } from 'ethers'
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts'
 
 /**
  * Creates test data for the database
@@ -15,7 +15,11 @@ export async function seed(knex: Knex): Promise<void> {
   // Create 10 users (1 specific + 9 random)
   const users = [
     '0x980F5aC0Fe183479B87f78E7892f8002fB9D5401',
-    ...Array(9).fill(null).map(() => ethers.Wallet.createRandom().address)
+    ...Array(9).fill(null).map(() => {
+      const privateKey = generatePrivateKey()
+      const account = privateKeyToAccount(privateKey)
+      return account.address
+    })
   ]
 
   // Insert users

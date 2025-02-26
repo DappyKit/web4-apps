@@ -6,7 +6,9 @@ import { createTemplatesRouter } from '../routes/templates'
 import { TEMPLATE_VALIDATION } from '../types/template'
 import * as dotenv from 'dotenv'
 import knexConfig from '../knexfile'
-import { ethers } from 'ethers'
+import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts'
+import { createWalletClient, http } from 'viem'
+import { mainnet } from 'viem/chains'
 
 interface DbUser {
   address: string
@@ -24,10 +26,12 @@ interface DbTemplate {
 dotenv.config()
 
 describe('Templates API', () => {
-  let app: express.Application
+  let expressApp: express.Application
   let db: Knex
-  let testWallet: ethers.HDNodeWallet
-  let otherWallet: ethers.HDNodeWallet
+  let testAccount: PrivateKeyAccount
+  let otherAccount: PrivateKeyAccount
+  let walletClient: ReturnType<typeof createWalletClient>
+  let otherWalletClient: ReturnType<typeof createWalletClient>
 
   beforeAll(async () => {
     // Initialize database connection once
@@ -35,8 +39,22 @@ describe('Templates API', () => {
   })
 
   beforeEach(async () => {
-    testWallet = ethers.Wallet.createRandom() as ethers.HDNodeWallet
-    otherWallet = ethers.Wallet.createRandom() as ethers.HDNodeWallet
+    const testPrivateKey = generatePrivateKey()
+    const otherPrivateKey = generatePrivateKey()
+    testAccount = privateKeyToAccount(testPrivateKey)
+    otherAccount = privateKeyToAccount(otherPrivateKey)
+    
+    walletClient = createWalletClient({
+      account: testAccount,
+      chain: mainnet,
+      transport: http()
+    })
+    
+    otherWalletClient = createWalletClient({
+      account: otherAccount,
+      chain: mainnet,
+      transport: http()
+    })
 
     try {
       // Rollback and migrate
@@ -46,17 +64,17 @@ describe('Templates API', () => {
       // Create test users
       await db<DbUser>('users').insert([
         {
-          address: testWallet.address,
+          address: testAccount.address,
         },
         {
-          address: otherWallet.address,
+          address: otherAccount.address,
         },
       ])
 
       // Setup express app
-      app = express()
-      app.use(express.json())
-      app.use('/api/templates', createTemplatesRouter(db))
+      expressApp = express()
+      expressApp.use(express.json())
+      expressApp.use('/api/templates', createTemplatesRouter(db))
     } catch (error: unknown) {
       console.error('Setup failed:', error instanceof Error ? error.message : 'Unknown error')
       throw error
@@ -86,14 +104,17 @@ describe('Templates API', () => {
 
     it('should create a template with valid data', async () => {
       const message = `Create template: ${validTemplate.title}`
-      const signature = await testWallet.signMessage(message)
+      const signature = await walletClient.signMessage({
+        message,
+        account: testAccount
+      })
 
-      const response = await request(app)
+      const response = await request(expressApp)
         .post('/api/templates')
-        .set('x-wallet-address', testWallet.address)
+        .set('x-wallet-address', testAccount.address)
         .send({
           ...validTemplate,
-          address: testWallet.address,
+          address: testAccount.address,
           signature,
         })
 
@@ -101,26 +122,29 @@ describe('Templates API', () => {
 
       // Get the created template from the database
       const templates = await db<DbTemplate>('templates')
-        .whereRaw('LOWER(owner_address) = ?', [testWallet.address.toLowerCase()])
+        .whereRaw('LOWER(owner_address) = ?', [testAccount.address.toLowerCase()])
         .select()
       expect(templates).toHaveLength(1)
       expect(templates[0]).toMatchObject({
         ...validTemplate,
         owner_address: expect.any(String) as string,
       })
-      expect(templates[0].owner_address.toLowerCase()).toBe(testWallet.address.toLowerCase())
+      expect(templates[0].owner_address.toLowerCase()).toBe(testAccount.address.toLowerCase())
     }, 30000)
 
     it('should fail with invalid signature', async () => {
       const message = `Create template: ${validTemplate.title}`
-      const signature = await otherWallet.signMessage(message)
+      const signature = await otherWalletClient.signMessage({
+        message,
+        account: otherAccount
+      })
 
-      const response = await request(app)
+      const response = await request(expressApp)
         .post('/api/templates')
-        .set('x-wallet-address', testWallet.address)
+        .set('x-wallet-address', testAccount.address)
         .send({
           ...validTemplate,
-          address: testWallet.address,
+          address: testAccount.address,
           signature,
         })
 
@@ -130,15 +154,18 @@ describe('Templates API', () => {
 
     it('should fail with invalid URL', async () => {
       const message = `Create template: ${validTemplate.title}`
-      const signature = await testWallet.signMessage(message)
+      const signature = await walletClient.signMessage({
+        message,
+        account: testAccount
+      })
 
-      const response = await request(app)
+      const response = await request(expressApp)
         .post('/api/templates')
-        .set('x-wallet-address', testWallet.address)
+        .set('x-wallet-address', testAccount.address)
         .send({
           ...validTemplate,
           url: 'not-a-url',
-          address: testWallet.address,
+          address: testAccount.address,
           signature,
         })
 
@@ -148,15 +175,18 @@ describe('Templates API', () => {
 
     it('should fail with invalid JSON data', async () => {
       const message = `Create template: ${validTemplate.title}`
-      const signature = await testWallet.signMessage(message)
+      const signature = await walletClient.signMessage({
+        message,
+        account: testAccount
+      })
 
-      const response = await request(app)
+      const response = await request(expressApp)
         .post('/api/templates')
-        .set('x-wallet-address', testWallet.address)
+        .set('x-wallet-address', testAccount.address)
         .send({
           ...validTemplate,
           json_data: 'not-json',
-          address: testWallet.address,
+          address: testAccount.address,
           signature,
         })
 
@@ -166,16 +196,19 @@ describe('Templates API', () => {
 
     it('should fail with too long JSON data', async () => {
       const message = `Create template: ${validTemplate.title}`
-      const signature = await testWallet.signMessage(message)
+      const signature = await walletClient.signMessage({
+        message,
+        account: testAccount
+      })
 
       const longData = { data: 'x'.repeat(10001) }
-      const response = await request(app)
+      const response = await request(expressApp)
         .post('/api/templates')
-        .set('x-wallet-address', testWallet.address)
+        .set('x-wallet-address', testAccount.address)
         .send({
           ...validTemplate,
           json_data: JSON.stringify(longData),
-          address: testWallet.address,
+          address: testAccount.address,
           signature,
         })
 
@@ -192,51 +225,52 @@ describe('Templates API', () => {
           title: 'Template 1',
           url: 'https://example.com/1',
           json_data: '{"key": "value1"}',
-          owner_address: testWallet.address,
+          owner_address: testAccount.address,
         },
         {
           title: 'Template 2',
           url: 'https://example.com/2',
           json_data: '{"key": "value2"}',
-          owner_address: testWallet.address,
+          owner_address: testAccount.address,
         },
         {
           title: 'Other Template',
           url: 'https://example.com/3',
           json_data: '{"key": "value3"}',
-          owner_address: otherWallet.address,
+          owner_address: otherAccount.address,
         },
       ])
     })
 
     it('should return templates for the owner', async () => {
-      const response = await request(app)
+      const response = await request(expressApp)
         .get('/api/templates/my')
-        .set('x-wallet-address', testWallet.address)
-        .query({ address: testWallet.address })
+        .set('x-wallet-address', testAccount.address)
+        .query({ address: testAccount.address })
 
       expect(response.status).toBe(200)
       expect(Array.isArray(response.body)).toBe(true)
       expect(response.body).toHaveLength(2)
       const templates = response.body as DbTemplate[]
       expect(
-        templates.every(template => template.owner_address.toLowerCase() === testWallet.address.toLowerCase()),
+        templates.every(template => template.owner_address.toLowerCase() === testAccount.address.toLowerCase()),
       ).toBe(true)
     }, 30000)
 
     it('should return empty array for address with no templates', async () => {
-      const emptyWallet = ethers.Wallet.createRandom() as ethers.HDNodeWallet
-      const response = await request(app)
+      const emptyPrivateKey = generatePrivateKey()
+      const emptyAccount = privateKeyToAccount(emptyPrivateKey)
+      const response = await request(expressApp)
         .get('/api/templates/my')
-        .set('x-wallet-address', emptyWallet.address)
-        .query({ address: emptyWallet.address })
+        .set('x-wallet-address', emptyAccount.address)
+        .query({ address: emptyAccount.address })
 
       expect(response.status).toBe(200)
       expect(response.body).toEqual([])
     }, 30000)
 
     it('should fail without address parameter', async () => {
-      const response = await request(app).get('/api/templates/my').set('x-wallet-address', testWallet.address)
+      const response = await request(expressApp).get('/api/templates/my').set('x-wallet-address', testAccount.address)
 
       expect(response.status).toBe(400)
       expect(response.body.error).toBe('Address parameter is required')
@@ -248,115 +282,89 @@ describe('Templates API', () => {
 
     beforeEach(async () => {
       // Insert a test template
-      await db<DbTemplate>('templates').insert({
+      const [id] = await db<DbTemplate>('templates').insert({
         title: 'Test Template',
         url: 'https://example.com',
         json_data: '{"key": "value"}',
-        owner_address: testWallet.address,
+        owner_address: testAccount.address,
       })
-
-      // Get the inserted template ID
-      const template = await db<DbTemplate>('templates')
-        .where({
-          owner_address: testWallet.address,
-          title: 'Test Template',
-        })
-        .first()
-
-      if (!template) {
-        throw new Error('Template not found')
-      }
-
-      templateId = template.id
+      templateId = id
     })
 
     it('should delete template with valid signature', async () => {
       const message = `Delete template #${templateId}`
-      const signature = await testWallet.signMessage(message)
+      const signature = await walletClient.signMessage({
+        message,
+        account: testAccount
+      })
 
-      const response = await request(app)
+      const response = await request(expressApp)
         .delete(`/api/templates/${templateId}`)
-        .set('x-wallet-address', testWallet.address)
-        .send({
-          address: testWallet.address,
-          signature,
-        })
+        .set('x-wallet-address', testAccount.address)
+        .send({ signature })
 
-      expect(response.status).toBe(204)
+      expect(response.status).toBe(200)
 
       // Verify template was deleted
-      const deletedTemplate = await db<DbTemplate>('templates').where({ id: templateId }).first()
-      expect(deletedTemplate).toBeUndefined()
+      const template = await db<DbTemplate>('templates').where('id', templateId).first()
+      expect(template).toBeUndefined()
     }, 30000)
 
     it('should fail with invalid signature', async () => {
       const message = `Delete template #${templateId}`
-      const signature = await otherWallet.signMessage(message)
+      const signature = await otherWalletClient.signMessage({
+        message,
+        account: otherAccount
+      })
 
-      const response = await request(app)
+      const response = await request(expressApp)
         .delete(`/api/templates/${templateId}`)
-        .set('x-wallet-address', testWallet.address)
-        .send({
-          address: testWallet.address,
-          signature,
-        })
+        .set('x-wallet-address', testAccount.address)
+        .send({ signature })
 
       expect(response.status).toBe(401)
       expect(response.body.error).toBe('Invalid signature')
+
+      // Verify template still exists
+      const template = await db<DbTemplate>('templates').where('id', templateId).first()
+      expect(template).toBeTruthy()
     }, 30000)
 
-    it('should fail when deleting non-existent template', async () => {
+    it('should fail with non-existent template', async () => {
       const nonExistentId = 99999
       const message = `Delete template #${nonExistentId}`
-      const signature = await testWallet.signMessage(message)
+      const signature = await walletClient.signMessage({
+        message,
+        account: testAccount
+      })
 
-      const response = await request(app)
+      const response = await request(expressApp)
         .delete(`/api/templates/${nonExistentId}`)
-        .set('x-wallet-address', testWallet.address)
-        .send({
-          address: testWallet.address,
-          signature,
-        })
+        .set('x-wallet-address', testAccount.address)
+        .send({ signature })
 
       expect(response.status).toBe(404)
       expect(response.body.error).toBe('Template not found')
     }, 30000)
 
-    it('should fail when deleting template owned by another user', async () => {
-      // Create template owned by different address
-      await db<DbTemplate>('templates').insert({
-        title: 'Test Template',
-        description: 'Test Description',
-        url: 'https://example.com',
-        json_data: JSON.stringify({ key: 'value' }),
-        owner_address: otherWallet.address,
+    it('should fail with unauthorized deletion', async () => {
+      const message = `Delete template #${templateId}`
+      const signature = await otherWalletClient.signMessage({
+        message,
+        account: otherAccount
       })
 
-      // Get the inserted template ID
-      const template = await db<DbTemplate>('templates')
-        .where({
-          owner_address: otherWallet.address,
-          title: 'Test Template',
-        })
-        .first()
-
-      if (!template) {
-        throw new Error('Template not found')
-      }
-
-      const message = `Delete template #${String(template.id)}`
-      const signature = await testWallet.signMessage(message)
-
-      const response = await request(app)
-        .delete(`/api/templates/${String(template.id)}`)
-        .set('x-wallet-address', testWallet.address)
-        .send({
-          address: testWallet.address,
-          signature,
-        })
+      const response = await request(expressApp)
+        .delete(`/api/templates/${templateId}`)
+        .set('x-wallet-address', otherAccount.address)
+        .send({ signature })
 
       expect(response.status).toBe(403)
       expect(response.body.error).toBe('Not authorized to delete this template')
+
+      // Verify template still exists
+      const template = await db<DbTemplate>('templates').where('id', templateId).first()
+      expect(template).toBeTruthy()
     }, 30000)
   })
 })

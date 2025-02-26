@@ -78,7 +78,8 @@ export function createAppsRouter(db: Knex): Router {
       // Construct message and verify signature
       const message = `Create app: ${trimmedName}`
       try {
-        if (!verifySignature(message, signature, userAddress)) {
+        const isValidSignature = await verifySignature(message, signature, userAddress)
+        if (!isValidSignature) {
           return res.status(401).json({ error: 'Invalid signature' })
         }
       } catch (error) {
@@ -136,11 +137,20 @@ export function createAppsRouter(db: Knex): Router {
         .first()
 
       if (!app) {
-        return res.status(404).json({ error: 'App not found or unauthorized' })
+        const appExists = await db<App>('apps').where({ id: appId }).first()
+        if (!appExists) {
+          return res.status(404).json({ error: 'App not found' })
+        }
+        return res.status(403).json({ error: 'Not authorized to delete this app' })
       }
 
       const deleteMessage = `Delete application #${String(appId)}`
-      if (!verifySignature(deleteMessage, signature, userAddress)) {
+      try {
+        const isValidSignature = await verifySignature(deleteMessage, signature, userAddress)
+        if (!isValidSignature) {
+          return res.status(401).json({ error: 'Invalid signature' })
+        }
+      } catch (error) {
         return res.status(401).json({ error: 'Invalid signature' })
       }
 

@@ -51,7 +51,8 @@ export function createTemplatesRouter(db: Knex): Router {
 
       // Verify signature
       const message = `Create template: ${templateData.title}`
-      if (!verifySignature(message, signature, address)) {
+      const isValidSignature = await verifySignature(message, signature, address)
+      if (!isValidSignature) {
         return res.status(401).json({ error: 'Invalid signature' })
       }
 
@@ -75,7 +76,7 @@ export function createTemplatesRouter(db: Knex): Router {
         res.status(400).json({ error: error.message })
       } else {
         console.error('Error creating template:', error)
-        res.status(500).json({ error: 'Failed to create template' })
+        res.status(500).json({ error: 'Internal server error' })
       }
     }
   })
@@ -96,7 +97,7 @@ export function createTemplatesRouter(db: Knex): Router {
       res.json(templates)
     } catch (error) {
       console.error('Error fetching templates:', error)
-      res.status(500).json({ error: 'Failed to fetch templates' })
+      res.status(500).json({ error: 'Internal server error' })
     }
   })
 
@@ -113,7 +114,7 @@ export function createTemplatesRouter(db: Knex): Router {
 
       // Validate address
       if (!address) {
-        return res.status(400).json({ error: 'Address is required' })
+        return res.status(400).json({ error: 'Missing required fields' })
       }
 
       // Check if template exists and belongs to the user
@@ -129,16 +130,17 @@ export function createTemplatesRouter(db: Knex): Router {
 
       // Verify signature
       const message = `Delete template #${templateId}`
-      if (!verifySignature(message, signature, address)) {
+      const isValidSignature = await verifySignature(message, signature, address)
+      if (!isValidSignature) {
         return res.status(401).json({ error: 'Invalid signature' })
       }
 
       await db('templates').where({ id: templateId }).delete()
 
-      res.status(204).send()
+      res.status(200).json({ message: 'Template deleted successfully' })
     } catch (error) {
       console.error('Error deleting template:', error)
-      res.status(500).json({ error: 'Failed to delete template' })
+      res.status(500).json({ error: 'Internal server error' })
     }
   })
 

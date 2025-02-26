@@ -1,4 +1,4 @@
-import { ethers } from 'ethers'
+import { verifyMessage } from 'viem'
 import { Request, Response, NextFunction } from 'express'
 
 /**
@@ -13,12 +13,16 @@ type AuthRequest = Request & {
  * @param {string} message - The original message that was signed
  * @param {string} signature - The signature to verify
  * @param {string} address - The Ethereum address that supposedly signed the message
- * @returns {boolean} True if the signature is valid, false otherwise
+ * @returns {Promise<boolean>} True if the signature is valid, false otherwise
  */
-export function verifySignature(message: string, signature: string, address: string): boolean {
+export async function verifySignature(message: string, signature: string, address: string): Promise<boolean> {
   try {
-    const recoveredAddress = ethers.verifyMessage(message, signature)
-    return recoveredAddress.toLowerCase() === address.toLowerCase()
+    const recoveredAddress = await verifyMessage({
+      message,
+      signature: signature as `0x${string}`,
+      address: address as `0x${string}`
+    })
+    return recoveredAddress
   } catch {
     return false
   }

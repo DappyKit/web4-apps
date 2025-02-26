@@ -21,7 +21,7 @@ export function createUsersRouter(db: Knex): Router {
       const { address } = req.params
 
       if (!address || address.length !== 42) {
-        return res.status(400).json({ error: 'Invalid address format' })
+        return res.status(400).json({ error: 'Invalid Ethereum address format' })
       }
 
       if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
@@ -54,7 +54,8 @@ export function createUsersRouter(db: Knex): Router {
         return res.status(400).json({ error: 'Invalid registration message' })
       }
 
-      if (!verifySignature(message, signature, address)) {
+      const isValidSignature = await verifySignature(message, signature, address)
+      if (!isValidSignature) {
         return res.status(401).json({ error: 'Invalid signature' })
       }
 
@@ -68,7 +69,7 @@ export function createUsersRouter(db: Knex): Router {
       const user = await db<User>('users').where({ address: address.toLowerCase() }).first()
 
       if (!user) {
-        return res.status(500).json({ error: 'Failed to register user' })
+        return res.status(500).json({ error: 'Internal server error' })
       }
 
       res.status(201).json({ address: user.address.toLowerCase() })
