@@ -59,7 +59,7 @@ export function MainLogged(): React.JSX.Element {
               <li className="nav-item">
                 <NavLink
                   className={({ isActive }) => `nav-link d-flex gap-2 ${isActive ? 'active' : ''}`}
-                  to="/dashboard"
+                  to="/"
                 >
                   <i className="bi bi-house-fill"></i>
                   Dashboard
@@ -133,6 +133,14 @@ export function MainLogged(): React.JSX.Element {
         <div className="px-md-4 flex-grow-1">
           <Routes>
             <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/dashboard"
               element={
                 <ProtectedRoute>
@@ -182,7 +190,7 @@ export function MainLogged(): React.JSX.Element {
                 </ProtectedRoute>
               }
             />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </div>
 

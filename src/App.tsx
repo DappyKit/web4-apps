@@ -20,9 +20,9 @@ function AppContent(): React.JSX.Element {
     document.body.className = auth.isAuthenticated ? '' : 'p-1 p-lg-2'
   }, [auth.isAuthenticated])
 
-  // If trying to access a protected route while not authenticated
-  if (!auth.isAuthenticated && location.pathname !== '/') {
-    return <Navigate to="/" replace />
+  // If trying to access root path while authenticated, redirect to dashboard
+  if (auth.isAuthenticated && location.pathname === '/') {
+    return <Navigate to="/dashboard" replace />
   }
 
   return (
@@ -35,11 +35,10 @@ function AppContent(): React.JSX.Element {
 }
 
 /**
- * Root component of the application
- * Initializes and sets up routing
- * @returns {React.JSX.Element} The root application component wrapped in router
+ * Root application component
+ * @returns {React.JSX.Element} The root application component
  */
-function App(): React.JSX.Element {
+export default function App(): React.JSX.Element {
   useEffect(() => {
     const sdk = new SDK(Config.optimismMainnetConfig)
     console.log('sdk', sdk)
@@ -51,5 +50,3 @@ function App(): React.JSX.Element {
     </BrowserRouter>
   )
 }
-
-export default App
