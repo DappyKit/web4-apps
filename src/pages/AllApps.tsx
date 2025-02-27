@@ -1,60 +1,80 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Container, Row, Col } from 'react-bootstrap'
 import { getAllApps, type App, type PaginatedAppsResponse } from '../services/api'
 import { AppList } from '../components/AppList'
 import { Pagination } from '../components/Pagination'
+import { useSearchParams } from 'react-router-dom'
 
 export function AllApps(): React.JSX.Element {
-  const [isLoading, setIsLoading] = useState(true)
+  const [searchParams, setSearchParams] = useSearchParams()
+  
+  // Get current page from URL or default to 1
+  const initialPage = Number(searchParams.get('page') ?? 1)
+  
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [apps, setApps] = useState<App[]>([])
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    limit: 12
+  const [data, setData] = useState<{
+    apps: App[]
+    pagination: {
+      currentPage: number
+      totalPages: number
+      totalItems: number
+      limit: number
+    }
+  }>({
+    apps: [],
+    pagination: {
+      currentPage: initialPage,
+      totalPages: 1,
+      totalItems: 0,
+      limit: 12
+    }
   })
 
   // Fetch apps with pagination
-  const fetchApps = async (page: number): Promise<void> => {
-    setIsLoading(true)
+  const fetchApps = useCallback(async (page: number): Promise<void> => {
+    if (page === data.pagination.currentPage && data.apps.length > 0) {
+      return // Prevent duplicate fetches for the same page
+    }
+
+    // Only show loading state on initial load
+    if (data.apps.length === 0) {
+      setIsInitialLoading(true)
+    }
     setError(null)
     
     try {
-      const response: PaginatedAppsResponse = await getAllApps(page, pagination.limit)
+      const response: PaginatedAppsResponse = await getAllApps(page, data.pagination.limit)
       
-      setApps(response.data)
-      setPagination({
-        currentPage: response.pagination.page,
-        totalPages: response.pagination.totalPages,
-        totalItems: response.pagination.total,
-        limit: response.pagination.limit
+      setData({
+        apps: response.data,
+        pagination: {
+          currentPage: response.pagination.page,
+          totalPages: response.pagination.totalPages,
+          totalItems: response.pagination.total,
+          limit: response.pagination.limit
+        }
       })
     } catch (err) {
       console.error('Error fetching apps:', err)
       setError('Failed to load apps. Please try again later.')
-      setApps([])
     } finally {
-      setIsLoading(false)
+      setIsInitialLoading(false)
     }
-  }
+  }, [data.pagination.currentPage, data.pagination.limit, data.apps.length])
 
   // Handle page change
-  const handlePageChange = (page: number): void => {
-    // Only fetch if the page actually changed
-    if (page !== pagination.currentPage) {
-      window.scrollTo(0, 0) // Scroll to top when changing pages
+  const handlePageChange = useCallback((page: number): void => {
+    if (page !== data.pagination.currentPage) {
+      setSearchParams({ page: String(page) }, { replace: true })
       void fetchApps(page)
     }
-  }
+  }, [data.pagination.currentPage, fetchApps, setSearchParams])
 
-  // Initial fetch - only run on component mount
-  // We're intentionally using an empty dependency array since we only want this to run once
-  // The eslint rule for exhaustive-deps is disabled inline to prevent unwanted re-fetch loops
+  // Initial fetch when component mounts or URL changes
   useEffect(() => {
-    void fetchApps(1)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    void fetchApps(initialPage)
+  }, [initialPage, fetchApps])
 
   return (
     <Container className="py-4">
@@ -71,15 +91,15 @@ export function AllApps(): React.JSX.Element {
       <Row>
         <Col>
           <AppList 
-            apps={apps} 
-            isLoading={isLoading} 
+            apps={data.apps} 
+            isLoading={isInitialLoading} 
             showEmptyMessage="No apps available at the moment."
           />
 
-          {!isLoading && !error && (
+          {!isInitialLoading && !error && data.apps.length > 0 && (
             <Pagination 
-              currentPage={pagination.currentPage}
-              totalPages={pagination.totalPages}
+              currentPage={data.pagination.currentPage}
+              totalPages={data.pagination.totalPages}
               onPageChange={handlePageChange}
             />
           )}

@@ -69,9 +69,10 @@ export function AppList({
     </div>
   )
 
-  if (isLoading) {
+  // Show spinner only on initial load when there are no apps yet
+  if (isLoading && apps.length === 0) {
     return (
-      <div className="text-center">
+      <div className="text-center" style={{ minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Spinner animation="border" role="status">
           <span className="visually-hidden">Loading...</span>
         </Spinner>
@@ -79,13 +80,21 @@ export function AppList({
     )
   }
 
-  if (apps.length === 0) {
-    return <Alert variant="info">{showEmptyMessage}</Alert>
+  // Show empty message only when not loading and no apps
+  if (!isLoading && apps.length === 0) {
+    return (
+      <div style={{ minHeight: '200px' }}>
+        <Alert variant="info">{showEmptyMessage}</Alert>
+      </div>
+    )
   }
 
+  // Main content - simple and direct rendering
   return (
-    <div style={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
-      <div className="mx-0 row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">{apps.map(renderAppCard)}</div>
+    <div style={{ width: '100%', maxWidth: '100%' }}>
+      <div className="mx-0 row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {apps.map(renderAppCard)}
+      </div>
     </div>
   )
 }
