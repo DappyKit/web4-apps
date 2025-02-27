@@ -44,6 +44,7 @@ export function MyApps(): React.JSX.Element {
   const [isDeleting, setIsDeleting] = useState<number | null>(null)
   const [templates, setTemplates] = useState<Template[]>([])
   const [showTemplateModal, setShowTemplateModal] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
   const loadApps = useCallback(async () => {
     if (!address) return
@@ -247,181 +248,211 @@ export function MyApps(): React.JSX.Element {
     <div>
       <div className="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 className="h2">My Apps</h1>
-      </div>
-
-      <div className="row">
-        <div className="col-md-8">
-          <div className="card">
-            <div className="card-body">
-              <h5 className="card-title mb-3">Create New App</h5>
-
-              {error && (
-                <Alert
-                  variant="danger"
-                  onClose={() => {
-                    setError(null)
-                  }}
-                  dismissible
-                >
-                  {error}
-                </Alert>
-              )}
-
-              {success && (
-                <Alert
-                  variant="success"
-                  onClose={() => {
-                    setSuccess(null)
-                  }}
-                  dismissible
-                >
-                  {success}
-                </Alert>
-              )}
-
-              <Form
-                onSubmit={e => {
-                  void handleSubmit(e)
-                }}
-              >
-                <Form.Group className="mb-3">
-                  <Form.Label htmlFor="name">
-                    App Name
-                    <span className="text-muted ms-2">
-                      ({nameCharCount}/{MAX_NAME_LENGTH})
-                    </span>
-                  </Form.Label>
-                  <Form.Control
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    isInvalid={!!errors.name}
-                    disabled={isCreating}
-                    maxLength={MAX_NAME_LENGTH}
-                  />
-                  <Form.Control.Feedback type="invalid">{errors.name}</Form.Control.Feedback>
-                  <Form.Text className="text-muted">Name must be between 3 and {MAX_NAME_LENGTH} characters</Form.Text>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label htmlFor="description">
-                    Description
-                    <span className="text-muted ms-2">
-                      ({descriptionCharCount}/{MAX_DESCRIPTION_LENGTH})
-                    </span>
-                  </Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    rows={3}
-                    disabled={isCreating}
-                    isInvalid={!!errors.description}
-                    maxLength={MAX_DESCRIPTION_LENGTH}
-                  />
-                  <Form.Control.Feedback type="invalid">{errors.description}</Form.Control.Feedback>
-                  <Form.Text className="text-muted">Maximum {MAX_DESCRIPTION_LENGTH} characters</Form.Text>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label htmlFor="templateId">Template ID</Form.Label>
-                  <div className="d-flex">
-                    <Form.Control
-                      type="text"
-                      id="templateId"
-                      name="templateId"
-                      value={formData.templateId}
-                      onChange={handleChange}
-                      isInvalid={!!errors.templateId}
-                      disabled={isCreating}
-                      placeholder="Enter template ID"
-                      className="me-2"
-                    />
-                    <Button
-                      variant="outline-secondary"
-                      onClick={() => {
-                        setShowTemplateModal(true)
-                      }}
-                      disabled={isCreating}
-                    >
-                      Browse
-                    </Button>
-                  </div>
-                  <Form.Control.Feedback type="invalid">{errors.templateId}</Form.Control.Feedback>
-                  <Form.Text className="text-muted">Enter the ID of the template you want to use</Form.Text>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label htmlFor="jsonData">
-                    JSON Data
-                    <span className="text-muted ms-2">
-                      ({jsonDataCharCount}/{MAX_JSON_DATA_LENGTH})
-                    </span>
-                  </Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    id="jsonData"
-                    name="jsonData"
-                    value={formData.jsonData}
-                    onChange={handleChange}
-                    rows={8}
-                    disabled={isCreating}
-                    isInvalid={!!errors.jsonData}
-                    maxLength={MAX_JSON_DATA_LENGTH}
-                    style={{ fontFamily: 'monospace' }}
-                  />
-                  <Form.Control.Feedback type="invalid">{errors.jsonData}</Form.Control.Feedback>
-                  <div className="d-flex justify-content-between">
-                    <Form.Text className="text-muted">Enter valid JSON data for your app</Form.Text>
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      onClick={formatJsonData}
-                      disabled={isCreating}
-                      className="mt-1"
-                    >
-                      Format JSON
-                    </Button>
-                  </div>
-                </Form.Group>
-
-                <Button type="submit" variant="primary" disabled={isCreating}>
-                  {isCreating ? (
-                    <>
-                      <Spinner
-                        as="span"
-                        animation="border"
-                        size="sm"
-                        role="status"
-                        aria-hidden="true"
-                        className="me-2"
-                      />
-                      Creating...
-                    </>
-                  ) : (
-                    'Create App'
-                  )}
-                </Button>
-              </Form>
-            </div>
-          </div>
-        </div>
+        <Button 
+          variant="primary" 
+          onClick={() => {
+            setShowCreateModal(true)
+          }}
+          className="d-flex align-items-center gap-2"
+        >
+          <i className="bi bi-plus-circle d-flex align-items-center"></i>
+          New App
+        </Button>
       </div>
 
       <div className="mt-4">
-        <h2>Your Apps</h2>
         <AppList
           apps={apps}
           isLoading={isLoading}
           onDeleteApp={handleDeleteApp}
           isDeleting={isDeleting}
-          showEmptyMessage="You don't have any apps yet. Create one using the form above!"
+          showEmptyMessage="You don't have any apps yet. Click the 'New App' button to create one!"
         />
       </div>
+
+      {/* Create App Modal */}
+      <Modal
+        show={showCreateModal}
+        onHide={() => {
+          setShowCreateModal(false)
+          setError(null)
+          setSuccess(null)
+          setFormData({
+            name: '',
+            description: '',
+            templateId: '',
+            jsonData: '{}',
+          })
+          setErrors({})
+        }}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Create New App</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {error && (
+            <Alert
+              variant="danger"
+              onClose={() => {
+                setError(null)
+              }}
+              dismissible
+            >
+              {error}
+            </Alert>
+          )}
+
+          {success && (
+            <Alert
+              variant="success"
+              onClose={() => {
+                setSuccess(null)
+              }}
+              dismissible
+            >
+              {success}
+            </Alert>
+          )}
+
+          <Form
+            onSubmit={e => {
+              void handleSubmit(e)
+            }}
+          >
+            <Form.Group className="mb-3">
+              <Form.Label htmlFor="name">
+                App Name
+                <span className="text-muted ms-2">
+                  ({nameCharCount}/{MAX_NAME_LENGTH})
+                </span>
+              </Form.Label>
+              <Form.Control
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                isInvalid={!!errors.name}
+                disabled={isCreating}
+                maxLength={MAX_NAME_LENGTH}
+              />
+              <Form.Control.Feedback type="invalid">{errors.name}</Form.Control.Feedback>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label htmlFor="description">
+                Description
+                <span className="text-muted ms-2">
+                  ({descriptionCharCount}/{MAX_DESCRIPTION_LENGTH})
+                </span>
+              </Form.Label>
+              <Form.Control
+                as="textarea"
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={3}
+                disabled={isCreating}
+                isInvalid={!!errors.description}
+                maxLength={MAX_DESCRIPTION_LENGTH}
+              />
+              <Form.Control.Feedback type="invalid">{errors.description}</Form.Control.Feedback>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label htmlFor="templateId">Template ID</Form.Label>
+              <div className="d-flex">
+                <Form.Control
+                  type="text"
+                  id="templateId"
+                  name="templateId"
+                  value={formData.templateId}
+                  onChange={handleChange}
+                  isInvalid={!!errors.templateId}
+                  disabled={isCreating}
+                  placeholder="Enter template ID"
+                  className="me-2"
+                />
+                <Button
+                  variant="outline-secondary"
+                  onClick={() => {
+                    setShowTemplateModal(true)
+                  }}
+                  disabled={isCreating}
+                >
+                  Browse
+                </Button>
+              </div>
+              <Form.Control.Feedback type="invalid">{errors.templateId}</Form.Control.Feedback>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label htmlFor="jsonData">
+                JSON Data
+                <span className="text-muted ms-2">
+                  ({jsonDataCharCount}/{MAX_JSON_DATA_LENGTH})
+                </span>
+              </Form.Label>
+              <Form.Control
+                as="textarea"
+                id="jsonData"
+                name="jsonData"
+                value={formData.jsonData}
+                onChange={handleChange}
+                rows={4}
+                disabled={isCreating}
+                isInvalid={!!errors.jsonData}
+                maxLength={MAX_JSON_DATA_LENGTH}
+                style={{ fontFamily: 'monospace' }}
+              />
+              <Form.Control.Feedback type="invalid">{errors.jsonData}</Form.Control.Feedback>
+              <div className="d-flex justify-content-end">
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  onClick={formatJsonData}
+                  disabled={isCreating}
+                  className="mt-1"
+                >
+                  Format JSON
+                </Button>
+              </div>
+            </Form.Group>
+
+            <div className="d-flex justify-content-end gap-2">
+              <Button 
+                variant="secondary" 
+                onClick={() => {
+                  setShowCreateModal(false)
+                }}
+                disabled={isCreating}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" disabled={isCreating}>
+                {isCreating ? (
+                  <>
+                    <Spinner
+                      as="span"
+                      animation="border"
+                      size="sm"
+                      role="status"
+                      aria-hidden="true"
+                      className="me-2"
+                    />
+                    Creating...
+                  </>
+                ) : (
+                  'Create App'
+                )}
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
 
       {/* Template Selection Modal */}
       <Modal
