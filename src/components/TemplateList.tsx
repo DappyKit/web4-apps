@@ -7,6 +7,7 @@ interface TemplateListProps {
   templates: Template[]
   onDeleteTemplate: (id: number) => void
   isDeleting: boolean
+  showDelete?: boolean
 }
 
 /**
@@ -14,7 +15,12 @@ interface TemplateListProps {
  * @param {TemplateListProps} props - Component props
  * @returns {JSX.Element} Template list component
  */
-const TemplateList: React.FC<TemplateListProps> = ({ templates, onDeleteTemplate, isDeleting }) => {
+const TemplateList: React.FC<TemplateListProps> = ({ 
+  templates, 
+  onDeleteTemplate, 
+  isDeleting,
+  showDelete = true 
+}) => {
   if (templates.length === 0) {
     return <div className="text-center mt-4">No templates found</div>
   }
@@ -29,6 +35,7 @@ const TemplateList: React.FC<TemplateListProps> = ({ templates, onDeleteTemplate
               onDeleteTemplate(template.id)
             }}
             isDeleting={isDeleting}
+            showDelete={showDelete}
           />
         </Col>
       ))}

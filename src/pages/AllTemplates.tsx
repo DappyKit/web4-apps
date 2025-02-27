@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Container, Row, Col } from 'react-bootstrap'
 import { getAllTemplates, type Template, type PaginatedTemplatesResponse } from '../services/api'
-import { TemplateList } from '../components/TemplateList'
+import TemplateList from '../components/TemplateList'
 import { Pagination } from '../components/Pagination'
 import { useSearchParams } from 'react-router-dom'
 
@@ -92,8 +92,9 @@ export function AllTemplates(): React.JSX.Element {
         <Col>
           <TemplateList 
             templates={data.templates} 
-            isLoading={isInitialLoading} 
-            showEmptyMessage="No templates available at the moment."
+            onDeleteTemplate={() => {}} 
+            isDeleting={false}
+            showDelete={false}
           />
 
           {!isInitialLoading && !error && data.templates.length > 0 && (

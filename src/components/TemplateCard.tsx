@@ -7,6 +7,7 @@ interface TemplateCardProps {
   template: Template
   onDelete: () => void
   isDeleting: boolean
+  showDelete?: boolean
 }
 
 /**
@@ -14,7 +15,7 @@ interface TemplateCardProps {
  * @param {TemplateCardProps} props - Component props
  * @returns {JSX.Element} Template card component
  */
-const TemplateCard: React.FC<TemplateCardProps> = ({ template, onDelete, isDeleting }) => {
+const TemplateCard: React.FC<TemplateCardProps> = ({ template, onDelete, isDeleting, showDelete = true }) => {
   return (
     <Card>
       <Card.Body>
@@ -29,28 +30,30 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onDelete, isDelet
           >
             View
           </Link>
-          <Button
-            variant="outline-danger"
-            size="sm"
-            onClick={onDelete}
-            disabled={isDeleting}
-          >
-            {isDeleting ? (
-              <>
-                <Spinner
-                  as="span"
-                  animation="border"
-                  size="sm"
-                  role="status"
-                  aria-hidden="true"
-                  className="me-2"
-                />
-                Deleting...
-              </>
-            ) : (
-              'Delete'
-            )}
-          </Button>
+          {showDelete && (
+            <Button
+              variant="outline-danger"
+              size="sm"
+              onClick={onDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Spinner
+                    as="span"
+                    animation="border"
+                    size="sm"
+                    role="status"
+                    aria-hidden="true"
+                    className="me-2"
+                  />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </Button>
+          )}
         </div>
       </Card.Body>
     </Card>

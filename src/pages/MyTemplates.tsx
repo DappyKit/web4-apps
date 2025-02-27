@@ -3,7 +3,7 @@ import { useAccount, useSignMessage } from 'wagmi'
 import { Alert, Button, Form, Spinner, Modal } from 'react-bootstrap'
 import { createTemplate, getMyTemplates, deleteTemplate } from '../services/api'
 import type { Template } from '../services/api'
-import { TemplateList } from '../components/TemplateList'
+import TemplateList from '../components/TemplateList'
 
 // Constants matching backend limitations
 const MAX_TITLE_LENGTH = 255
