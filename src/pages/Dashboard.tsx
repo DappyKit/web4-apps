@@ -130,13 +130,15 @@ export function Dashboard(): JSX.Element {
 
       {isRegistered && (
         <>
-          <AppList
-            apps={apps}
-            isLoading={isLoading}
-            onDeleteApp={handleDeleteApp}
-            isDeleting={isDeleting}
-            showEmptyMessage="You don't have any apps yet. Create one to get started!"
-          />
+          <div className="w-100" style={{ minWidth: 0 }}>
+            <AppList
+              apps={apps}
+              isLoading={isLoading}
+              onDeleteApp={handleDeleteApp}
+              isDeleting={isDeleting}
+              showEmptyMessage="You don't have any apps yet. Create one to get started!"
+            />
+          </div>
 
           {error && (
             <div className="alert alert-danger mt-3" role="alert">

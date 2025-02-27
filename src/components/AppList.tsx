@@ -82,5 +82,9 @@ export function AppList({
     return <Alert variant="info">{showEmptyMessage}</Alert>
   }
 
-  return <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">{apps.map(renderAppCard)}</div>
+  return (
+    <div style={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
+      <div className="mx-0 row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">{apps.map(renderAppCard)}</div>
+    </div>
+  )
 }

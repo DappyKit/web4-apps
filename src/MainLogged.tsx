@@ -35,7 +35,7 @@ export function MainLogged(): React.JSX.Element {
 
   return (
     <main className="d-flex min-vh-100">
-      <div className="border-end bg-body-tertiary" style={{ width: '280px' }}>
+      <div className="border-end bg-body-tertiary" style={{ width: '280px', flexShrink: 0 }}>
         <div
           className="offcanvas-md offcanvas-end bg-body-tertiary"
           id="sidebarMenu"
@@ -128,7 +128,7 @@ export function MainLogged(): React.JSX.Element {
         </div>
       </div>
 
-      <div className="flex-grow-1 d-flex flex-column">
+      <div className="flex-grow-1 d-flex flex-column" style={{ maxWidth: 'calc(100% - 280px)', minWidth: 0 }}>
         <div className="px-md-4 flex-grow-1">
           <Routes>
             <Route
