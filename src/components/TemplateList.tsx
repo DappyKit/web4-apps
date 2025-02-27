@@ -6,8 +6,9 @@ import TemplateCard from './TemplateCard'
 interface TemplateListProps {
   templates: Template[]
   onDeleteTemplate: (id: number) => void
-  isDeleting: boolean
+  isDeleting: number | null
   showDelete?: boolean
+  showEmptyMessage?: string
 }
 
 /**
@@ -19,10 +20,11 @@ const TemplateList: React.FC<TemplateListProps> = ({
   templates, 
   onDeleteTemplate, 
   isDeleting,
-  showDelete = true 
+  showDelete = true,
+  showEmptyMessage = 'No templates found'
 }) => {
   if (templates.length === 0) {
-    return <div className="text-center mt-4">No templates found</div>
+    return <div className="text-center mt-4">{showEmptyMessage}</div>
   }
 
   return (
@@ -34,7 +36,7 @@ const TemplateList: React.FC<TemplateListProps> = ({
             onDelete={() => {
               onDeleteTemplate(template.id)
             }}
-            isDeleting={isDeleting}
+            isDeleting={isDeleting === template.id}
             showDelete={showDelete}
           />
         </Col>

@@ -5,6 +5,14 @@ import TemplateList from '../components/TemplateList'
 import { Pagination } from '../components/Pagination'
 import { useSearchParams } from 'react-router-dom'
 
+/**
+ * No operation function
+ */
+const noop = (): void => {
+  // Intentionally empty
+  return undefined
+}
+
 export function AllTemplates(): React.JSX.Element {
   const [searchParams, setSearchParams] = useSearchParams()
   
@@ -92,7 +100,7 @@ export function AllTemplates(): React.JSX.Element {
         <Col>
           <TemplateList 
             templates={data.templates} 
-            onDeleteTemplate={() => {}} 
+            onDeleteTemplate={noop}
             isDeleting={false}
             showDelete={false}
           />

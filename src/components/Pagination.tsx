@@ -26,7 +26,12 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
     
     // Show ellipsis if needed after first page
     if (currentPage > 3) {
-      items.push(<BootstrapPagination.Ellipsis key="ellipsis-1" />)
+      items.push(
+        <BootstrapPagination.Ellipsis 
+          key="ellipsis-1" 
+          style={{ pointerEvents: 'none', cursor: 'default' }}
+        />
+      )
     }
     
     // Show pages around current page
@@ -48,7 +53,12 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
     
     // Show ellipsis if needed before last page
     if (currentPage < totalPages - 2) {
-      items.push(<BootstrapPagination.Ellipsis key="ellipsis-2" />)
+      items.push(
+        <BootstrapPagination.Ellipsis 
+          key="ellipsis-2" 
+          style={{ pointerEvents: 'none', cursor: 'default' }}
+        />
+      )
     }
     
     // Always show last page if there's more than one page

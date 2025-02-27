@@ -4,8 +4,10 @@ import { Alert, Button, Form, Spinner, Modal, Table } from 'react-bootstrap'
 import { createApp, getMyApps, deleteApp, getMyTemplates } from '../services/api'
 import type { App, Template } from '../services/api'
 import { AppList } from '../components/AppList'
+import { Pagination } from '../components/Pagination'
 
 // Constants matching backend limitations
+const ITEMS_PER_PAGE = 12
 const MAX_NAME_LENGTH = 255
 const MAX_DESCRIPTION_LENGTH = 1000
 const MAX_JSON_DATA_LENGTH = 10000 // Adjust based on your backend limits
@@ -45,6 +47,8 @@ export function MyApps(): React.JSX.Element {
   const [templates, setTemplates] = useState<Template[]>([])
   const [showTemplateModal, setShowTemplateModal] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
 
   const loadApps = useCallback(async () => {
     if (!address) return
@@ -53,6 +57,7 @@ export function MyApps(): React.JSX.Element {
     try {
       const myApps = await getMyApps(address)
       setApps(myApps)
+      setTotalPages(Math.ceil(myApps.length / ITEMS_PER_PAGE))
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load apps'
       setError(errorMessage)
@@ -244,6 +249,18 @@ export function MyApps(): React.JSX.Element {
   const descriptionCharCount = formData.description.trim().length
   const jsonDataCharCount = formData.jsonData.trim().length
 
+  // Get current page items
+  const getCurrentPageItems = useCallback(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+    const endIndex = startIndex + ITEMS_PER_PAGE
+    return apps.slice(startIndex, endIndex)
+  }, [currentPage, apps])
+
+  // Handle page change
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page)
+  }, [])
+
   return (
     <div>
       <div className="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -262,12 +279,22 @@ export function MyApps(): React.JSX.Element {
 
       <div className="mt-4">
         <AppList
-          apps={apps}
+          apps={getCurrentPageItems()}
           isLoading={isLoading}
           onDeleteApp={handleDeleteApp}
           isDeleting={isDeleting}
           showEmptyMessage="You don't have any apps yet. Click the 'New App' button to create one!"
         />
+
+        {apps.length > ITEMS_PER_PAGE && (
+          <div className="d-flex justify-content-center mt-4">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        )}
       </div>
 
       {/* Create App Modal */}

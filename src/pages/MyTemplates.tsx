@@ -4,8 +4,10 @@ import { Alert, Button, Form, Spinner, Modal } from 'react-bootstrap'
 import { createTemplate, getMyTemplates, deleteTemplate } from '../services/api'
 import type { Template } from '../services/api'
 import TemplateList from '../components/TemplateList'
+import { Pagination } from '../components/Pagination'
 
-// Constants matching backend limitations
+// Constants
+const ITEMS_PER_PAGE = 12
 const MAX_TITLE_LENGTH = 255
 const MAX_DESCRIPTION_LENGTH = 1000
 const MAX_JSON_LENGTH = 10000
@@ -39,25 +41,24 @@ export function MyTemplates(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [templates, setTemplates] = useState<Template[]>([])
-  const [isLoading, setIsLoading] = useState(false)
   const [isDeleting, setIsDeleting] = useState<number | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [templateToDelete, setTemplateToDelete] = useState<number | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
 
   const loadTemplates = useCallback(async () => {
     if (!address) return
 
-    setIsLoading(true)
     try {
       const myTemplates = await getMyTemplates(address)
       setTemplates(myTemplates)
+      setTotalPages(Math.ceil(myTemplates.length / ITEMS_PER_PAGE))
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load templates'
       setError(errorMessage)
       console.error('Error loading templates:', error)
-    } finally {
-      setIsLoading(false)
     }
   }, [address])
 
@@ -213,6 +214,18 @@ export function MyTemplates(): React.JSX.Element {
     [errors],
   )
 
+  // Get current page items
+  const getCurrentPageItems = useCallback(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+    const endIndex = startIndex + ITEMS_PER_PAGE
+    return templates.slice(startIndex, endIndex)
+  }, [currentPage, templates])
+
+  // Handle page change
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page)
+  }, [])
+
   return (
     <div>
       <div className="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -232,12 +245,21 @@ export function MyTemplates(): React.JSX.Element {
 
       <div className="mt-4">
         <TemplateList
-          templates={templates}
-          isLoading={isLoading}
+          templates={getCurrentPageItems()}
           onDeleteTemplate={handleTemplateDelete}
           isDeleting={isDeleting}
-          showEmptyMessage="Click the &apos;New Template&apos; button to create your first template"
+          showEmptyMessage="Click the 'New Template' button to create your first template"
         />
+
+        {templates.length > ITEMS_PER_PAGE && (
+          <div className="d-flex justify-content-center mt-4">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        )}
       </div>
 
       {/* Create Modal */}

@@ -33,7 +33,7 @@ export async function seed(knex: Knex): Promise<void> {
 
   // Create templates for each user
   for (const userAddress of users) {
-    const templates = Array(5).fill(null).map((_, index) => ({
+    const templates = Array(100).fill(null).map((_, index) => ({
       title: `Template ${index + 1} by ${userAddress.slice(0, 6)}`,
       description: `A test template ${index + 1} created by ${userAddress}`,
       owner_address: userAddress.toLowerCase(),
@@ -43,7 +43,8 @@ export async function seed(knex: Knex): Promise<void> {
         components: ['component1', 'component2'],
         settings: { theme: 'light', language: 'en' }
       }),
-      created_at: new Date(),
+      moderated: true,
+      created_at: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000), // Random date within last 30 days
       updated_at: new Date()
     }))
 
@@ -63,11 +64,11 @@ export async function seed(knex: Knex): Promise<void> {
     )
 
     // Create apps for each user
-    const apps = Array(3).fill(null).map((_, index) => ({
+    const apps = Array(100).fill(null).map((_, index) => ({
       name: `App ${index + 1} by ${userAddress.slice(0, 6)}`,
       description: `A test app ${index + 1} created by ${userAddress}`,
       owner_address: userAddress.toLowerCase(),
-      template_id: insertedTemplates[index % 5].id, // Cycle through templates
+      template_id: insertedTemplates[index % templates.length].id,
       json_data: JSON.stringify({
         version: '1.0',
         settings: {
@@ -75,8 +76,8 @@ export async function seed(knex: Knex): Promise<void> {
           features: ['feature1', 'feature2']
         }
       }),
-      moderated: true, // All test apps are moderated by default
-      created_at: new Date(),
+      moderated: true,
+      created_at: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000), // Random date within last 30 days
       updated_at: new Date()
     }))
 
