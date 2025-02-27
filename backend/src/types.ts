@@ -15,6 +15,7 @@ export interface App {
   updated_at: string
   template_id: number
   json_data?: string
+  moderated: boolean
 }
 
 export interface CreateUserDTO {

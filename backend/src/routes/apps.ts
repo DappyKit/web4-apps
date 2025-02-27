@@ -99,6 +99,7 @@ export function createAppsRouter(db: Knex): Router {
         owner_address: userAddress,
         template_id,
         json_data: json_data && typeof json_data === 'string' ? json_data : undefined,
+        moderated: false, // New apps are not moderated by default
       }
 
       const [insertId] = await db<App>('apps').insert(newApp)
@@ -121,7 +122,7 @@ export function createAppsRouter(db: Knex): Router {
       const { id } = req.params
       const { signature } = req.body
 
-      const appId = parseInt(id, 10)
+      const appId = Number(id)
       if (isNaN(appId)) {
         return res.status(400).json({ error: 'Invalid app ID' })
       }
@@ -166,6 +167,58 @@ export function createAppsRouter(db: Knex): Router {
     }
   }) as RequestHandler)
 
+  // Get all apps with pagination (public endpoint, only moderated apps)
+  router.get('/apps', async (req: Request, res: Response) => {
+    try {
+      const page = Number(req.query.page as string || '1')
+      const limit = Number(req.query.limit as string || '12')
+      
+      // Validate pagination parameters
+      if (isNaN(page) || page < 1) {
+        return res.status(400).json({ error: 'Invalid page parameter' })
+      }
+      
+      if (isNaN(limit) || limit < 1 || limit > 50) {
+        return res.status(400).json({ error: 'Invalid limit parameter. Must be between 1 and 50' })
+      }
+      
+      const offset = (page - 1) * limit
+
+      // Get moderated apps with pagination
+      const apps = await db<App>('apps')
+        .where({ moderated: true })
+        .orderBy('created_at', 'desc')
+        .limit(limit)
+        .offset(offset)
+      
+      // Get total count for pagination info
+      const result = await db('apps')
+        .where({ moderated: true })
+        .count({ count: 'id' })
+        .first()
+      
+      // Knex count returns the count in a format that may vary by database
+      const count = result?.count
+      const totalCount = typeof count === 'number' ? count : Number(count)
+      const totalPages = Math.ceil(totalCount / limit)
+      
+      res.json({
+        data: apps,
+        pagination: {
+          total: totalCount,
+          page,
+          limit,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1
+        }
+      })
+    } catch (err: unknown) {
+      console.error('Error fetching all apps:', err)
+      res.status(500).json({ error: 'Internal server error' })
+    }
+  })
+  
   // Get app by ID (public endpoint)
   router.get('/apps/:id', async (req: Request, res: Response) => {
     try {

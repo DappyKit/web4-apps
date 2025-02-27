@@ -21,6 +21,7 @@ export interface App {
   updated_at: string
   template_id: number
   json_data?: string
+  moderated: boolean
 }
 
 interface CreateAppResponse {
@@ -276,6 +277,44 @@ export async function deleteTemplate(address: string, id: number, signature: str
     }
   } catch (error) {
     console.error('Error deleting template:', error)
+    throw error
+  }
+}
+
+/**
+ * Pagination response interface for getAllApps
+ */
+export interface PaginatedAppsResponse {
+  data: App[]
+  pagination: {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+    hasNextPage: boolean
+    hasPrevPage: boolean
+  }
+}
+
+/**
+ * Get all moderated apps with pagination
+ * @param {number} page - The page number to retrieve
+ * @param {number} limit - The number of items per page
+ * @returns {Promise<PaginatedAppsResponse>} The paginated apps data
+ */
+export async function getAllApps(page = 1, limit = 12): Promise<PaginatedAppsResponse> {
+  try {
+    const response = await fetch(`/api/apps?page=${String(page)}&limit=${String(limit)}`)
+
+    if (!response.ok) {
+      const errorData = (await response.json()) as ApiErrorResponse
+      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`)
+    }
+
+    const data = (await response.json()) as PaginatedAppsResponse
+    return data
+  } catch (error) {
+    console.error('Error fetching all apps:', error)
     throw error
   }
 }

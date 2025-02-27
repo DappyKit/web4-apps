@@ -75,6 +75,7 @@ export async function seed(knex: Knex): Promise<void> {
           features: ['feature1', 'feature2']
         }
       }),
+      moderated: true, // All test apps are moderated by default
       created_at: new Date(),
       updated_at: new Date()
     }))
