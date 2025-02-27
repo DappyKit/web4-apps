@@ -58,8 +58,8 @@ export function MainLogged(): React.JSX.Element {
             <ul className="nav flex-column">
               <li className="nav-item">
                 <NavLink
-                  className={({ isActive }) => `nav-link d-flex gap-2 ${isActive ? 'active' : ''}`}
-                  to="/"
+                  className={({ isActive }) => `nav-link d-flex gap-2${isActive ? ' active text-primary' : ''}`}
+                  to="/dashboard"
                 >
                   <i className="bi bi-house-fill"></i>
                   Dashboard
@@ -67,7 +67,7 @@ export function MainLogged(): React.JSX.Element {
               </li>
               <li className="nav-item">
                 <NavLink
-                  className={({ isActive }) => `nav-link d-flex gap-2 ${isActive ? 'active' : ''}`}
+                  className={({ isActive }) => `nav-link d-flex gap-2${isActive ? ' active text-primary' : ''}`}
                   to="/my-apps"
                 >
                   <i className="bi bi-puzzle"></i>
@@ -76,7 +76,7 @@ export function MainLogged(): React.JSX.Element {
               </li>
               <li className="nav-item">
                 <NavLink
-                  className={({ isActive }) => `nav-link d-flex gap-2 ${isActive ? 'active' : ''}`}
+                  className={({ isActive }) => `nav-link d-flex gap-2${isActive ? ' active text-primary' : ''}`}
                   to="/my-templates"
                 >
                   <i className="bi bi-cart"></i>
@@ -85,7 +85,7 @@ export function MainLogged(): React.JSX.Element {
               </li>
               <li className="nav-item">
                 <NavLink
-                  className={({ isActive }) => `nav-link d-flex gap-2 ${isActive ? 'active' : ''}`}
+                  className={({ isActive }) => `nav-link d-flex gap-2${isActive ? ' active text-primary' : ''}`}
                   to="/all-apps"
                 >
                   <i className="bi bi-people"></i>
@@ -94,7 +94,7 @@ export function MainLogged(): React.JSX.Element {
               </li>
               <li className="nav-item">
                 <NavLink
-                  className={({ isActive }) => `nav-link d-flex gap-2 ${isActive ? 'active' : ''}`}
+                  className={({ isActive }) => `nav-link d-flex gap-2${isActive ? ' active text-primary' : ''}`}
                   to="/all-templates"
                 >
                   <i className="bi bi-graph-up"></i>
@@ -108,7 +108,7 @@ export function MainLogged(): React.JSX.Element {
             <ul className="nav flex-column mb-auto">
               <li className="nav-item">
                 <NavLink
-                  className={({ isActive }) => `nav-link d-flex gap-2 ${isActive ? 'active' : ''}`}
+                  className={({ isActive }) => `nav-link d-flex gap-2${isActive ? ' active text-primary' : ''}`}
                   to="/settings"
                 >
                   <i className="bi bi-gear-wide-connected"></i>
