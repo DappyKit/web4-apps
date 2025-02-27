@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAccount, useSignMessage } from 'wagmi'
-import { Alert, Button, Form, Spinner } from 'react-bootstrap'
+import { Alert, Button, Form, Spinner, Modal } from 'react-bootstrap'
 import { createTemplate, getMyTemplates, deleteTemplate } from '../services/api'
 import type { Template } from '../services/api'
 import { TemplateList } from '../components/TemplateList'
@@ -42,6 +42,7 @@ export function MyTemplates(): React.JSX.Element {
   const [templates, setTemplates] = useState<Template[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isDeleting, setIsDeleting] = useState<number | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
   const loadTemplates = useCallback(async () => {
     if (!address) return
@@ -217,140 +218,171 @@ export function MyTemplates(): React.JSX.Element {
     <div>
       <div className="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 className="h2">My Templates</h1>
-      </div>
-
-      <div className="row">
-        <div className="col-md-6">
-          <div className="card">
-            <div className="card-body">
-              <h5 className="card-title mb-3">Create New Template</h5>
-
-              {error && (
-                <Alert variant="danger" onClose={handleErrorClose} dismissible>
-                  {error}
-                </Alert>
-              )}
-
-              {success && (
-                <Alert variant="success" onClose={handleSuccessClose} dismissible>
-                  {success}
-                </Alert>
-              )}
-
-              <Form onSubmit={handleFormSubmit}>
-                <Form.Group className="mb-3">
-                  <Form.Label htmlFor="title">
-                    Template Title
-                    <span className="text-muted ms-2">
-                      ({titleCharCount}/{MAX_TITLE_LENGTH})
-                    </span>
-                  </Form.Label>
-                  <Form.Control
-                    type="text"
-                    id="title"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleChange}
-                    isInvalid={!!errors.title}
-                    disabled={isCreating}
-                    maxLength={MAX_TITLE_LENGTH}
-                  />
-                  <Form.Control.Feedback type="invalid">{errors.title}</Form.Control.Feedback>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label htmlFor="description">
-                    Description
-                    <span className="text-muted ms-2">
-                      ({descriptionCharCount}/{MAX_DESCRIPTION_LENGTH})
-                    </span>
-                  </Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    rows={3}
-                    disabled={isCreating}
-                    isInvalid={!!errors.description}
-                    maxLength={MAX_DESCRIPTION_LENGTH}
-                  />
-                  <Form.Control.Feedback type="invalid">{errors.description}</Form.Control.Feedback>
-                  <Form.Text className="text-muted">Maximum {MAX_DESCRIPTION_LENGTH} characters</Form.Text>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label htmlFor="url">Template URL</Form.Label>
-                  <Form.Control
-                    type="url"
-                    id="url"
-                    name="url"
-                    value={formData.url}
-                    onChange={handleChange}
-                    isInvalid={!!errors.url}
-                    disabled={isCreating}
-                  />
-                  <Form.Control.Feedback type="invalid">{errors.url}</Form.Control.Feedback>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label htmlFor="jsonData">
-                    JSON Data
-                    <span className="text-muted ms-2">
-                      ({jsonCharCount}/{MAX_JSON_LENGTH})
-                    </span>
-                  </Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    id="jsonData"
-                    name="jsonData"
-                    value={formData.jsonData}
-                    onChange={handleChange}
-                    rows={5}
-                    disabled={isCreating}
-                    isInvalid={!!errors.jsonData}
-                    maxLength={MAX_JSON_LENGTH}
-                  />
-                  <Form.Control.Feedback type="invalid">{errors.jsonData}</Form.Control.Feedback>
-                  <Form.Text className="text-muted">
-                    Enter valid JSON data, maximum {MAX_JSON_LENGTH} characters
-                  </Form.Text>
-                </Form.Group>
-
-                <Button type="submit" variant="primary" disabled={isCreating}>
-                  {isCreating ? (
-                    <>
-                      <Spinner
-                        as="span"
-                        animation="border"
-                        size="sm"
-                        role="status"
-                        aria-hidden="true"
-                        className="me-2"
-                      />
-                      Creating...
-                    </>
-                  ) : (
-                    'Create Template'
-                  )}
-                </Button>
-              </Form>
-            </div>
-          </div>
-        </div>
+        <Button 
+          variant="primary" 
+          onClick={() => {
+            setShowCreateModal(true)
+          }}
+          className="d-flex align-items-center gap-2"
+        >
+          <i className="bi bi-plus-circle d-flex align-items-center"></i>
+          New Template
+        </Button>
       </div>
 
       <div className="mt-4">
-        <h2>Your Templates</h2>
         <TemplateList
           templates={templates}
           isLoading={isLoading}
           onDeleteTemplate={handleTemplateDelete}
           isDeleting={isDeleting}
-          showEmptyMessage="You don't have any templates yet. Create one using the form above!"
+          showEmptyMessage="You don't have any templates yet. Click the 'New Template' button to create one!"
         />
       </div>
+
+      {/* Create Template Modal */}
+      <Modal
+        show={showCreateModal}
+        onHide={() => {
+          setShowCreateModal(false)
+          setError(null)
+          setSuccess(null)
+          setFormData({
+            title: '',
+            description: '',
+            url: '',
+            jsonData: '',
+          })
+          setErrors({})
+        }}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Create New Template</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {error && (
+            <Alert variant="danger" onClose={handleErrorClose} dismissible>
+              {error}
+            </Alert>
+          )}
+
+          {success && (
+            <Alert variant="success" onClose={handleSuccessClose} dismissible>
+              {success}
+            </Alert>
+          )}
+
+          <Form onSubmit={handleFormSubmit}>
+            <Form.Group className="mb-3">
+              <Form.Label htmlFor="title">
+                Template Title
+                <span className="text-muted ms-2">
+                  ({titleCharCount}/{MAX_TITLE_LENGTH})
+                </span>
+              </Form.Label>
+              <Form.Control
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                isInvalid={!!errors.title}
+                disabled={isCreating}
+                maxLength={MAX_TITLE_LENGTH}
+              />
+              <Form.Control.Feedback type="invalid">{errors.title}</Form.Control.Feedback>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label htmlFor="description">
+                Description
+                <span className="text-muted ms-2">
+                  ({descriptionCharCount}/{MAX_DESCRIPTION_LENGTH})
+                </span>
+              </Form.Label>
+              <Form.Control
+                as="textarea"
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={3}
+                disabled={isCreating}
+                isInvalid={!!errors.description}
+                maxLength={MAX_DESCRIPTION_LENGTH}
+              />
+              <Form.Control.Feedback type="invalid">{errors.description}</Form.Control.Feedback>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label htmlFor="url">Template URL</Form.Label>
+              <Form.Control
+                type="url"
+                id="url"
+                name="url"
+                value={formData.url}
+                onChange={handleChange}
+                isInvalid={!!errors.url}
+                disabled={isCreating}
+              />
+              <Form.Control.Feedback type="invalid">{errors.url}</Form.Control.Feedback>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label htmlFor="jsonData">
+                JSON Data
+                <span className="text-muted ms-2">
+                  ({jsonCharCount}/{MAX_JSON_LENGTH})
+                </span>
+              </Form.Label>
+              <Form.Control
+                as="textarea"
+                id="jsonData"
+                name="jsonData"
+                value={formData.jsonData}
+                onChange={handleChange}
+                rows={4}
+                disabled={isCreating}
+                isInvalid={!!errors.jsonData}
+                maxLength={MAX_JSON_LENGTH}
+                style={{ fontFamily: 'monospace' }}
+              />
+              <Form.Control.Feedback type="invalid">{errors.jsonData}</Form.Control.Feedback>
+            </Form.Group>
+
+            <div className="d-flex justify-content-end gap-2">
+              <Button 
+                variant="secondary" 
+                onClick={() => {
+                  setShowCreateModal(false)
+                }}
+                disabled={isCreating}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" disabled={isCreating}>
+                {isCreating ? (
+                  <>
+                    <Spinner
+                      as="span"
+                      animation="border"
+                      size="sm"
+                      role="status"
+                      aria-hidden="true"
+                      className="me-2"
+                    />
+                    Creating...
+                  </>
+                ) : (
+                  'Create Template'
+                )}
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
     </div>
   )
 }
