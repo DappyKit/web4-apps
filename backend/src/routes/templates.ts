@@ -94,6 +94,7 @@ export function createTemplatesRouter(db: Knex): Router {
 
       const templates: Template[] = await db('templates')
         .whereRaw('LOWER(owner_address) = ?', [address.toLowerCase()])
+        .whereNull('deleted_at')
         .orderBy('created_at', 'desc')
 
       res.json(templates)
@@ -120,7 +121,7 @@ export function createTemplatesRouter(db: Knex): Router {
       }
 
       // Check if template exists and belongs to the user
-      const template = await db<Template>('templates').where({ id: templateId }).first()
+      const template = await db<Template>('templates').where({ id: templateId }).whereNull('deleted_at').first()
 
       if (!template) {
         return res.status(404).json({ error: 'Template not found' })
@@ -137,7 +138,13 @@ export function createTemplatesRouter(db: Knex): Router {
         return res.status(401).json({ error: 'Invalid signature' })
       }
 
-      await db('templates').where({ id: templateId }).delete()
+      // Soft delete the template
+      await db('templates')
+        .where({ id: templateId })
+        .update({
+          deleted_at: db.fn.now(),
+          updated_at: db.fn.now()
+        })
 
       res.status(200).json({ message: 'Template deleted successfully' })
     } catch (error) {

@@ -17,13 +17,7 @@ interface FormData {
   jsonData: string
 }
 
-interface FormErrors {
-  [key: string]: string | undefined
-  title?: string
-  description?: string
-  url?: string
-  jsonData?: string
-}
+type FormErrors = Record<keyof FormData, string | undefined>
 
 export function MyTemplates(): React.JSX.Element {
   const { address } = useAccount()
@@ -35,7 +29,12 @@ export function MyTemplates(): React.JSX.Element {
     url: '',
     jsonData: '',
   })
-  const [errors, setErrors] = useState<FormErrors>({})
+  const [errors, setErrors] = useState<FormErrors>({
+    title: undefined,
+    description: undefined,
+    url: undefined,
+    jsonData: undefined,
+  })
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -43,6 +42,8 @@ export function MyTemplates(): React.JSX.Element {
   const [isLoading, setIsLoading] = useState(false)
   const [isDeleting, setIsDeleting] = useState<number | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [templateToDelete, setTemplateToDelete] = useState<number | null>(null)
 
   const loadTemplates = useCallback(async () => {
     if (!address) return
@@ -61,51 +62,51 @@ export function MyTemplates(): React.JSX.Element {
   }, [address])
 
   useEffect(() => {
-    loadTemplates().catch(console.error)
+    void loadTemplates()
   }, [loadTemplates])
 
-  const validateForm = useCallback((): boolean => {
-    const newErrors: FormErrors = {}
-    const trimmedTitle = formData.title.trim()
-    const trimmedDescription = formData.description.trim()
-    const trimmedUrl = formData.url.trim()
-    const trimmedJsonData = formData.jsonData.trim()
+  const validateForm = useCallback(() => {
+    const newErrors: FormErrors = {
+      title: undefined,
+      description: undefined,
+      url: undefined,
+      jsonData: undefined,
+    }
 
-    if (!trimmedTitle) {
-      newErrors.title = 'Template title is required'
-    } else if (trimmedTitle.length > MAX_TITLE_LENGTH) {
+    if (!formData.title.trim()) {
+      newErrors.title = 'Title is required'
+    } else if (formData.title.length > MAX_TITLE_LENGTH) {
       newErrors.title = `Title must be less than ${String(MAX_TITLE_LENGTH)} characters`
     }
 
-    if (trimmedDescription && trimmedDescription.length > MAX_DESCRIPTION_LENGTH) {
+    if (formData.description && formData.description.length > MAX_DESCRIPTION_LENGTH) {
       newErrors.description = `Description must be less than ${String(MAX_DESCRIPTION_LENGTH)} characters`
     }
 
-    if (!trimmedUrl) {
-      newErrors.url = 'Template URL is required'
+    if (!formData.url.trim()) {
+      newErrors.url = 'URL is required'
     } else {
       try {
-        new URL(trimmedUrl)
+        new URL(formData.url)
       } catch {
-        newErrors.url = 'Invalid URL format'
+        newErrors.url = 'Please enter a valid URL'
       }
     }
 
-    if (!trimmedJsonData) {
-      newErrors.jsonData = 'Template JSON data is required'
+    if (!formData.jsonData.trim()) {
+      newErrors.jsonData = 'JSON data is required'
+    } else if (formData.jsonData.length > MAX_JSON_LENGTH) {
+      newErrors.jsonData = `JSON data must be less than ${String(MAX_JSON_LENGTH)} characters`
     } else {
       try {
-        JSON.parse(trimmedJsonData)
-        if (trimmedJsonData.length > MAX_JSON_LENGTH) {
-          newErrors.jsonData = `JSON data must be less than ${String(MAX_JSON_LENGTH)} characters`
-        }
+        JSON.parse(formData.jsonData)
       } catch {
-        newErrors.jsonData = 'Invalid JSON format'
+        newErrors.jsonData = 'Please enter valid JSON data'
       }
     }
 
     setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    return Object.values(newErrors).every(error => error === undefined)
   }, [formData])
 
   const handleSubmit = useCallback(
@@ -137,6 +138,7 @@ export function MyTemplates(): React.JSX.Element {
         setSuccess('Template created successfully!')
         setFormData({ title: '', description: '', url: '', jsonData: '' })
         await loadTemplates()
+        setShowCreateModal(false)
       } catch (error) {
         setError(error instanceof Error ? error.message : 'Failed to create template')
       } finally {
@@ -178,41 +180,38 @@ export function MyTemplates(): React.JSX.Element {
     [address, isDeleting, loadTemplates, signMessageAsync],
   )
 
-  const handleTemplateDelete = useCallback(
-    (templateId: number) => {
-      void handleDeleteTemplate(templateId)
-    },
-    [handleDeleteTemplate],
-  )
+  const handleTemplateDelete = useCallback((templateId: number) => {
+    setTemplateToDelete(templateId)
+    setShowCreateModal(false)
+    setShowDeleteModal(true)
+  }, [])
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!templateToDelete) return
+
+    try {
+      await handleDeleteTemplate(templateToDelete)
+      setShowDeleteModal(false)
+      setTemplateToDelete(null)
+    } catch (error) {
+      console.error('Error deleting template:', error)
+    }
+  }, [handleDeleteTemplate, templateToDelete])
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { name, value } = e.target
       setFormData(prev => ({ ...prev, [name]: value }))
       // Clear error when user starts typing
-      if (errors[name]) {
-        setErrors(prev => {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { [name]: _, ...rest } = prev
-          return rest
-        })
+      if (errors[name as keyof FormErrors]) {
+        setErrors(prev => ({
+          ...prev,
+          [name]: undefined,
+        }))
       }
     },
     [errors],
   )
-
-  // Add character count display
-  const titleCharCount = formData.title.trim().length
-  const descriptionCharCount = formData.description.trim().length
-  const jsonCharCount = formData.jsonData.trim().length
-
-  const handleErrorClose = useCallback(() => {
-    setError(null)
-  }, [])
-
-  const handleSuccessClose = useCallback(() => {
-    setSuccess(null)
-  }, [])
 
   return (
     <div>
@@ -220,9 +219,7 @@ export function MyTemplates(): React.JSX.Element {
         <h1 className="h2">My Templates</h1>
         <Button 
           variant="primary" 
-          onClick={() => {
-            setShowCreateModal(true)
-          }}
+          onClick={() => { setShowCreateModal(true) }}
           className="d-flex align-items-center gap-2"
         >
           <i className="bi bi-plus-circle d-flex align-items-center"></i>
@@ -230,149 +227,87 @@ export function MyTemplates(): React.JSX.Element {
         </Button>
       </div>
 
+      {error && <Alert variant="danger">{error}</Alert>}
+      {success && <Alert variant="success">{success}</Alert>}
+
       <div className="mt-4">
         <TemplateList
           templates={templates}
           isLoading={isLoading}
           onDeleteTemplate={handleTemplateDelete}
           isDeleting={isDeleting}
-          showEmptyMessage="You don't have any templates yet. Click the 'New Template' button to create one!"
+          showEmptyMessage="Click the &apos;New Template&apos; button to create your first template"
         />
       </div>
 
-      {/* Create Template Modal */}
-      <Modal
-        show={showCreateModal}
-        onHide={() => {
-          setShowCreateModal(false)
-          setError(null)
-          setSuccess(null)
-          setFormData({
-            title: '',
-            description: '',
-            url: '',
-            jsonData: '',
-          })
-          setErrors({})
-        }}
-        size="lg"
-        centered
-      >
+      {/* Create Modal */}
+      <Modal show={showCreateModal} onHide={() => { setShowCreateModal(false) }} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>Create New Template</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {error && (
-            <Alert variant="danger" onClose={handleErrorClose} dismissible>
-              {error}
-            </Alert>
-          )}
-
-          {success && (
-            <Alert variant="success" onClose={handleSuccessClose} dismissible>
-              {success}
-            </Alert>
-          )}
-
           <Form onSubmit={handleFormSubmit}>
             <Form.Group className="mb-3">
-              <Form.Label htmlFor="title">
-                Template Title
-                <span className="text-muted ms-2">
-                  ({titleCharCount}/{MAX_TITLE_LENGTH})
-                </span>
-              </Form.Label>
+              <Form.Label>Title</Form.Label>
               <Form.Control
                 type="text"
-                id="title"
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
                 isInvalid={!!errors.title}
-                disabled={isCreating}
-                maxLength={MAX_TITLE_LENGTH}
               />
-              <Form.Control.Feedback type="invalid">{errors.title}</Form.Control.Feedback>
+              {errors.title && <Form.Control.Feedback type="invalid">{errors.title}</Form.Control.Feedback>}
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label htmlFor="description">
-                Description
-                <span className="text-muted ms-2">
-                  ({descriptionCharCount}/{MAX_DESCRIPTION_LENGTH})
-                </span>
-              </Form.Label>
+              <Form.Label>Description (Optional)</Form.Label>
               <Form.Control
                 as="textarea"
-                id="description"
+                rows={2}
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                rows={3}
-                disabled={isCreating}
                 isInvalid={!!errors.description}
-                maxLength={MAX_DESCRIPTION_LENGTH}
               />
-              <Form.Control.Feedback type="invalid">{errors.description}</Form.Control.Feedback>
+              {errors.description && (
+                <Form.Control.Feedback type="invalid">{errors.description}</Form.Control.Feedback>
+              )}
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label htmlFor="url">Template URL</Form.Label>
+              <Form.Label>URL</Form.Label>
               <Form.Control
-                type="url"
-                id="url"
+                type="text"
                 name="url"
                 value={formData.url}
                 onChange={handleChange}
                 isInvalid={!!errors.url}
-                disabled={isCreating}
               />
-              <Form.Control.Feedback type="invalid">{errors.url}</Form.Control.Feedback>
+              {errors.url && <Form.Control.Feedback type="invalid">{errors.url}</Form.Control.Feedback>}
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label htmlFor="jsonData">
-                JSON Data
-                <span className="text-muted ms-2">
-                  ({jsonCharCount}/{MAX_JSON_LENGTH})
-                </span>
-              </Form.Label>
+              <Form.Label>JSON Data</Form.Label>
               <Form.Control
                 as="textarea"
-                id="jsonData"
+                rows={4}
                 name="jsonData"
                 value={formData.jsonData}
                 onChange={handleChange}
-                rows={4}
-                disabled={isCreating}
                 isInvalid={!!errors.jsonData}
-                maxLength={MAX_JSON_LENGTH}
                 style={{ fontFamily: 'monospace' }}
               />
-              <Form.Control.Feedback type="invalid">{errors.jsonData}</Form.Control.Feedback>
+              {errors.jsonData && <Form.Control.Feedback type="invalid">{errors.jsonData}</Form.Control.Feedback>}
             </Form.Group>
 
             <div className="d-flex justify-content-end gap-2">
-              <Button 
-                variant="secondary" 
-                onClick={() => {
-                  setShowCreateModal(false)
-                }}
-                disabled={isCreating}
-              >
+              <Button variant="secondary" onClick={() => { setShowCreateModal(false) }}>
                 Cancel
               </Button>
-              <Button type="submit" variant="primary" disabled={isCreating}>
+              <Button type="submit" disabled={isCreating}>
                 {isCreating ? (
                   <>
-                    <Spinner
-                      as="span"
-                      animation="border"
-                      size="sm"
-                      role="status"
-                      aria-hidden="true"
-                      className="me-2"
-                    />
+                    <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
                     Creating...
                   </>
                 ) : (
@@ -382,6 +317,40 @@ export function MyTemplates(): React.JSX.Element {
             </div>
           </Form>
         </Modal.Body>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal show={showDeleteModal} onHide={() => { setShowDeleteModal(false) }}>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete Template</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Are you sure you want to delete this template?</p>
+          <Alert variant="warning">
+            <i className="bi bi-exclamation-triangle me-2"></i>
+            Warning: Some apps might be using this template. Deleting it will not affect existing apps, but they may lose
+            access to the template&apos;s source.
+          </Alert>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => { setShowDeleteModal(false) }}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => { void handleConfirmDelete() }}
+            disabled={isDeleting !== null}
+          >
+            {isDeleting !== null ? (
+              <>
+                <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
+                Deleting...
+              </>
+            ) : (
+              'Delete Template'
+            )}
+          </Button>
+        </Modal.Footer>
       </Modal>
     </div>
   )

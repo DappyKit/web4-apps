@@ -7,6 +7,7 @@ export interface Template {
   created_at: Date
   updated_at: Date
   owner_address: string
+  deleted_at?: Date
 }
 
 export interface CreateTemplateDTO {

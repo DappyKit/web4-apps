@@ -47,8 +47,12 @@ export function ViewApp(): React.JSX.Element {
     return (
       <div className="p-3">
         <Alert variant="danger">{error}</Alert>
-        <Link to="/my-apps" className="btn btn-primary">
-          Back to My Apps
+        <Link 
+          to="/my-apps" 
+          className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
+          style={{ width: '42px', height: '42px' }}
+        >
+          <i className="bi bi-arrow-left" style={{ lineHeight: 0 }}></i>
         </Link>
       </div>
     )
@@ -58,8 +62,12 @@ export function ViewApp(): React.JSX.Element {
     return (
       <div className="p-3">
         <Alert variant="warning">App not found</Alert>
-        <Link to="/my-apps" className="btn btn-primary">
-          Back to My Apps
+        <Link 
+          to="/my-apps" 
+          className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
+          style={{ width: '42px', height: '42px' }}
+        >
+          <i className="bi bi-arrow-left" style={{ lineHeight: 0 }}></i>
         </Link>
       </div>
     )
@@ -67,11 +75,15 @@ export function ViewApp(): React.JSX.Element {
 
   return (
     <div className="p-3">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="h2">{app.name}</h1>
-        <Link to="/my-apps" className="btn btn-outline-primary">
-          Back to My Apps
+      <div className="d-flex align-items-center gap-3 mb-4">
+        <Link 
+          to="/my-apps" 
+          className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
+          style={{ width: '42px', height: '42px' }}
+        >
+          <i className="bi bi-arrow-left" style={{ lineHeight: 0 }}></i>
         </Link>
+        <h1 className="h2 mb-0">{app.name}</h1>
       </div>
 
       <Card className="mb-4">
