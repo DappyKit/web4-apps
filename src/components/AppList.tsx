@@ -46,7 +46,7 @@ export function AppList({
             <p className="card-text">{truncateText(app.description ?? 'No description', DESCRIPTION_MAX_LENGTH)}</p>
           </OverlayTrigger>
 
-          <div className="d-flex justify-content-between align-items-center">
+          <div className="d-flex justify-content-between align-items-center mt-3">
             <Link to={`/apps/${String(app.id)}`} className="btn btn-outline-primary btn-sm">
               View
             </Link>

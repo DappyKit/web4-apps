@@ -39,7 +39,7 @@ export function TemplateList({
             <Card.Body>
               <Card.Title>{template.title}</Card.Title>
               {template.description && <Card.Text className="text-muted">{template.description}</Card.Text>}
-              <div className="d-flex justify-content-between align-items-center">
+              <div className="d-flex justify-content-between align-items-center mt-3">
                 <Link
                   to={`/templates/${String(template.id)}`}
                   className="btn btn-outline-primary btn-sm"
