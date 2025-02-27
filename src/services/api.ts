@@ -363,3 +363,41 @@ export async function getTemplateById(id: number): Promise<Template> {
     throw error
   }
 }
+
+/**
+ * Pagination response interface for getAllTemplates
+ */
+export interface PaginatedTemplatesResponse {
+  data: Template[]
+  pagination: {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+    hasNextPage: boolean
+    hasPrevPage: boolean
+  }
+}
+
+/**
+ * Get all moderated templates with pagination
+ * @param {number} page - The page number to retrieve
+ * @param {number} limit - The number of items per page
+ * @returns {Promise<PaginatedTemplatesResponse>} The paginated templates data
+ */
+export async function getAllTemplates(page = 1, limit = 12): Promise<PaginatedTemplatesResponse> {
+  try {
+    const response = await fetch(`/api/templates?page=${String(page)}&limit=${String(limit)}`)
+
+    if (!response.ok) {
+      const errorData = (await response.json()) as ApiErrorResponse
+      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`)
+    }
+
+    const data = (await response.json()) as PaginatedTemplatesResponse
+    return data
+  } catch (error) {
+    console.error('Error fetching all templates:', error)
+    throw error
+  }
+}

@@ -178,5 +178,59 @@ export function createTemplatesRouter(db: Knex): Router {
     }
   })
 
+  // Get all templates with pagination (public endpoint, only moderated templates)
+  router.get('/', async (req: Request, res: Response) => {
+    try {
+      const page = Number(req.query.page as string || '1')
+      const limit = Number(req.query.limit as string || '12')
+      
+      // Validate pagination parameters
+      if (isNaN(page) || page < 1) {
+        return res.status(400).json({ error: 'Invalid page parameter' })
+      }
+      
+      if (isNaN(limit) || limit < 1 || limit > 50) {
+        return res.status(400).json({ error: 'Invalid limit parameter. Must be between 1 and 50' })
+      }
+      
+      const offset = (page - 1) * limit
+
+      // Get moderated templates with pagination
+      const templates = await db<Template>('templates')
+        .where('moderated', true)
+        .whereNull('deleted_at')
+        .orderBy('created_at', 'desc')
+        .limit(limit)
+        .offset(offset)
+      
+      // Get total count for pagination info
+      const result = await db('templates')
+        .where('moderated', true)
+        .whereNull('deleted_at')
+        .count({ count: 'id' })
+        .first()
+      
+      // Knex count returns the count in a format that may vary by database
+      const count = result?.count
+      const totalCount = typeof count === 'number' ? count : Number(count)
+      const totalPages = Math.ceil(totalCount / limit)
+      
+      res.json({
+        data: templates,
+        pagination: {
+          total: totalCount,
+          page,
+          limit,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1
+        }
+      })
+    } catch (err: unknown) {
+      console.error('Error fetching all templates:', err)
+      res.status(500).json({ error: 'Internal server error' })
+    }
+  })
+
   return router
 }

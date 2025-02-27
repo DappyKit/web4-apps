@@ -16,7 +16,8 @@
     "ui-test:ui": "vitest --ui",
     "code:lines": "./scripts/analyze-code.sh",
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \"backend/src/**/*.ts\" \"backend/migrations/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"backend/src/**/*.ts\" \"backend/migrations/**/*.ts\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"backend/src/**/*.ts\" \"backend/migrations/**/*.ts\"",
+    "types:check": "tsc --noEmit --project tsconfig.json && cd backend && tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
     "@dappykit/sdk": "^3.0.1",
