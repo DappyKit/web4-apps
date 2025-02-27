@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, JSX } from 'react'
 import { useAccount, useSignMessage } from 'wagmi'
 import { checkUserRegistration, registerUser, getMyApps, deleteApp } from '../services/api'
 import type { App } from '../services/api'
@@ -6,7 +6,7 @@ import { AppList } from '../components/AppList'
 
 const REGISTRATION_MESSAGE = 'Web4 Apps Registration'
 
-export function Dashboard(): React.JSX.Element {
+export function Dashboard(): JSX.Element {
   const { address } = useAccount()
   const { signMessageAsync } = useSignMessage()
   const [isRegistered, setIsRegistered] = useState<boolean | null>(null)
@@ -33,8 +33,7 @@ export function Dashboard(): React.JSX.Element {
 
     setIsLoading(true)
     try {
-      const myApps = await getMyApps(address)
-      setApps(myApps)
+      setApps(await getMyApps(address))
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load apps'
       setError(errorMessage)
@@ -104,7 +103,12 @@ export function Dashboard(): React.JSX.Element {
         <h1 className="h2">Dashboard</h1>
       </div>
 
-      {!isRegistered && (
+
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>My Apps</h2>
+      </div>
+
+      {isRegistered === false && (
         <div className="alert alert-info" role="alert">
           <p>You need to register to use Web4 Apps.</p>
           <button
@@ -126,10 +130,6 @@ export function Dashboard(): React.JSX.Element {
 
       {isRegistered && (
         <>
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h2>My Apps</h2>
-          </div>
-
           <AppList
             apps={apps}
             isLoading={isLoading}
