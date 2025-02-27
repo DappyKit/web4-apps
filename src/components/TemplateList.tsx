@@ -1,4 +1,5 @@
 import { Button, Card, Spinner } from 'react-bootstrap'
+import { Link } from 'react-router-dom'
 import type { Template } from '../services/api'
 
 interface TemplateListProps {
@@ -39,14 +40,12 @@ export function TemplateList({
               <Card.Title>{template.title}</Card.Title>
               {template.description && <Card.Text className="text-muted">{template.description}</Card.Text>}
               <div className="d-flex justify-content-between align-items-center">
-                <a
-                  href={template.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  to={`/templates/${String(template.id)}`}
                   className="btn btn-outline-primary btn-sm"
                 >
-                  View Template
-                </a>
+                  View
+                </Link>
                 <Button
                   variant="outline-danger"
                   size="sm"

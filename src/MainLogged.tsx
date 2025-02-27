@@ -12,6 +12,7 @@ import { useDispatch } from 'react-redux'
 import { logout } from './redux/reducers/authSlice'
 import { useDisconnect } from 'wagmi'
 import { ViewApp } from './pages/ViewApp'
+import { ViewTemplate } from './pages/ViewTemplate'
 
 /**
  * Main component for authenticated users
@@ -156,6 +157,7 @@ export function MainLogged(): React.JSX.Element {
                 </ProtectedRoute>
               }
             />
+            <Route path="/templates/:id" element={<ViewTemplate />} />
             <Route
               path="/all-apps"
               element={

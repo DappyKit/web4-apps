@@ -21,6 +21,7 @@ interface DbTemplate {
   url: string
   json_data: string
   owner_address: string
+  deleted_at?: Date
 }
 
 dotenv.config()
@@ -292,6 +293,11 @@ describe('Templates API', () => {
     })
 
     it('should delete template with valid signature', async () => {
+      // Verify template is not deleted before the operation
+      const templateBefore = await db<DbTemplate>('templates').where('id', templateId).first()
+      expect(templateBefore).toBeDefined()
+      expect(templateBefore?.deleted_at).toBeNull()
+
       const message = `Delete template #${templateId}`
       const signature = await walletClient.signMessage({
         message,
@@ -305,9 +311,11 @@ describe('Templates API', () => {
 
       expect(response.status).toBe(200)
 
-      // Verify template was deleted
-      const template = await db<DbTemplate>('templates').where('id', templateId).first()
-      expect(template).toBeUndefined()
+      // Verify template was soft deleted
+      const templateAfter = await db<DbTemplate>('templates').where('id', templateId).first()
+      expect(templateAfter).toBeDefined()
+      expect(templateAfter?.deleted_at).toBeDefined()
+      expect(templateAfter?.deleted_at).not.toBeNull()
     }, 30000)
 
     it('should fail with invalid signature', async () => {
@@ -365,6 +373,65 @@ describe('Templates API', () => {
       // Verify template still exists
       const template = await db<DbTemplate>('templates').where('id', templateId).first()
       expect(template).toBeTruthy()
+    }, 30000)
+  })
+
+  describe('GET /:id', () => {
+    let templateId: number
+
+    beforeEach(async () => {
+      // Insert a test template
+      const [id] = await db<DbTemplate>('templates').insert({
+        title: 'Test Template',
+        url: 'https://example.com',
+        json_data: '{"key": "value"}',
+        owner_address: testAccount.address,
+      })
+      templateId = id
+    })
+
+    it('should return template by ID', async () => {
+      const response = await request(expressApp)
+        .get(`/api/templates/${String(templateId)}`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        id: templateId,
+        title: 'Test Template',
+        url: 'https://example.com',
+        json_data: '{"key": "value"}',
+        owner_address: testAccount.address,
+      })
+    }, 30000)
+
+    it('should return 404 for non-existent template', async () => {
+      const nonExistentId = 99999
+      const response = await request(expressApp)
+        .get(`/api/templates/${String(nonExistentId)}`)
+
+      expect(response.status).toBe(404)
+      expect(response.body.error).toBe('Template not found')
+    }, 30000)
+
+    it('should return 400 for invalid template ID', async () => {
+      const response = await request(expressApp)
+        .get('/api/templates/invalid-id')
+
+      expect(response.status).toBe(400)
+      expect(response.body.error).toBe('Invalid template ID')
+    }, 30000)
+
+    it('should not return deleted templates', async () => {
+      // Soft delete the template
+      await db('templates')
+        .where({ id: templateId })
+        .update({ deleted_at: db.fn.now() })
+
+      const response = await request(expressApp)
+        .get(`/api/templates/${String(templateId)}`)
+
+      expect(response.status).toBe(404)
+      expect(response.body.error).toBe('Template not found')
     }, 30000)
   })
 })

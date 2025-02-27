@@ -46,14 +46,15 @@ export function AppList({
             <p className="card-text">{truncateText(app.description ?? 'No description', DESCRIPTION_MAX_LENGTH)}</p>
           </OverlayTrigger>
 
-          <div className="d-flex gap-2">
-            <Link to={`/apps/${String(app.id)}`} className="btn btn-primary">
+          <div className="d-flex justify-content-between align-items-center">
+            <Link to={`/apps/${String(app.id)}`} className="btn btn-outline-primary btn-sm">
               View
             </Link>
 
             {onDeleteApp && (
               <Button
-                variant="danger"
+                variant="outline-danger"
+                size="sm"
                 onClick={() => {
                   void onDeleteApp(Number(app.id))
                 }}

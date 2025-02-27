@@ -301,3 +301,26 @@ export async function getAppById(id: number): Promise<App> {
     throw error
   }
 }
+
+/**
+ * Fetches a single template by its ID
+ * @param {number} id - The ID of the template to fetch
+ * @returns {Promise<Template>} The template data
+ * @throws {Error} If the template is not found or there's an error fetching it
+ */
+export async function getTemplateById(id: number): Promise<Template> {
+  try {
+    const response = await fetch(`/api/templates/${String(id)}`)
+
+    if (!response.ok) {
+      const errorData = (await response.json()) as ApiErrorResponse
+      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`)
+    }
+
+    const data = (await response.json()) as Template
+    return await Promise.resolve(data)
+  } catch (error) {
+    console.error('Error fetching template:', error)
+    throw error
+  }
+}

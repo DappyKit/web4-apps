@@ -153,5 +153,30 @@ export function createTemplatesRouter(db: Knex): Router {
     }
   })
 
+  // Get template by ID
+  router.get('/:id', async (req: Request, res: Response) => {
+    try {
+      const templateId = Number(req.params.id)
+
+      if (isNaN(templateId)) {
+        return res.status(400).json({ error: 'Invalid template ID' })
+      }
+
+      const template = await db<Template>('templates')
+        .where({ id: templateId })
+        .whereNull('deleted_at')
+        .first()
+
+      if (!template) {
+        return res.status(404).json({ error: 'Template not found' })
+      }
+
+      res.json(template)
+    } catch (error) {
+      console.error('Error fetching template:', error)
+      res.status(500).json({ error: 'Internal server error' })
+    }
+  })
+
   return router
 }
