@@ -60,18 +60,17 @@ export function createTemplatesRouter(db: Knex): Router {
       validateTemplate(templateData)
 
       // Insert template and get the id
-      const [insertId] = await db('templates')
-        .insert({
-          ...templateData,
-          owner_address: address,
-        })
+      const [insertId] = await db('templates').insert({
+        ...templateData,
+        owner_address: address,
+      })
 
       res.status(201).json({
         id: insertId,
         ...templateData,
         owner_address: address,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       })
     } catch (error) {
       if (error instanceof ValidationError) {
@@ -139,12 +138,10 @@ export function createTemplatesRouter(db: Knex): Router {
       }
 
       // Soft delete the template
-      await db('templates')
-        .where({ id: templateId })
-        .update({
-          deleted_at: db.fn.now(),
-          updated_at: db.fn.now()
-        })
+      await db('templates').where({ id: templateId }).update({
+        deleted_at: db.fn.now(),
+        updated_at: db.fn.now(),
+      })
 
       res.status(200).json({ message: 'Template deleted successfully' })
     } catch (error) {
@@ -162,10 +159,7 @@ export function createTemplatesRouter(db: Knex): Router {
         return res.status(400).json({ error: 'Invalid template ID' })
       }
 
-      const template = await db<Template>('templates')
-        .where({ id: templateId })
-        .whereNull('deleted_at')
-        .first()
+      const template = await db<Template>('templates').where({ id: templateId }).whereNull('deleted_at').first()
 
       if (!template) {
         return res.status(404).json({ error: 'Template not found' })
@@ -181,18 +175,18 @@ export function createTemplatesRouter(db: Knex): Router {
   // Get all templates with pagination (public endpoint, only moderated templates)
   router.get('/', async (req: Request, res: Response) => {
     try {
-      const page = Number(req.query.page as string || '1')
-      const limit = Number(req.query.limit as string || '12')
-      
+      const page = Number((req.query.page as string) || '1')
+      const limit = Number((req.query.limit as string) || '12')
+
       // Validate pagination parameters
       if (isNaN(page) || page < 1) {
         return res.status(400).json({ error: 'Invalid page parameter' })
       }
-      
+
       if (isNaN(limit) || limit < 1 || limit > 50) {
         return res.status(400).json({ error: 'Invalid limit parameter. Must be between 1 and 50' })
       }
-      
+
       const offset = (page - 1) * limit
 
       // Get moderated templates with pagination
@@ -202,19 +196,19 @@ export function createTemplatesRouter(db: Knex): Router {
         .orderBy('id', 'desc')
         .limit(limit)
         .offset(offset)
-      
+
       // Get total count for pagination info
       const result = await db('templates')
         .where('moderated', true)
         .whereNull('deleted_at')
         .count({ count: 'id' })
         .first()
-      
+
       // Knex count returns the count in a format that may vary by database
       const count = result?.count
       const totalCount = typeof count === 'number' ? count : Number(count)
       const totalPages = Math.ceil(totalCount / limit)
-      
+
       res.json({
         data: templates,
         pagination: {
@@ -223,8 +217,8 @@ export function createTemplatesRouter(db: Knex): Router {
           limit,
           totalPages,
           hasNextPage: page < totalPages,
-          hasPrevPage: page > 1
-        }
+          hasPrevPage: page > 1,
+        },
       })
     } catch (err: unknown) {
       console.error('Error fetching all templates:', err)

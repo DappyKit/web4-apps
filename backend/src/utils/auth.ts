@@ -20,7 +20,7 @@ export async function verifySignature(message: string, signature: string, addres
     const recoveredAddress = await verifyMessage({
       message,
       signature: signature as `0x${string}`,
-      address: address as `0x${string}`
+      address: address as `0x${string}`,
     })
     return recoveredAddress
   } catch {

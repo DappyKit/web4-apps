@@ -13,4 +13,4 @@ export async function down(knex: Knex): Promise<void> {
   await knex.schema.alterTable('templates', table => {
     table.dropColumn('moderated')
   })
-} 
+}

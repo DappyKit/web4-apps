@@ -19,35 +19,19 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onDelete, isDelet
   return (
     <Card>
       <Card.Body>
-        <Card.Title>{template.title}</Card.Title>
-        {template.description && (
-          <Card.Text className="text-muted">{template.description}</Card.Text>
-        )}
-        <div className="d-flex justify-content-between align-items-center mt-3">
-          <Link
-            to={`/templates/${String(template.id)}`}
-            className="btn btn-outline-primary btn-sm"
-          >
+        <Card.Title className="mb-2">{template.title}</Card.Title>
+        {template.description && <Card.Text className="text-muted small">{template.description}</Card.Text>}
+        <div className="d-flex flex-wrap gap-2 justify-content-between align-items-center mt-3">
+          <Link to={`/templates/${String(template.id)}`} className="btn btn-outline-primary btn-sm">
             View
           </Link>
           {showDelete && (
-            <Button
-              variant="outline-danger"
-              size="sm"
-              onClick={onDelete}
-              disabled={isDeleting}
-            >
+            <Button variant="outline-danger" size="sm" onClick={onDelete} disabled={isDeleting}>
               {isDeleting ? (
                 <>
-                  <Spinner
-                    as="span"
-                    animation="border"
-                    size="sm"
-                    role="status"
-                    aria-hidden="true"
-                    className="me-2"
-                  />
-                  Deleting...
+                  <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
+                  <span className="d-none d-sm-inline">Deleting...</span>
+                  <span className="d-inline d-sm-none">...</span>
                 </>
               ) : (
                 'Delete'
@@ -60,4 +44,4 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onDelete, isDelet
   )
 }
 
-export default TemplateCard 
+export default TemplateCard

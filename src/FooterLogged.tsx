@@ -1,9 +1,9 @@
 export function FooterLogged(): React.JSX.Element {
   return (
-    <footer className="px-md-4">
-      <hr className="w-100 my-4" />
+    <footer className="px-3 px-md-4">
+      <hr className="w-100 my-3 my-md-4" />
       <div className="container-fluid px-0">
-        <div className="row mb-4">
+        <div className="row mb-3 mb-md-4">
           <div className="col">
             <ul className="nav">
               <li className="nav-item">
@@ -30,8 +30,8 @@ export function FooterLogged(): React.JSX.Element {
           </div>
         </div>
         <div className="row mb-3">
-          <div className="col-auto">
-            <p className="text-sm text-muted mb-0">&copy; Copyright 2025 DappyKit</p>
+          <div className="col-12">
+            <p className="text-sm text-muted mb-2 mb-md-0">&copy; Copyright 2025 DappyKit</p>
           </div>
         </div>
       </div>

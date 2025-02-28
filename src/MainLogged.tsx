@@ -26,10 +26,7 @@ interface NavItemProps {
  */
 const NavItem = memo(({ to, icon, children }: NavItemProps) => (
   <li className="nav-item">
-    <NavLink
-      className={({ isActive }) => `nav-link d-flex gap-2${isActive ? ' active text-primary' : ''}`}
-      to={to}
-    >
+    <NavLink className={({ isActive }) => `nav-link d-flex gap-2${isActive ? ' active text-primary' : ''}`} to={to}>
       <i className={`bi bi-${icon}`}></i>
       {children}
     </NavLink>
@@ -46,7 +43,7 @@ const NAV_ITEMS = [
   { to: '/my-apps', icon: 'puzzle', label: 'My Apps' },
   { to: '/my-templates', icon: 'cart', label: 'My Templates' },
   { to: '/all-apps', icon: 'people', label: 'All Apps' },
-  { to: '/all-templates', icon: 'graph-up', label: 'All Templates' }
+  { to: '/all-templates', icon: 'graph-up', label: 'All Templates' },
 ]
 
 /**
@@ -59,19 +56,15 @@ const ROUTES = [
   { path: '/my-templates', element: <MyTemplates /> },
   { path: '/all-apps', element: <AllApps /> },
   { path: '/all-templates', element: <AllTemplates /> },
-  { path: '/settings', element: <Settings /> }
+  { path: '/settings', element: <Settings /> },
 ]
 
 /**
  * Sidebar navigation component
  */
 const SidebarNav = memo(({ onLogout }: { onLogout: () => void }) => (
-  <div className="border-end bg-body-tertiary" style={{ width: '280px', flexShrink: 0 }}>
-    <div
-      className="offcanvas-md offcanvas-end bg-body-tertiary"
-      id="sidebarMenu"
-      aria-labelledby="sidebarMenuLabel"
-    >
+  <div className="border-end bg-body-tertiary sidebar d-none d-md-block">
+    <div className="offcanvas-md offcanvas-end bg-body-tertiary" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
       <div className="offcanvas-header">
         <h5 className="offcanvas-title" id="sidebarMenuLabel">
           Web4 Apps
@@ -120,15 +113,27 @@ SidebarNav.displayName = 'SidebarNav'
  * Main content component
  */
 const MainContent = memo(() => (
-  <div className="flex-grow-1 d-flex flex-column" style={{ maxWidth: 'calc(100% - 280px)', minWidth: 0 }}>
-    <div className="px-md-4 flex-grow-1">
+  <div className="flex-grow-1 d-flex flex-column w-100">
+    <header className="d-md-none p-3 border-bottom bg-body-tertiary">
+      <div className="d-flex justify-content-between align-items-center">
+        <a href="#" className="text-decoration-none">
+          <span className="fs-4">Web4 Apps</span>
+        </a>
+        <button
+          className="btn btn-sm btn-outline-secondary"
+          type="button"
+          data-bs-toggle="offcanvas"
+          data-bs-target="#sidebarMenu"
+          aria-controls="sidebarMenu"
+        >
+          <i className="bi bi-list"></i>
+        </button>
+      </div>
+    </header>
+    <div className="px-3 px-md-4 flex-grow-1">
       <Routes>
         {ROUTES.map(({ path, element }) => (
-          <Route
-            key={path}
-            path={path}
-            element={<ProtectedRoute>{element}</ProtectedRoute>}
-          />
+          <Route key={path} path={path} element={<ProtectedRoute>{element}</ProtectedRoute>} />
         ))}
         <Route path="/apps/:id" element={<ViewApp />} />
         <Route path="/templates/:id" element={<ViewTemplate />} />

@@ -44,17 +44,17 @@ describe('Templates API', () => {
     const otherPrivateKey = generatePrivateKey()
     testAccount = privateKeyToAccount(testPrivateKey)
     otherAccount = privateKeyToAccount(otherPrivateKey)
-    
+
     walletClient = createWalletClient({
       account: testAccount,
       chain: mainnet,
-      transport: http()
+      transport: http(),
     })
-    
+
     otherWalletClient = createWalletClient({
       account: otherAccount,
       chain: mainnet,
-      transport: http()
+      transport: http(),
     })
 
     try {
@@ -107,7 +107,7 @@ describe('Templates API', () => {
       const message = `Create template: ${validTemplate.title}`
       const signature = await walletClient.signMessage({
         message,
-        account: testAccount
+        account: testAccount,
       })
 
       const response = await request(expressApp)
@@ -137,7 +137,7 @@ describe('Templates API', () => {
       const message = `Create template: ${validTemplate.title}`
       const signature = await otherWalletClient.signMessage({
         message,
-        account: otherAccount
+        account: otherAccount,
       })
 
       const response = await request(expressApp)
@@ -157,7 +157,7 @@ describe('Templates API', () => {
       const message = `Create template: ${validTemplate.title}`
       const signature = await walletClient.signMessage({
         message,
-        account: testAccount
+        account: testAccount,
       })
 
       const response = await request(expressApp)
@@ -178,7 +178,7 @@ describe('Templates API', () => {
       const message = `Create template: ${validTemplate.title}`
       const signature = await walletClient.signMessage({
         message,
-        account: testAccount
+        account: testAccount,
       })
 
       const response = await request(expressApp)
@@ -199,7 +199,7 @@ describe('Templates API', () => {
       const message = `Create template: ${validTemplate.title}`
       const signature = await walletClient.signMessage({
         message,
-        account: testAccount
+        account: testAccount,
       })
 
       const longData = { data: 'x'.repeat(10001) }
@@ -301,7 +301,7 @@ describe('Templates API', () => {
       const message = `Delete template #${templateId}`
       const signature = await walletClient.signMessage({
         message,
-        account: testAccount
+        account: testAccount,
       })
 
       const response = await request(expressApp)
@@ -322,7 +322,7 @@ describe('Templates API', () => {
       const message = `Delete template #${templateId}`
       const signature = await otherWalletClient.signMessage({
         message,
-        account: otherAccount
+        account: otherAccount,
       })
 
       const response = await request(expressApp)
@@ -343,7 +343,7 @@ describe('Templates API', () => {
       const message = `Delete template #${nonExistentId}`
       const signature = await walletClient.signMessage({
         message,
-        account: testAccount
+        account: testAccount,
       })
 
       const response = await request(expressApp)
@@ -359,7 +359,7 @@ describe('Templates API', () => {
       const message = `Delete template #${templateId}`
       const signature = await otherWalletClient.signMessage({
         message,
-        account: otherAccount
+        account: otherAccount,
       })
 
       const response = await request(expressApp)
@@ -391,8 +391,7 @@ describe('Templates API', () => {
     })
 
     it('should return template by ID', async () => {
-      const response = await request(expressApp)
-        .get(`/api/templates/${String(templateId)}`)
+      const response = await request(expressApp).get(`/api/templates/${String(templateId)}`)
 
       expect(response.status).toBe(200)
       expect(response.body).toMatchObject({
@@ -406,16 +405,14 @@ describe('Templates API', () => {
 
     it('should return 404 for non-existent template', async () => {
       const nonExistentId = 99999
-      const response = await request(expressApp)
-        .get(`/api/templates/${String(nonExistentId)}`)
+      const response = await request(expressApp).get(`/api/templates/${String(nonExistentId)}`)
 
       expect(response.status).toBe(404)
       expect(response.body.error).toBe('Template not found')
     }, 30000)
 
     it('should return 400 for invalid template ID', async () => {
-      const response = await request(expressApp)
-        .get('/api/templates/invalid-id')
+      const response = await request(expressApp).get('/api/templates/invalid-id')
 
       expect(response.status).toBe(400)
       expect(response.body.error).toBe('Invalid template ID')
@@ -423,12 +420,9 @@ describe('Templates API', () => {
 
     it('should not return deleted templates', async () => {
       // Soft delete the template
-      await db('templates')
-        .where({ id: templateId })
-        .update({ deleted_at: db.fn.now() })
+      await db('templates').where({ id: templateId }).update({ deleted_at: db.fn.now() })
 
-      const response = await request(expressApp)
-        .get(`/api/templates/${String(templateId)}`)
+      const response = await request(expressApp).get(`/api/templates/${String(templateId)}`)
 
       expect(response.status).toBe(404)
       expect(response.body.error).toBe('Template not found')

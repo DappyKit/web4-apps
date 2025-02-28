@@ -265,8 +265,8 @@ export function MyApps(): React.JSX.Element {
     <div>
       <div className="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 className="h2">My Apps</h1>
-        <Button 
-          variant="primary" 
+        <Button
+          variant="primary"
           onClick={() => {
             setShowCreateModal(true)
           }}
@@ -288,11 +288,7 @@ export function MyApps(): React.JSX.Element {
 
         {apps.length > ITEMS_PER_PAGE && (
           <div className="d-flex justify-content-center mt-4">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
+            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
           </div>
         )}
       </div>
@@ -450,8 +446,8 @@ export function MyApps(): React.JSX.Element {
             </Form.Group>
 
             <div className="d-flex justify-content-end gap-2">
-              <Button 
-                variant="secondary" 
+              <Button
+                variant="secondary"
                 onClick={() => {
                   setShowCreateModal(false)
                 }}
@@ -462,14 +458,7 @@ export function MyApps(): React.JSX.Element {
               <Button type="submit" variant="primary" disabled={isCreating}>
                 {isCreating ? (
                   <>
-                    <Spinner
-                      as="span"
-                      animation="border"
-                      size="sm"
-                      role="status"
-                      aria-hidden="true"
-                      className="me-2"
-                    />
+                    <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
                     Creating...
                   </>
                 ) : (

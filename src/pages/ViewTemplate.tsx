@@ -47,8 +47,8 @@ export function ViewTemplate(): React.JSX.Element {
     return (
       <div className="p-3">
         <Alert variant="danger">{error}</Alert>
-        <Link 
-          to="/my-templates" 
+        <Link
+          to="/my-templates"
           className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
           style={{ width: '42px', height: '42px' }}
         >
@@ -62,8 +62,8 @@ export function ViewTemplate(): React.JSX.Element {
     return (
       <div className="p-3">
         <Alert variant="warning">Template not found</Alert>
-        <Link 
-          to="/my-templates" 
+        <Link
+          to="/my-templates"
           className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
           style={{ width: '42px', height: '42px' }}
         >
@@ -76,8 +76,8 @@ export function ViewTemplate(): React.JSX.Element {
   return (
     <div className="p-3">
       <div className="d-flex align-items-center gap-3 mb-4">
-        <Link 
-          to="/my-templates" 
+        <Link
+          to="/my-templates"
           className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
           style={{ width: '42px', height: '42px' }}
         >
@@ -129,4 +129,4 @@ export function ViewTemplate(): React.JSX.Element {
       )}
     </div>
   )
-} 
+}

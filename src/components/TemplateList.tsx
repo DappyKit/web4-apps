@@ -16,22 +16,22 @@ interface TemplateListProps {
  * @param {TemplateListProps} props - Component props
  * @returns {JSX.Element} Template list component
  */
-const TemplateList: React.FC<TemplateListProps> = ({ 
-  templates, 
-  onDeleteTemplate, 
+const TemplateList: React.FC<TemplateListProps> = ({
+  templates,
+  onDeleteTemplate,
   isDeleting,
   showDelete = true,
-  showEmptyMessage = 'No templates found'
+  showEmptyMessage = 'No templates found',
 }) => {
   if (templates.length === 0) {
     return <div className="text-center mt-4">{showEmptyMessage}</div>
   }
 
   return (
-    <Row xs={1} md={2} lg={3} className="g-4">
-      {templates.map((template) => (
+    <Row xs={1} sm={2} lg={3} className="g-3 g-md-4">
+      {templates.map(template => (
         <Col key={template.id}>
-          <TemplateCard 
+          <TemplateCard
             template={template}
             onDelete={() => {
               onDeleteTemplate(template.id)

@@ -230,9 +230,11 @@ export function MyTemplates(): React.JSX.Element {
     <div>
       <div className="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 className="h2">My Templates</h1>
-        <Button 
-          variant="primary" 
-          onClick={() => { setShowCreateModal(true) }}
+        <Button
+          variant="primary"
+          onClick={() => {
+            setShowCreateModal(true)
+          }}
           className="d-flex align-items-center gap-2"
         >
           <i className="bi bi-plus-circle d-flex align-items-center"></i>
@@ -253,17 +255,19 @@ export function MyTemplates(): React.JSX.Element {
 
         {templates.length > ITEMS_PER_PAGE && (
           <div className="d-flex justify-content-center mt-4">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
+            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
           </div>
         )}
       </div>
 
       {/* Create Modal */}
-      <Modal show={showCreateModal} onHide={() => { setShowCreateModal(false) }} size="lg">
+      <Modal
+        show={showCreateModal}
+        onHide={() => {
+          setShowCreateModal(false)
+        }}
+        size="lg"
+      >
         <Modal.Header closeButton>
           <Modal.Title>Create New Template</Modal.Title>
         </Modal.Header>
@@ -291,9 +295,7 @@ export function MyTemplates(): React.JSX.Element {
                 onChange={handleChange}
                 isInvalid={!!errors.description}
               />
-              {errors.description && (
-                <Form.Control.Feedback type="invalid">{errors.description}</Form.Control.Feedback>
-              )}
+              {errors.description && <Form.Control.Feedback type="invalid">{errors.description}</Form.Control.Feedback>}
             </Form.Group>
 
             <Form.Group className="mb-3">
@@ -323,7 +325,12 @@ export function MyTemplates(): React.JSX.Element {
             </Form.Group>
 
             <div className="d-flex justify-content-end gap-2">
-              <Button variant="secondary" onClick={() => { setShowCreateModal(false) }}>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowCreateModal(false)
+                }}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={isCreating}>
@@ -342,7 +349,12 @@ export function MyTemplates(): React.JSX.Element {
       </Modal>
 
       {/* Delete Confirmation Modal */}
-      <Modal show={showDeleteModal} onHide={() => { setShowDeleteModal(false) }}>
+      <Modal
+        show={showDeleteModal}
+        onHide={() => {
+          setShowDeleteModal(false)
+        }}
+      >
         <Modal.Header closeButton>
           <Modal.Title>Delete Template</Modal.Title>
         </Modal.Header>
@@ -350,17 +362,24 @@ export function MyTemplates(): React.JSX.Element {
           <p>Are you sure you want to delete this template?</p>
           <Alert variant="warning">
             <i className="bi bi-exclamation-triangle me-2"></i>
-            Warning: Some apps might be using this template. Deleting it will not affect existing apps, but they may lose
-            access to the template&apos;s source.
+            Warning: Some apps might be using this template. Deleting it will not affect existing apps, but they may
+            lose access to the template&apos;s source.
           </Alert>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => { setShowDeleteModal(false) }}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowDeleteModal(false)
+            }}
+          >
             Cancel
           </Button>
           <Button
             variant="danger"
-            onClick={() => { void handleConfirmDelete() }}
+            onClick={() => {
+              void handleConfirmDelete()
+            }}
             disabled={isDeleting !== null}
           >
             {isDeleting !== null ? (

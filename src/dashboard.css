@@ -7,6 +7,10 @@
 /*
  * Sidebar
  */
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+}
 
 @media (min-width: 768px) {
   .sidebar .offcanvas-lg {
@@ -16,6 +20,12 @@
   }
   .navbar-search {
     display: block;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .sidebar {
+    width: 100%;
   }
 }
 
@@ -44,4 +54,43 @@
 
 .navbar .form-control {
   padding: .75rem 1rem;
+}
+
+/* 
+ * Mobile responsiveness 
+ */
+@media (max-width: 575.98px) {
+  .card-body {
+    padding: 1rem;
+  }
+  
+  .card-title {
+    font-size: 1.1rem;
+  }
+  
+  .card-text {
+    font-size: 0.9rem;
+  }
+}
+
+/* 
+ * Touch interaction improvements for mobile
+ */
+@media (max-width: 991.98px) {
+  /* Prevent double-tap zoom on interactive elements */
+  button, 
+  a, 
+  .nav-link, 
+  .btn,
+  [role="button"],
+  .interactive {
+    touch-action: manipulation;
+  }
+  
+  /* Make cards and other elements easier to tap */
+  .card, 
+  .nav-item,
+  .form-control {
+    touch-action: manipulation;
+  }
 }

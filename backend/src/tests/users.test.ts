@@ -27,7 +27,7 @@ describe('Users API', () => {
     walletClient = createWalletClient({
       account: testAccount,
       chain: mainnet,
-      transport: http()
+      transport: http(),
     })
 
     try {
@@ -61,7 +61,7 @@ describe('Users API', () => {
     it('should register new user with valid signature', async () => {
       const signature = await walletClient.signMessage({
         message: REGISTRATION_MESSAGE,
-        account: testAccount
+        account: testAccount,
       })
 
       const response = await request(app).post('/api/register').send({
@@ -81,7 +81,7 @@ describe('Users API', () => {
     it('should prevent duplicate registration', async () => {
       const signature = await walletClient.signMessage({
         message: REGISTRATION_MESSAGE,
-        account: testAccount
+        account: testAccount,
       })
 
       // Register first time
@@ -106,7 +106,7 @@ describe('Users API', () => {
       it('should reject invalid message', async () => {
         const signature = await walletClient.signMessage({
           message: 'Wrong message',
-          account: testAccount
+          account: testAccount,
         })
 
         const response = await request(app).post('/api/register').send({
@@ -132,7 +132,7 @@ describe('Users API', () => {
         const message = 'Wrong message'
         const signature = await walletClient.signMessage({
           message,
-          account: testAccount
+          account: testAccount,
         })
 
         const response = await request(app).post('/api/register').send({
@@ -152,7 +152,7 @@ describe('Users API', () => {
       const message = 'Web4 Apps Registration'
       const signature = await walletClient.signMessage({
         message,
-        account: testAccount
+        account: testAccount,
       })
 
       await request(app).post('/api/register').send({

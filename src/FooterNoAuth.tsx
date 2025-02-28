@@ -1,8 +1,8 @@
 export function FooterNoAuth(): React.JSX.Element {
   return (
-    <footer className="pt-24 pb-10">
-      <div className="container mw-screen-xl">
-        <div className="row mt-5 mb-7">
+    <footer className="pt-16 pt-md-24 pb-6 pb-md-10">
+      <div className="container mw-screen-xl px-3 px-md-4">
+        <div className="row mt-3 mt-md-5 mb-4 mb-md-7">
           <div className="col">
             <ul className="nav mx-n4">
               <li className="nav-item">
@@ -29,8 +29,8 @@ export function FooterNoAuth(): React.JSX.Element {
           </div>
         </div>
         <div className="row">
-          <div className="col-auto">
-            <p className="text-sm text-muted">&copy; Copyright 2025 DappyKit</p>
+          <div className="col-12">
+            <p className="text-sm text-muted mb-2 mb-md-0">&copy; Copyright 2025 DappyKit</p>
           </div>
         </div>
       </div>

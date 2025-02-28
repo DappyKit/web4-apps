@@ -103,7 +103,6 @@ export function Dashboard(): JSX.Element {
         <h1 className="h2">Dashboard</h1>
       </div>
 
-
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>My Apps</h2>
       </div>
