@@ -235,7 +235,7 @@ export function MyTemplates(): React.JSX.Element {
           onClick={() => {
             setShowCreateModal(true)
           }}
-          className="d-flex align-items-center gap-2"
+          className="btn-sm d-flex align-items-center gap-2"
         >
           <i className="bi bi-plus-circle d-flex align-items-center"></i>
           New Template
