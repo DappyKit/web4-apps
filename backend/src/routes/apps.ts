@@ -33,7 +33,7 @@ export function createAppsRouter(db: Knex): Router {
   router.get('/my-apps', requireAuth, (async (req: Request, res: Response) => {
     try {
       const userAddress = (req as AuthRequest).address.toLowerCase()
-      const apps = await db<App>('apps').where({ owner_address: userAddress }).orderBy('created_at', 'desc')
+      const apps = await db<App>('apps').where({ owner_address: userAddress }).orderBy('id', 'desc')
 
       res.json(apps)
     } catch (err: unknown) {
@@ -187,7 +187,7 @@ export function createAppsRouter(db: Knex): Router {
       // Get moderated apps with pagination
       const apps = await db<App>('apps')
         .where({ moderated: true })
-        .orderBy('created_at', 'desc')
+        .orderBy('id', 'desc')
         .limit(limit)
         .offset(offset)
       

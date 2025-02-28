@@ -95,7 +95,7 @@ export function createTemplatesRouter(db: Knex): Router {
       const templates: Template[] = await db('templates')
         .whereRaw('LOWER(owner_address) = ?', [address.toLowerCase()])
         .whereNull('deleted_at')
-        .orderBy('created_at', 'desc')
+        .orderBy('id', 'desc')
 
       res.json(templates)
     } catch (error) {
@@ -199,7 +199,7 @@ export function createTemplatesRouter(db: Knex): Router {
       const templates = await db<Template>('templates')
         .where('moderated', true)
         .whereNull('deleted_at')
-        .orderBy('created_at', 'desc')
+        .orderBy('id', 'desc')
         .limit(limit)
         .offset(offset)
       
