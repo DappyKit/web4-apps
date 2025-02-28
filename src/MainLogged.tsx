@@ -13,20 +13,26 @@ import { logout } from './redux/reducers/authSlice'
 import { useDisconnect } from 'wagmi'
 import { ViewApp } from './pages/ViewApp'
 import { ViewTemplate } from './pages/ViewTemplate'
-import { memo } from 'react'
+import { memo, useState, useCallback } from 'react'
+import { Offcanvas, Button } from 'react-bootstrap'
 
 interface NavItemProps {
   to: string
   icon: string
   children: React.ReactNode
+  onClick?: () => void
 }
 
 /**
  * Navigation item component with active state handling
  */
-const NavItem = memo(({ to, icon, children }: NavItemProps) => (
+const NavItem = memo(({ to, icon, children, onClick }: NavItemProps) => (
   <li className="nav-item">
-    <NavLink className={({ isActive }) => `nav-link d-flex gap-2${isActive ? ' active text-primary' : ''}`} to={to}>
+    <NavLink
+      className={({ isActive }) => `nav-link d-flex gap-2${isActive ? ' active text-primary' : ''}`}
+      to={to}
+      onClick={onClick}
+    >
       <i className={`bi bi-${icon}`}></i>
       {children}
     </NavLink>
@@ -62,72 +68,108 @@ const ROUTES = [
 /**
  * Sidebar navigation component
  */
-const SidebarNav = memo(({ onLogout }: { onLogout: () => void }) => (
-  <div className="border-end bg-body-tertiary sidebar d-none d-md-block">
-    <div className="offcanvas-md offcanvas-end bg-body-tertiary" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
-      <div className="offcanvas-header">
-        <h5 className="offcanvas-title" id="sidebarMenuLabel">
-          Web4 Apps
-        </h5>
-        <button
-          type="button"
-          className="btn-close"
-          data-bs-dismiss="offcanvas"
-          data-bs-target="#sidebarMenu"
-          aria-label="Close"
-        ></button>
-      </div>
-      <div className="offcanvas-body d-md-flex flex-column p-0 pt-lg-3 overflow-y-auto">
-        <ul className="nav flex-column">
-          {NAV_ITEMS.map(({ to, icon, label }) => (
-            <NavItem key={to} to={to} icon={icon}>
-              {label}
+const SidebarNav = memo(
+  ({
+    onLogout,
+    showMobileMenu,
+    handleCloseMobileMenu,
+  }: {
+    onLogout: () => void
+    showMobileMenu: boolean
+    handleCloseMobileMenu: () => void
+  }) => (
+    <>
+      {/* Desktop sidebar - visible only on md screens and up */}
+      <div className="border-end bg-body-tertiary sidebar d-none d-md-block">
+        <div className="d-md-flex flex-column p-0 pt-lg-3 overflow-y-auto h-100">
+          <ul className="nav flex-column">
+            {NAV_ITEMS.map(({ to, icon, label }) => (
+              <NavItem key={to} to={to} icon={icon}>
+                {label}
+              </NavItem>
+            ))}
+          </ul>
+
+          <hr className="my-3" />
+
+          <ul className="nav flex-column mb-auto">
+            <NavItem to="/settings" icon="gear-wide-connected">
+              Settings
             </NavItem>
-          ))}
-        </ul>
-
-        <hr className="my-3" />
-
-        <ul className="nav flex-column mb-auto">
-          <NavItem to="/settings" icon="gear-wide-connected">
-            Settings
-          </NavItem>
-          <li className="nav-item">
-            <button
-              onClick={onLogout}
-              className="nav-link d-flex gap-2 text-danger border-0 bg-transparent w-100 text-start"
-            >
-              <i className="bi bi-box-arrow-right"></i>
-              Logout
-            </button>
-          </li>
-        </ul>
+            <li className="nav-item">
+              <button
+                onClick={onLogout}
+                className="nav-link d-flex gap-2 text-danger border-0 bg-transparent w-100 text-start"
+              >
+                <i className="bi bi-box-arrow-right"></i>
+                Logout
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
-    </div>
-  </div>
-))
+
+      {/* Mobile sidebar - using React-Bootstrap Offcanvas */}
+      <Offcanvas
+        show={showMobileMenu}
+        onHide={handleCloseMobileMenu}
+        placement="end"
+        className="d-md-none bg-body-tertiary"
+      >
+        <Offcanvas.Header closeButton>
+          <Offcanvas.Title>Web4 Apps</Offcanvas.Title>
+        </Offcanvas.Header>
+        <Offcanvas.Body className="p-0">
+          <div className="d-flex flex-column overflow-y-auto">
+            <ul className="nav flex-column">
+              {NAV_ITEMS.map(({ to, icon, label }) => (
+                <NavItem key={to} to={to} icon={icon} onClick={handleCloseMobileMenu}>
+                  {label}
+                </NavItem>
+              ))}
+            </ul>
+
+            <hr className="my-3" />
+
+            <ul className="nav flex-column mb-auto">
+              <NavItem to="/settings" icon="gear-wide-connected" onClick={handleCloseMobileMenu}>
+                Settings
+              </NavItem>
+              <li className="nav-item">
+                <button
+                  onClick={() => {
+                    handleCloseMobileMenu()
+                    onLogout()
+                  }}
+                  className="nav-link d-flex gap-2 text-danger border-0 bg-transparent w-100 text-start"
+                >
+                  <i className="bi bi-box-arrow-right"></i>
+                  Logout
+                </button>
+              </li>
+            </ul>
+          </div>
+        </Offcanvas.Body>
+      </Offcanvas>
+    </>
+  ),
+)
 
 SidebarNav.displayName = 'SidebarNav'
 
 /**
- * Main content component
+ * Main content component with mobile menu toggle
  */
-const MainContent = memo(() => (
+const MainContent = memo(({ handleShowMobileMenu }: { handleShowMobileMenu: () => void }) => (
   <div className="flex-grow-1 d-flex flex-column w-100">
     <header className="d-md-none p-3 border-bottom bg-body-tertiary">
       <div className="d-flex justify-content-between align-items-center">
-        <a href="#" className="text-decoration-none">
+        <a href="#/" className="text-decoration-none">
           <span className="fs-4">Web4 Apps</span>
         </a>
-        <button
-          className="btn btn-sm btn-outline-secondary"
-          type="button"
-          data-bs-toggle="offcanvas"
-          data-bs-target="#sidebarMenu"
-          aria-controls="sidebarMenu"
-        >
+        <Button variant="outline-secondary" size="sm" onClick={handleShowMobileMenu}>
           <i className="bi bi-list"></i>
-        </button>
+        </Button>
       </div>
     </header>
     <div className="px-3 px-md-4 flex-grow-1">
@@ -154,6 +196,7 @@ MainContent.displayName = 'MainContent'
 export function MainLogged(): React.JSX.Element {
   const { disconnect } = useDisconnect()
   const dispatch = useDispatch()
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
 
   /**
    * Handles user logout with confirmation
@@ -166,10 +209,28 @@ export function MainLogged(): React.JSX.Element {
     }
   }
 
+  /**
+   * Handles showing the mobile menu
+   */
+  const handleShowMobileMenu = useCallback((): void => {
+    setShowMobileMenu(true)
+  }, [])
+
+  /**
+   * Handles closing the mobile menu
+   */
+  const handleCloseMobileMenu = useCallback((): void => {
+    setShowMobileMenu(false)
+  }, [])
+
   return (
     <main className="d-flex min-vh-100">
-      <SidebarNav onLogout={handleLogout} />
-      <MainContent />
+      <SidebarNav
+        onLogout={handleLogout}
+        showMobileMenu={showMobileMenu}
+        handleCloseMobileMenu={handleCloseMobileMenu}
+      />
+      <MainContent handleShowMobileMenu={handleShowMobileMenu} />
     </main>
   )
 }
