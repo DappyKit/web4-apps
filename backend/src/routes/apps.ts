@@ -3,6 +3,8 @@ import { Knex } from 'knex'
 import { requireAuth } from '../utils/auth'
 import { verifySignature } from '../utils/auth'
 import { CreateAppDTO, App } from '../types'
+import { Template } from '../types/template'
+import { JsonSchema, validateInputData } from '../utils/input-validation'
 
 /**
  * Extended Request type that includes the authenticated wallet address
@@ -72,6 +74,11 @@ export function createAppsRouter(db: Knex): Router {
         return res.status(400).json({ error: 'Description must be less than 1000 characters' })
       }
 
+      // todo validate is correct json
+      if (typeof json_data !== 'string') {
+        return res.status(400).json({ error: 'json_data must be a string' })
+      }
+
       const userAddress = (req as AuthRequest).address.toLowerCase()
       const trimmedName = name.trim()
 
@@ -87,7 +94,7 @@ export function createAppsRouter(db: Knex): Router {
       }
 
       // Check if template exists
-      const template = await db('templates').where({ id: template_id }).first()
+      const template = await db<Template>('templates').where({ id: template_id }).first()
       if (!template) {
         return res.status(404).json({ error: `Template with ID ${String(template_id)} not found` })
       }
@@ -98,9 +105,12 @@ export function createAppsRouter(db: Knex): Router {
         description: description && typeof description === 'string' ? description : undefined,
         owner_address: userAddress,
         template_id,
-        json_data: json_data && typeof json_data === 'string' ? json_data : undefined,
+        json_data,
         moderated: false, // New apps are not moderated by default
       }
+
+      const schema = JSON.parse(template.json_data) as unknown as JsonSchema
+      validateInputData({ schema, data: JSON.parse(json_data) })
 
       const [insertId] = await db<App>('apps').insert(newApp)
 

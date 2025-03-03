@@ -11,6 +11,62 @@ import { mainnet } from 'viem/chains'
 
 dotenv.config()
 
+const quizSchema = {
+  type: 'object',
+  properties: {
+    name: {
+      type: 'string',
+      minLength: 3,
+      maxLength: 20,
+    },
+    description: {
+      type: 'string',
+      minLength: 3,
+      maxLength: 20,
+    },
+    questions: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          text: {
+            type: 'string',
+            minLength: 3,
+            maxLength: 20,
+          },
+          options: {
+            type: 'array',
+            items: {
+              type: 'string',
+              minLength: 3,
+              maxLength: 20,
+            },
+            minItems: 4,
+            maxItems: 4,
+          },
+        },
+        required: ['text', 'options'],
+      },
+    },
+  },
+  required: ['name', 'description', 'questions'],
+}
+
+const quizData = JSON.stringify({
+  "name": "Animal Quiz",
+  "description": "About animals",
+  "questions": [
+    {
+      "text": "Who is barking?",
+      "options": ["dog", "cat", "mouse", "rabbit"]
+    },
+    {
+      "text": "Who is jumping?",
+      "options": ["rabbit", "elephant", "rhino", "hippo"]
+    }
+  ]
+})
+
 describe('Apps API', () => {
   let expressApp: express.Application
   let db: Knex
@@ -63,7 +119,7 @@ describe('Apps API', () => {
         title: 'Test Template',
         description: 'A template for testing',
         url: 'https://example.com/template',
-        json_data: JSON.stringify({ schema: { type: 'object' } }),
+        json_data: quizSchema,
         owner_address: testAccount.address,
       })
       templateId = id
@@ -133,7 +189,6 @@ describe('Apps API', () => {
         message,
         account: testAccount,
       })
-      const jsonData = '{"key":"value"}'
 
       const response = await request(expressApp)
         .post('/api/my-apps')
@@ -143,7 +198,7 @@ describe('Apps API', () => {
           description: 'Test Description',
           signature,
           template_id: templateId,
-          json_data: jsonData,
+          json_data: quizData,
         })
 
       expect(response.status).toBe(201)
@@ -152,7 +207,7 @@ describe('Apps API', () => {
         description: 'Test Description',
         owner_address: testAccount.address.toLowerCase(),
         template_id: templateId,
-        json_data: jsonData,
+        json_data: quizData,
       })
 
       // Verify app was created in database
@@ -160,7 +215,7 @@ describe('Apps API', () => {
       expect(apps).toHaveLength(1)
       expect(apps[0]).toMatchObject({
         template_id: templateId,
-        json_data: jsonData,
+        json_data: quizData,
       })
     })
 
@@ -206,6 +261,7 @@ describe('Apps API', () => {
           description: 'Test Description',
           signature,
           template_id: templateId,
+          json_data: quizData,
         })
 
       expect(response.status).toBe(401)
@@ -232,6 +288,7 @@ describe('Apps API', () => {
             description: 'Test Description',
             signature,
             template_id: templateId,
+            json_data: quizData,
           })
 
         expect(response.status).toBe(401)
@@ -254,6 +311,7 @@ describe('Apps API', () => {
             description: 'Test Description',
             signature,
             template_id: templateId,
+            json_data: quizData,
           })
 
         expect(response.status).toBe(401)
@@ -269,6 +327,7 @@ describe('Apps API', () => {
             description: 'Test Description',
             signature: 'invalid_signature',
             template_id: templateId,
+            json_data: quizData,
           })
 
         expect(response.status).toBe(401)
@@ -293,6 +352,7 @@ describe('Apps API', () => {
             description: 'Test Description',
             signature,
             template_id: templateId,
+            json_data: quizData,
           })
 
         expect(response.status).toBe(400)
@@ -375,6 +435,7 @@ describe('Apps API', () => {
           description: 'Test Description',
           signature: createSignature,
           template_id: templateId,
+          json_data: quizData,
         })
 
       const appId = (createAppResponse.body as { id: number }).id
@@ -414,6 +475,7 @@ describe('Apps API', () => {
           description: 'Test Description',
           signature: createSignature,
           template_id: templateId,
+          json_data: quizData,
         })
 
       const appId = (createAppResponse.body as { id: number }).id
@@ -470,6 +532,7 @@ describe('Apps API', () => {
           description: 'Test Description',
           signature: createSignature,
           template_id: templateId,
+          json_data: quizData,
         })
 
       const appId = (createResponse.body as { id: number }).id
@@ -529,6 +592,7 @@ describe('Apps API', () => {
           description: 'Test Description',
           signature: createSignature,
           template_id: templateId,
+          json_data: quizData,
         })
 
       const appId = (createResponse.body as { id: number }).id
