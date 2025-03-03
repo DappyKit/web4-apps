@@ -1,0 +1,45 @@
+name: Backend Checks
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  backend-checks:
+    name: Backend Linting, Types, and Tests (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ['20.x', '21.x']
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          
+      - name: Install root dependencies
+        run: npm ci
+        
+      - name: Install backend dependencies
+        run: cd backend && npm ci
+        
+      - name: Check formatting (root level check includes backend)
+        run: npm run format:check
+        
+      - name: Lint check (root level check includes backend)
+        run: npm run lint:check
+        
+      - name: Type check
+        run: cd backend && npx tsc --noEmit --project tsconfig.json
+        
+      - name: Run tests
+        run: npm run backend:test 
