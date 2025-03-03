@@ -1,6 +1,6 @@
 # DappyKit Apps
 
-[![Backend Checks](https://github.com/your-org/dappy-apps-vite/actions/workflows/backend-checks.yml/badge.svg)](https://github.com/your-org/dappy-apps-vite/actions/workflows/backend-checks.yml)
+[![Backend Checks](https://github.com/DappyKit/web4-apps/actions/workflows/backend-checks.yml/badge.svg)](https://github.com/your-org/dappy-apps-vite/actions/workflows/backend-checks.yml)
 
 A Web3 application platform built with React, TypeScript, and Vite that allows users to create, manage, and share decentralized applications (dApps) and templates.
 
