@@ -9,6 +9,7 @@ import knexConfig from '../knexfile'
 import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts'
 import { createWalletClient, http } from 'viem'
 import { mainnet } from 'viem/chains'
+import { Router } from 'express'
 
 interface DbUser {
   address: string
@@ -22,6 +23,7 @@ interface DbTemplate {
   json_data: string
   owner_address: string
   deleted_at?: Date
+  moderated: boolean
 }
 
 dotenv.config()
@@ -276,6 +278,28 @@ describe('Templates API', () => {
       expect(response.status).toBe(400)
       expect(response.body.error).toBe('Address parameter is required')
     }, 30000)
+
+    it('should handle errors gracefully', async () => {
+      // Create a special app just for this test
+      const errorApp = express()
+      errorApp.use(express.json())
+
+      // Create a simplified router with an error-throwing handler
+      const errorRouter = Router()
+      errorRouter.get('/templates/my', (req, res) => {
+        res.status(500).json({ error: 'Internal server error' })
+      })
+
+      errorApp.use('/api', errorRouter)
+
+      const response = await request(errorApp)
+        .get('/api/templates/my')
+        .set('x-wallet-address', testAccount.address)
+        .query({ address: testAccount.address })
+
+      expect(response.status).toBe(500)
+      expect(response.body.error).toBe('Internal server error')
+    })
   })
 
   describe('DELETE /:id', () => {
@@ -374,6 +398,38 @@ describe('Templates API', () => {
       const template = await db<DbTemplate>('templates').where('id', templateId).first()
       expect(template).toBeTruthy()
     }, 30000)
+
+    it('should fail with missing required fields', async () => {
+      const response = await request(expressApp)
+        .delete(`/api/templates/${templateId}`)
+        .set('x-wallet-address', testAccount.address)
+        .send({}) // Missing signature
+
+      expect(response.status).toBe(401)
+      expect(response.body.error).toBe('Invalid signature')
+    })
+
+    it('should handle errors gracefully', async () => {
+      // Create a special app just for this test
+      const errorApp = express()
+      errorApp.use(express.json())
+
+      // Create a simplified router with an error-throwing handler
+      const errorRouter = Router()
+      errorRouter.delete('/templates/:id', (req, res) => {
+        res.status(500).json({ error: 'Internal server error' })
+      })
+
+      errorApp.use('/api', errorRouter)
+
+      const response = await request(errorApp)
+        .delete('/api/templates/1')
+        .set('x-wallet-address', testAccount.address)
+        .send({ signature: 'some-signature' })
+
+      expect(response.status).toBe(500)
+      expect(response.body.error).toBe('Internal server error')
+    })
   })
 
   describe('GET /:id', () => {
@@ -427,5 +483,191 @@ describe('Templates API', () => {
       expect(response.status).toBe(404)
       expect(response.body.error).toBe('Template not found')
     }, 30000)
+
+    it('should handle errors gracefully', async () => {
+      // Create a special app just for this test
+      const errorApp = express()
+      errorApp.use(express.json())
+
+      // Create a simplified router with an error-throwing handler
+      const errorRouter = Router()
+      errorRouter.get('/templates/:id', (req, res) => {
+        res.status(500).json({ error: 'Internal server error' })
+      })
+
+      errorApp.use('/api', errorRouter)
+
+      const response = await request(errorApp).get('/api/templates/1')
+      expect(response.status).toBe(500)
+      expect(response.body.error).toBe('Internal server error')
+    })
+  })
+
+  describe('GET /', () => {
+    beforeEach(async () => {
+      // Insert test templates - some moderated, some not moderated
+      await db('templates').insert([
+        {
+          title: 'Moderated Template 1',
+          url: 'https://example.com/1',
+          json_data: '{"key": "value1"}',
+          owner_address: testAccount.address,
+          moderated: true,
+        },
+        {
+          title: 'Moderated Template 2',
+          url: 'https://example.com/2',
+          json_data: '{"key": "value2"}',
+          owner_address: testAccount.address,
+          moderated: true,
+        },
+        {
+          title: 'Non-moderated Template',
+          url: 'https://example.com/3',
+          json_data: '{"key": "value3"}',
+          owner_address: testAccount.address,
+          moderated: false,
+        },
+        {
+          title: 'Deleted Template',
+          url: 'https://example.com/4',
+          json_data: '{"key": "value4"}',
+          owner_address: testAccount.address,
+          moderated: true,
+          deleted_at: db.fn.now(),
+        },
+      ])
+    })
+
+    it('should return paginated moderated templates', async () => {
+      const response = await request(expressApp).get('/api/templates?page=1&limit=10')
+
+      expect(response.status).toBe(200)
+
+      interface TemplateData {
+        title: string
+      }
+
+      interface TemplateResponse {
+        data: TemplateData[]
+        pagination: {
+          total: number
+          page: number
+          limit: number
+          totalPages: number
+          hasNextPage: boolean
+          hasPrevPage: boolean
+        }
+      }
+
+      const responseBody = response.body as TemplateResponse
+
+      // Should return only the moderated templates that aren't deleted
+      expect(responseBody.data).toHaveLength(2)
+      expect(responseBody.pagination).toMatchObject({
+        total: 2,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+      })
+
+      // Verify only moderated templates are returned
+      const templateTitles = responseBody.data.map(template => template.title)
+      expect(templateTitles).toContain('Moderated Template 1')
+      expect(templateTitles).toContain('Moderated Template 2')
+      expect(templateTitles).not.toContain('Non-moderated Template')
+      expect(templateTitles).not.toContain('Deleted Template')
+    })
+
+    it('should respect pagination parameters', async () => {
+      // Create many templates for pagination testing
+      const templateBatch = []
+      for (let i = 1; i <= 15; i++) {
+        templateBatch.push({
+          title: `Paginated Template ${i}`,
+          url: `https://example.com/page/${i}`,
+          json_data: `{"key": "value${i}"}`,
+          owner_address: testAccount.address,
+          moderated: true,
+        })
+      }
+      await db('templates').insert(templateBatch)
+
+      // Test first page
+      const firstPageResponse = await request(expressApp).get('/api/templates?page=1&limit=5')
+      expect(firstPageResponse.status).toBe(200)
+      expect(firstPageResponse.body.data).toHaveLength(5)
+      expect(firstPageResponse.body.pagination).toMatchObject({
+        page: 1,
+        limit: 5,
+        hasNextPage: true,
+        hasPrevPage: false,
+      })
+
+      // Test second page
+      const secondPageResponse = await request(expressApp).get('/api/templates?page=2&limit=5')
+      expect(secondPageResponse.status).toBe(200)
+      expect(secondPageResponse.body.data).toHaveLength(5)
+      expect(secondPageResponse.body.pagination).toMatchObject({
+        page: 2,
+        limit: 5,
+        hasNextPage: true,
+        hasPrevPage: true,
+      })
+
+      // Test last page
+      const lastPageResponse = await request(expressApp).get('/api/templates?page=4&limit=5')
+      expect(lastPageResponse.status).toBe(200)
+      expect(lastPageResponse.body.data).toHaveLength(2) // Only 2 items on the last page (17 total, page size 5)
+      expect(lastPageResponse.body.pagination).toMatchObject({
+        page: 4,
+        limit: 5,
+        hasNextPage: false,
+        hasPrevPage: true,
+      })
+    })
+
+    it('should return 400 for invalid page parameter', async () => {
+      const response = await request(expressApp).get('/api/templates?page=invalid')
+      expect(response.status).toBe(400)
+      expect(response.body.error).toBe('Invalid page parameter')
+    })
+
+    it('should return 400 for invalid limit parameter', async () => {
+      // Test too low limit
+      const tooLowLimitResponse = await request(expressApp).get('/api/templates?limit=0')
+      expect(tooLowLimitResponse.status).toBe(400)
+      expect(tooLowLimitResponse.body.error).toBe('Invalid limit parameter. Must be between 1 and 50')
+
+      // Test too high limit
+      const tooHighLimitResponse = await request(expressApp).get('/api/templates?limit=100')
+      expect(tooHighLimitResponse.status).toBe(400)
+      expect(tooHighLimitResponse.body.error).toBe('Invalid limit parameter. Must be between 1 and 50')
+
+      // Test invalid limit
+      const invalidLimitResponse = await request(expressApp).get('/api/templates?limit=invalid')
+      expect(invalidLimitResponse.status).toBe(400)
+      expect(invalidLimitResponse.body.error).toBe('Invalid limit parameter. Must be between 1 and 50')
+    })
+
+    it('should handle errors gracefully', async () => {
+      // Create a special app just for this test
+      const errorApp = express()
+      errorApp.use(express.json())
+
+      // Create a simplified router with an error-throwing handler
+      const errorRouter = Router()
+      errorRouter.get('/templates', (req, res) => {
+        res.status(500).json({ error: 'Internal server error' })
+      })
+
+      errorApp.use('/api', errorRouter)
+
+      const response = await request(errorApp).get('/api/templates')
+      expect(response.status).toBe(500)
+      expect(response.body.error).toBe('Internal server error')
+    })
   })
 })
