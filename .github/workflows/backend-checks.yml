@@ -32,11 +32,11 @@ jobs:
       - name: Install backend dependencies
         run: cd backend && npm ci
         
-      - name: Check formatting (root level check includes backend)
-        run: npm run format:check
+      - name: Check formatting (backend only)
+        run: npm run format:backend
         
-      - name: Lint check (root level check includes backend)
-        run: npm run lint:check
+      - name: Lint check (backend only)
+        run: npm run lint:backend
         
       - name: Type check
         run: cd backend && npx tsc --noEmit --project tsconfig.json

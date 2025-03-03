@@ -29,14 +29,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
-      - name: Check formatting
-        run: npm run format:check
+      - name: Check formatting (UI only)
+        run: npm run format:ui
         
-      - name: Lint check
-        run: npm run lint:check
+      - name: Lint check (UI only)
+        run: npm run lint:ui
         
-      - name: Type check
-        run: npm run types:check
+      - name: Type check (UI only)
+        run: npm run types:ui
         
       - name: Run tests
         run: npm run ui-test 

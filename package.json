@@ -8,6 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:check": "eslint 'src/**/*.{ts,tsx}' 'backend/src/**/*.ts' 'backend/migrations/**/*.ts' --max-warnings 0",
+    "lint:ui": "eslint 'src/**/*.{ts,tsx}' --max-warnings 0",
+    "lint:backend": "eslint 'backend/src/**/*.ts' 'backend/migrations/**/*.ts' --max-warnings 0",
     "preview": "vite preview",
     "backend:test": "cd backend && npm run test",
     "backend:new": "cd backend && npm run migrate:rollback && npm run migrate && npm run seed && npm run dev",
@@ -17,7 +19,10 @@
     "code:lines": "./scripts/analyze-code.sh",
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \"backend/src/**/*.ts\" \"backend/migrations/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"backend/src/**/*.ts\" \"backend/migrations/**/*.ts\"",
-    "types:check": "tsc --noEmit --project tsconfig.json && cd backend && tsc --noEmit --project tsconfig.json"
+    "format:ui": "prettier --check \"src/**/*.{ts,tsx}\"",
+    "format:backend": "prettier --check \"backend/src/**/*.ts\" \"backend/migrations/**/*.ts\"",
+    "types:check": "tsc --noEmit --project tsconfig.json && cd backend && tsc --noEmit --project tsconfig.json",
+    "types:ui": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
     "@dappykit/sdk": "^3.0.1",

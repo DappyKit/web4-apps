@@ -38,13 +38,13 @@ jobs:
         run: npm ci
         
       - name: Check formatting
-        run: npm run format:check
+        run: npm run format:ui
         
       - name: Lint check
-        run: npm run lint:check
+        run: npm run lint:ui
         
       - name: Type check
-        run: npm run types:check
+        run: npm run types:ui
         
       - name: Run tests
         run: npm run ui-test
@@ -91,10 +91,10 @@ jobs:
         run: cd backend && npm ci
         
       - name: Check formatting
-        run: npm run format:check
+        run: npm run format:backend
         
       - name: Lint check
-        run: npm run lint:check
+        run: npm run lint:backend
         
       - name: Type check
         run: cd backend && npx tsc --noEmit --project tsconfig.json
