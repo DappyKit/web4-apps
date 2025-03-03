@@ -1,7 +1,7 @@
 import { Knex } from 'knex'
 
 export async function up(knex: Knex): Promise<void> {
-  await knex.schema.createTable('templates', table => {
+  await knex.schema.createTable('templates', (table: Knex.CreateTableBuilder) => {
     table.increments('id').primary()
     table.string('title', 255).notNullable()
     table.text('description')
