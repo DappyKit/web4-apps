@@ -90,6 +90,34 @@ export default tseslint.config(
             '@typescript-eslint/no-unnecessary-type-assertion': 'off',
         },
     },
+    // Backend Tests configuration
+    {
+        extends: [js.configs.recommended, ...tseslint.configs.strictTypeChecked],
+        files: ['backend/src/tests/**/*.ts'],
+        languageOptions: {
+            ecmaVersion: 2020,
+            parserOptions: {
+                project: ['./backend/tsconfig.json'],
+                tsconfigRootDir: import.meta.dirname,
+            },
+        },
+        rules: {
+            'object-curly-spacing': ["error", "always"],
+            "indent": ["error", 2],
+            'semi': ["error", "never"],
+            '@typescript-eslint/no-unused-vars': ['error', {
+                // Don't allow any unused variables, even with _ prefix
+                'argsIgnorePattern': '',
+                'varsIgnorePattern': '',
+                'ignoreRestSiblings': false,
+                'caughtErrors': 'all'
+            }],
+            '@typescript-eslint/no-unsafe-assignment': 'off',
+            '@typescript-eslint/no-unsafe-member-access': 'off',
+            '@typescript-eslint/no-explicit-any': 'warn',
+            '@typescript-eslint/require-await': 'off',
+        },
+    },
     // Migrations configuration
     {
         extends: [js.configs.recommended, ...tseslint.configs.strictTypeChecked],

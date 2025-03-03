@@ -8,7 +8,6 @@ import { createAppsRouter } from '../routes/apps'
 import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts'
 import { createWalletClient, http } from 'viem'
 import { mainnet } from 'viem/chains'
-import { Router } from 'express'
 
 dotenv.config()
 
@@ -562,17 +561,18 @@ describe('Apps API', () => {
     })
 
     it('should handle errors gracefully', async () => {
-      // Create a special app just for this test
+      // Mock db to simulate database error
+      const mockDb = {
+        ...db,
+        async where() {
+          throw new Error('Database error')
+        },
+      } as unknown as Knex
+
+      // Create app with the mocked db
       const errorApp = express()
       errorApp.use(express.json())
-
-      // Create a simplified router with an error-throwing handler
-      const errorRouter = Router()
-      errorRouter.get('/apps/:id', (req, res) => {
-        res.status(500).json({ error: 'Internal server error' })
-      })
-
-      errorApp.use('/api', errorRouter)
+      errorApp.use('/api', createAppsRouter(mockDb))
 
       const response = await request(errorApp).get('/api/apps/1')
       expect(response.status).toBe(500)
@@ -641,8 +641,8 @@ describe('Apps API', () => {
       const appsToCreate = []
       for (let i = 1; i <= 15; i++) {
         appsToCreate.push({
-          name: `Moderated App ${i}`,
-          description: `Description ${i}`,
+          name: `Moderated App ${String(i)}`,
+          description: `Description ${String(i)}`,
           owner_address: testAccount.address,
           template_id: templateId,
           moderated: true,
@@ -714,17 +714,38 @@ describe('Apps API', () => {
     })
 
     it('should handle errors gracefully', async () => {
-      // Create a special app just for this test
+      // Mock db to simulate database error for listing apps
+      const mockDb = {
+        ...db,
+        where() {
+          // Return an object with count and other methods that will throw
+          return {
+            orderBy() {
+              return {
+                limit() {
+                  return {
+                    offset() {
+                      throw new Error('Database error')
+                    },
+                  }
+                },
+              }
+            },
+            count() {
+              return {
+                first() {
+                  throw new Error('Database error')
+                },
+              }
+            },
+          }
+        },
+      } as unknown as Knex
+
+      // Create app with the mocked db
       const errorApp = express()
       errorApp.use(express.json())
-
-      // Create a simplified router with an error-throwing handler
-      const errorRouter = Router()
-      errorRouter.get('/apps', (req, res) => {
-        res.status(500).json({ error: 'Internal server error' })
-      })
-
-      errorApp.use('/api', errorRouter)
+      errorApp.use('/api', createAppsRouter(mockDb))
 
       const response = await request(errorApp).get('/api/apps')
       expect(response.status).toBe(500)

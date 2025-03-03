@@ -322,14 +322,14 @@ describe('Templates API', () => {
       expect(templateBefore).toBeDefined()
       expect(templateBefore?.deleted_at).toBeNull()
 
-      const message = `Delete template #${templateId}`
+      const message = `Delete template #${String(templateId)}`
       const signature = await walletClient.signMessage({
         message,
         account: testAccount,
       })
 
       const response = await request(expressApp)
-        .delete(`/api/templates/${templateId}`)
+        .delete(`/api/templates/${String(templateId)}`)
         .set('x-wallet-address', testAccount.address)
         .send({ signature })
 
@@ -343,14 +343,14 @@ describe('Templates API', () => {
     }, 30000)
 
     it('should fail with invalid signature', async () => {
-      const message = `Delete template #${templateId}`
+      const message = `Delete template #${String(templateId)}`
       const signature = await otherWalletClient.signMessage({
         message,
         account: otherAccount,
       })
 
       const response = await request(expressApp)
-        .delete(`/api/templates/${templateId}`)
+        .delete(`/api/templates/${String(templateId)}`)
         .set('x-wallet-address', testAccount.address)
         .send({ signature })
 
@@ -364,14 +364,14 @@ describe('Templates API', () => {
 
     it('should fail with non-existent template', async () => {
       const nonExistentId = 99999
-      const message = `Delete template #${nonExistentId}`
+      const message = `Delete template #${String(nonExistentId)}`
       const signature = await walletClient.signMessage({
         message,
         account: testAccount,
       })
 
       const response = await request(expressApp)
-        .delete(`/api/templates/${nonExistentId}`)
+        .delete(`/api/templates/${String(nonExistentId)}`)
         .set('x-wallet-address', testAccount.address)
         .send({ signature })
 
@@ -380,14 +380,14 @@ describe('Templates API', () => {
     }, 30000)
 
     it('should fail with unauthorized deletion', async () => {
-      const message = `Delete template #${templateId}`
+      const message = `Delete template #${String(templateId)}`
       const signature = await otherWalletClient.signMessage({
         message,
         account: otherAccount,
       })
 
       const response = await request(expressApp)
-        .delete(`/api/templates/${templateId}`)
+        .delete(`/api/templates/${String(templateId)}`)
         .set('x-wallet-address', otherAccount.address)
         .send({ signature })
 
@@ -401,7 +401,7 @@ describe('Templates API', () => {
 
     it('should fail with missing required fields', async () => {
       const response = await request(expressApp)
-        .delete(`/api/templates/${templateId}`)
+        .delete(`/api/templates/${String(templateId)}`)
         .set('x-wallet-address', testAccount.address)
         .send({}) // Missing signature
 
@@ -582,18 +582,19 @@ describe('Templates API', () => {
     })
 
     it('should respect pagination parameters', async () => {
-      // Create many templates for pagination testing
-      const templateBatch = []
+      // Create several test templates
+      const templatesToCreate = []
       for (let i = 1; i <= 15; i++) {
-        templateBatch.push({
-          title: `Paginated Template ${i}`,
-          url: `https://example.com/page/${i}`,
-          json_data: `{"key": "value${i}"}`,
+        templatesToCreate.push({
+          title: `Template ${String(i)}`,
+          description: `Description ${String(i)}`,
+          url: `https://example.com/page/${String(i)}`,
+          json_data: '{"schema":{"type":"object"}}',
           owner_address: testAccount.address,
           moderated: true,
         })
       }
-      await db('templates').insert(templateBatch)
+      await db('templates').insert(templatesToCreate)
 
       // Test first page
       const firstPageResponse = await request(expressApp).get('/api/templates?page=1&limit=5')
