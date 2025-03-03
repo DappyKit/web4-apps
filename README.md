@@ -2,6 +2,7 @@
 
 [![Backend Checks](https://github.com/DappyKit/web4-apps/actions/workflows/backend-checks.yml/badge.svg)](https://github.com/DappyKit/web4-apps/actions/workflows/backend-checks.yml)
 [![UI Checks](https://github.com/DappyKit/web4-apps/actions/workflows/ui-checks.yml/badge.svg)](https://github.com/DappyKit/web4-apps/actions/workflows/ui-checks.yml)
+[![codecov](https://codecov.io/gh/DappyKit/web4-apps/graph/badge.svg?token=your-codecov-token)](https://codecov.io/gh/DappyKit/web4-apps)
 
 A Web3 application platform built with React, TypeScript, and Vite that allows users to create, manage, and share decentralized applications (dApps) and templates.
 

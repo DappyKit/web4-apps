@@ -72,11 +72,30 @@ jobs:
       - name: Type check
         run: cd backend && npx tsc --noEmit --project tsconfig.json
         
-      # Add environment variables for MySQL connection
+      # Run tests with normal configuration
       - name: Run tests
         run: npm run backend:test
         env:
           DB_HOST: localhost
           DB_USER: root
           DB_PASSWORD: root
-          DB_NAME: dappykit_apps 
+          DB_NAME: dappykit_apps
+          
+      # Run tests with coverage
+      - name: Generate test coverage
+        run: npm run backend:test:coverage
+        env:
+          DB_HOST: localhost
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: dappykit_apps
+          
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: ./backend/coverage
+          fail_ci_if_error: false
+          flags: backend
+          name: dappy-apps-vite-backend
+          verbose: true 

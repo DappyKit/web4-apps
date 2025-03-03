@@ -12,6 +12,7 @@
     "lint:backend": "eslint 'backend/src/**/*.ts' 'backend/migrations/**/*.ts' --max-warnings 0",
     "preview": "vite preview",
     "backend:test": "cd backend && npm run test",
+    "backend:test:coverage": "cd backend && npm run test:coverage",
     "backend:new": "cd backend && npm run migrate:rollback && npm run migrate && npm run seed && npm run dev",
     "ui-test": "vitest run",
     "ui-test:coverage": "vitest run --coverage",

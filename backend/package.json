@@ -10,6 +10,7 @@
     "migrate:rollback": "knex migrate:rollback --knexfile src/knexfile.ts",
     "migrate:make": "knex migrate:make -x ts --knexfile src/knexfile.ts",
     "test": "jest --detectOpenHandles --runInBand --forceExit --testTimeout=30000",
+    "test:coverage": "jest --coverage --detectOpenHandles --runInBand --forceExit --testTimeout=30000",
     "seed": "knex seed:run --knexfile src/knexfile.ts"
   },
   "dependencies": {
