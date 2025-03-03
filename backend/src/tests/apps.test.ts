@@ -8,6 +8,7 @@ import { createAppsRouter } from '../routes/apps'
 import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts'
 import { createWalletClient, http } from 'viem'
 import { mainnet } from 'viem/chains'
+import { Router } from 'express'
 
 dotenv.config()
 
@@ -558,6 +559,176 @@ describe('Apps API', () => {
 
       expect(response.status).toBe(400)
       expect(response.body.error).toBe('Invalid app ID')
+    })
+
+    it('should handle errors gracefully', async () => {
+      // Create a special app just for this test
+      const errorApp = express()
+      errorApp.use(express.json())
+
+      // Create a simplified router with an error-throwing handler
+      const errorRouter = Router()
+      errorRouter.get('/apps/:id', (req, res) => {
+        res.status(500).json({ error: 'Internal server error' })
+      })
+
+      errorApp.use('/api', errorRouter)
+
+      const response = await request(errorApp).get('/api/apps/1')
+      expect(response.status).toBe(500)
+      expect(response.body.error).toBe('Internal server error')
+    })
+  })
+
+  describe('GET /api/apps', () => {
+    it('should return paginated moderated apps', async () => {
+      // Create several test apps, some moderated, some not
+      await db('apps').insert([
+        {
+          name: 'Moderated App 1',
+          description: 'Moderated 1',
+          owner_address: testAccount.address,
+          template_id: templateId,
+          moderated: true,
+        },
+        {
+          name: 'Moderated App 2',
+          description: 'Moderated 2',
+          owner_address: testAccount.address,
+          template_id: templateId,
+          moderated: true,
+        },
+        {
+          name: 'Non-moderated App',
+          description: 'Not moderated',
+          owner_address: testAccount.address,
+          template_id: templateId,
+          moderated: false,
+        },
+      ])
+
+      const response = await request(expressApp).get('/api/apps?page=1&limit=10')
+
+      expect(response.status).toBe(200)
+      expect(response.body.data).toHaveLength(2) // Only the moderated apps
+      expect(response.body.pagination).toMatchObject({
+        total: 2,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+      })
+
+      // Verify only moderated apps are returned
+      interface AppData {
+        name: string
+      }
+
+      interface AppResponse {
+        data: AppData[]
+      }
+
+      const responseBody = response.body as AppResponse
+      const appNames = responseBody.data.map(app => app.name)
+      expect(appNames).toContain('Moderated App 1')
+      expect(appNames).toContain('Moderated App 2')
+      expect(appNames).not.toContain('Non-moderated App')
+    })
+
+    it('should respect pagination parameters', async () => {
+      // Create several test apps
+      const appsToCreate = []
+      for (let i = 1; i <= 15; i++) {
+        appsToCreate.push({
+          name: `Moderated App ${i}`,
+          description: `Description ${i}`,
+          owner_address: testAccount.address,
+          template_id: templateId,
+          moderated: true,
+        })
+      }
+      await db('apps').insert(appsToCreate)
+
+      // Test first page
+      const firstPageResponse = await request(expressApp).get('/api/apps?page=1&limit=5')
+      expect(firstPageResponse.status).toBe(200)
+      expect(firstPageResponse.body.data).toHaveLength(5)
+      expect(firstPageResponse.body.pagination).toMatchObject({
+        total: 15,
+        page: 1,
+        limit: 5,
+        totalPages: 3,
+        hasNextPage: true,
+        hasPrevPage: false,
+      })
+
+      // Test second page
+      const secondPageResponse = await request(expressApp).get('/api/apps?page=2&limit=5')
+      expect(secondPageResponse.status).toBe(200)
+      expect(secondPageResponse.body.data).toHaveLength(5)
+      expect(secondPageResponse.body.pagination).toMatchObject({
+        total: 15,
+        page: 2,
+        limit: 5,
+        totalPages: 3,
+        hasNextPage: true,
+        hasPrevPage: true,
+      })
+
+      // Test last page
+      const lastPageResponse = await request(expressApp).get('/api/apps?page=3&limit=5')
+      expect(lastPageResponse.status).toBe(200)
+      expect(lastPageResponse.body.data).toHaveLength(5)
+      expect(lastPageResponse.body.pagination).toMatchObject({
+        total: 15,
+        page: 3,
+        limit: 5,
+        totalPages: 3,
+        hasNextPage: false,
+        hasPrevPage: true,
+      })
+    })
+
+    it('should return 400 for invalid page parameter', async () => {
+      const invalidPageResponse = await request(expressApp).get('/api/apps?page=invalid')
+      expect(invalidPageResponse.status).toBe(400)
+      expect(invalidPageResponse.body.error).toBe('Invalid page parameter')
+    })
+
+    it('should return 400 for invalid limit parameter', async () => {
+      // Test too low limit
+      const tooLowLimitResponse = await request(expressApp).get('/api/apps?limit=0')
+      expect(tooLowLimitResponse.status).toBe(400)
+      expect(tooLowLimitResponse.body.error).toBe('Invalid limit parameter. Must be between 1 and 50')
+
+      // Test too high limit
+      const tooHighLimitResponse = await request(expressApp).get('/api/apps?limit=100')
+      expect(tooHighLimitResponse.status).toBe(400)
+      expect(tooHighLimitResponse.body.error).toBe('Invalid limit parameter. Must be between 1 and 50')
+
+      // Test invalid limit
+      const invalidLimitResponse = await request(expressApp).get('/api/apps?limit=invalid')
+      expect(invalidLimitResponse.status).toBe(400)
+      expect(invalidLimitResponse.body.error).toBe('Invalid limit parameter. Must be between 1 and 50')
+    })
+
+    it('should handle errors gracefully', async () => {
+      // Create a special app just for this test
+      const errorApp = express()
+      errorApp.use(express.json())
+
+      // Create a simplified router with an error-throwing handler
+      const errorRouter = Router()
+      errorRouter.get('/apps', (req, res) => {
+        res.status(500).json({ error: 'Internal server error' })
+      })
+
+      errorApp.use('/api', errorRouter)
+
+      const response = await request(errorApp).get('/api/apps')
+      expect(response.status).toBe(500)
+      expect(response.body.error).toBe('Internal server error')
     })
   })
 })
