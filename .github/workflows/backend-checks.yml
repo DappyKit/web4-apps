@@ -4,13 +4,21 @@ on:
   push:
     branches:
       - master
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-checks.yml'
+      - 'package.json'
   pull_request:
     branches:
       - master
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-checks.yml'
+      - 'package.json'
 
 jobs:
   backend-checks:
-    name: Backend Linting, Types, and Tests (Node ${{ matrix.node-version }})
+    name: Backend Linting and Tests (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -43,6 +51,14 @@ jobs:
           
       - name: Install root dependencies
         run: npm ci
+        
+      - name: Cache backend node_modules
+        uses: actions/cache@v3
+        with:
+          path: backend/node_modules
+          key: ${{ runner.os }}-backend-node-${{ matrix.node-version }}-${{ hashFiles('backend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-backend-node-${{ matrix.node-version }}-
         
       - name: Install backend dependencies
         run: cd backend && npm ci
