@@ -16,6 +16,21 @@ jobs:
       matrix:
         node-version: ['20.x', '21.x']
     
+    # Add MySQL service container
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: dappykit_apps
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -41,5 +56,11 @@ jobs:
       - name: Type check
         run: cd backend && npx tsc --noEmit --project tsconfig.json
         
+      # Add environment variables for MySQL connection
       - name: Run tests
-        run: npm run backend:test 
+        run: npm run backend:test
+        env:
+          DB_HOST: localhost
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: dappykit_apps 
