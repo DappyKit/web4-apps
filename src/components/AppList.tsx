@@ -74,7 +74,12 @@ export function AppList({
     return (
       <div
         className="text-center"
-        style={{ minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        style={{
+          minHeight: '200px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
       >
         <Spinner animation="border" role="status">
           <span className="visually-hidden">Loading...</span>
