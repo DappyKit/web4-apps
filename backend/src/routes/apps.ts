@@ -119,8 +119,15 @@ export function createAppsRouter(db: Knex): Router {
         moderated: false, // New apps are not moderated by default
       }
 
-      const schema = JSON.parse(template.json_data) as unknown as JsonSchema
-      validateInputData({ schema, data: JSON.parse(json_data) })
+      try {
+        const schema = JSON.parse(template.json_data) as unknown as JsonSchema
+        validateInputData({ schema, data: JSON.parse(json_data) })
+      } catch (error) {
+        if (error instanceof Error) {
+          return res.status(400).json({ error: `Invalid JSON data` })
+        }
+        throw error
+      }
 
       const [insertId] = await db<App>('apps').insert(newApp)
 
@@ -132,6 +139,9 @@ export function createAppsRouter(db: Knex): Router {
       })
     } catch (error: unknown) {
       console.error('Error creating app:', error)
+      if (error instanceof Error) {
+        return res.status(500).json({ error: `Failed to create app: ${error.message}` })
+      }
       res.status(500).json({ error: 'Internal server error' })
     }
   }) as RequestHandler)

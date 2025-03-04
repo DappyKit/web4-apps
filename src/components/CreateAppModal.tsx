@@ -160,6 +160,15 @@ export function CreateAppModal({
 
       if (errorMessage.includes('Invalid signature')) {
         setError('Authentication error: Invalid signature. Please try again.')
+      } else if (errorMessage.includes('Invalid JSON data')) {
+        // Extract the specific validation error
+        const match = errorMessage.match(/Invalid JSON data: (.+)/)
+        const validationError = match ? match[1] : 'Invalid JSON format'
+        setErrors(prev => ({
+          ...prev,
+          jsonData: validationError,
+        }))
+        setError('Please fix the JSON data validation errors.')
       } else {
         setError(errorMessage)
       }
