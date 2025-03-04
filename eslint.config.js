@@ -30,7 +30,7 @@ export default tseslint.config(
             ...react.configs['jsx-runtime'].rules,
             ...reactHooks.configs.recommended.rules,
             'object-curly-spacing': ["error", "always"],
-            "indent": ["error", 2],
+            // "indent": ["error", 2],
             'semi': ["error", "never"],
             '@typescript-eslint/explicit-function-return-type': ["error", {
                 "allowExpressions": true,
@@ -60,7 +60,7 @@ export default tseslint.config(
         },
         rules: {
             'object-curly-spacing': ["error", "always"],
-            "indent": ["error", 2],
+            // "indent": ["error", 2],
             'semi': ["error", "never"],
             '@typescript-eslint/explicit-function-return-type': ["error", {
                 "allowExpressions": true,
@@ -103,7 +103,7 @@ export default tseslint.config(
         },
         rules: {
             'object-curly-spacing': ["error", "always"],
-            "indent": ["error", 2],
+            // "indent": ["error", 2],
             'semi': ["error", "never"],
             '@typescript-eslint/no-unused-vars': ['error', {
                 // Don't allow any unused variables, even with _ prefix
@@ -131,7 +131,7 @@ export default tseslint.config(
         },
         rules: {
             'object-curly-spacing': ["error", "always"],
-            "indent": ["error", 2],
+            // "indent": ["error", 2],
             'semi': ["error", "never"],
             '@typescript-eslint/explicit-function-return-type': ["error", {
                 "allowExpressions": true,

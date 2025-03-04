@@ -80,11 +80,7 @@ const createArraySchema = (schema: JsonSchema): z.ZodArray<z.ZodTypeAny> => {
   const itemSchema = convertJsonSchemaToZod(schema.items)
   let zodSchema = z.array(itemSchema)
 
-  if (
-    schema.minItems !== undefined &&
-    schema.maxItems !== undefined &&
-    schema.minItems === schema.maxItems
-  ) {
+  if (schema.minItems !== undefined && schema.maxItems !== undefined && schema.minItems === schema.maxItems) {
     zodSchema = zodSchema.length(schema.minItems)
   } else {
     if (schema.minItems !== undefined) {
@@ -127,18 +123,18 @@ const createObjectSchema = (schema: JsonSchema): z.ZodObject<Record<string, z.Zo
  */
 const convertJsonSchemaToZod = (schema: JsonSchema): z.ZodTypeAny => {
   switch (schema.type) {
-  case 'string':
-    return createStringSchema(schema)
-  case 'array':
-    return createArraySchema(schema)
-  case 'object':
-    return createObjectSchema(schema)
-  case 'boolean':
-    return z.boolean()
-  case 'number':
-    return createNumberSchema(schema)
-  default:
-    throw new Error(`Unsupported schema type: ${schema.type}`)
+    case 'string':
+      return createStringSchema(schema)
+    case 'array':
+      return createArraySchema(schema)
+    case 'object':
+      return createObjectSchema(schema)
+    case 'boolean':
+      return z.boolean()
+    case 'number':
+      return createNumberSchema(schema)
+    default:
+      throw new Error(`Unsupported schema type: ${schema.type}`)
   }
 }
 
