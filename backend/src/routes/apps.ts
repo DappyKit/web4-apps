@@ -5,6 +5,7 @@ import { verifySignature } from '../utils/auth'
 import { CreateAppDTO, App } from '../types'
 import { Template } from '../types/template'
 import { JsonSchema, validateInputData } from '../utils/input-validation'
+import { validateJson, JsonValidationError } from '../utils/jsonValidation'
 
 /**
  * Extended Request type that includes the authenticated wallet address
@@ -74,9 +75,18 @@ export function createAppsRouter(db: Knex): Router {
         return res.status(400).json({ error: 'Description must be less than 1000 characters' })
       }
 
-      // todo validate is correct json
-      if (typeof json_data !== 'string') {
+      // Validate JSON data
+      if (!json_data || typeof json_data !== 'string') {
         return res.status(400).json({ error: 'json_data must be a string' })
+      }
+
+      try {
+        validateJson(json_data)
+      } catch (error) {
+        if (error instanceof JsonValidationError) {
+          return res.status(400).json({ error: error.message })
+        }
+        throw error
       }
 
       const userAddress = (req as AuthRequest).address.toLowerCase()

@@ -53,18 +53,18 @@ const quizSchema = {
 }
 
 const quizData = JSON.stringify({
-  "name": "Animal Quiz",
-  "description": "About animals",
-  "questions": [
+  name: 'Animal Quiz',
+  description: 'About animals',
+  questions: [
     {
-      "text": "Who is barking?",
-      "options": ["dog", "cat", "mouse", "rabbit"]
+      text: 'Who is barking?',
+      options: ['dog', 'cat', 'mouse', 'rabbit'],
     },
     {
-      "text": "Who is jumping?",
-      "options": ["rabbit", "elephant", "rhino", "hippo"]
-    }
-  ]
+      text: 'Who is jumping?',
+      options: ['rabbit', 'elephant', 'rhino', 'hippo'],
+    },
+  ],
 })
 
 describe('Apps API', () => {

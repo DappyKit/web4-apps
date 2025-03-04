@@ -73,8 +73,11 @@ const createNumberSchema = (schema: JsonSchema): z.ZodNumber => {
  * @param schema - JSON Schema array definition
  * @returns Zod array schema with applied constraints
  */
-const createArraySchema = (schema: JsonSchema): z.ZodArray<any> => {
-  const itemSchema = convertJsonSchemaToZod(schema.items!)
+const createArraySchema = (schema: JsonSchema): z.ZodArray<z.ZodTypeAny> => {
+  if (!schema.items) {
+    throw new Error('Array schema must have items defined')
+  }
+  const itemSchema = convertJsonSchemaToZod(schema.items)
   let zodSchema = z.array(itemSchema)
 
   if (
@@ -100,7 +103,7 @@ const createArraySchema = (schema: JsonSchema): z.ZodArray<any> => {
  * @param schema - JSON Schema object definition
  * @returns Zod object schema with applied constraints
  */
-const createObjectSchema = (schema: JsonSchema): z.ZodObject<any> => {
+const createObjectSchema = (schema: JsonSchema): z.ZodObject<Record<string, z.ZodTypeAny>> => {
   const shape: Record<string, z.ZodTypeAny> = {}
 
   if (schema.properties) {
