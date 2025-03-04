@@ -22,8 +22,8 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"backend/src/**/*.ts\" \"backend/migrations/**/*.ts\"",
     "format:ui": "prettier --check \"src/**/*.{ts,tsx}\"",
     "format:backend": "prettier --check \"backend/src/**/*.ts\" \"backend/migrations/**/*.ts\"",
-    "types:check": "tsc --noEmit --project tsconfig.json && cd backend && tsc --noEmit --project tsconfig.json",
-    "types:ui": "tsc --noEmit --project tsconfig.json"
+    "types:check": "tsc --noEmit --project tsconfig.json && npm run types:ui && cd backend && tsc --noEmit --project tsconfig.json",
+    "types:ui": "tsc --noEmit --project tsconfig.ui.json"
   },
   "dependencies": {
     "@dappykit/sdk": "^3.0.1",

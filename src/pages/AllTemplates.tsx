@@ -102,7 +102,7 @@ export function AllTemplates(): React.JSX.Element {
 
       <Row>
         <Col>
-          <TemplateList templates={data.templates} onDeleteTemplate={noop} isDeleting={false} showDelete={false} />
+          <TemplateList templates={data.templates} onDeleteTemplate={noop} isDeleting={null} showDelete={false} />
 
           {!isInitialLoading && !error && data.templates.length > 0 && (
             <Pagination

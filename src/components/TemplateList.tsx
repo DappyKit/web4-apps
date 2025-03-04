@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { JSX } from 'react'
 import { Row, Col } from 'react-bootstrap'
 import { Template } from '../services/api'
 import TemplateCard from './TemplateCard'
@@ -22,7 +22,7 @@ const TemplateList: React.FC<TemplateListProps> = ({
   isDeleting,
   showDelete = true,
   showEmptyMessage = 'No templates found',
-}) => {
+}: TemplateListProps): JSX.Element => {
   if (templates.length === 0) {
     return <div className="text-center mt-4">{showEmptyMessage}</div>
   }
