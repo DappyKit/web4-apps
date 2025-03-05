@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Alert, Button, Form, Spinner, Modal } from 'react-bootstrap'
 import { useSignMessage } from 'wagmi'
-import { createApp } from '../services/api'
+import { createApp, getTemplateById } from '../services/api'
 import type { Template } from '../services/api'
+import { DynamicForm } from './DynamicForm'
+import { parseTemplateSchema, formDataToJson } from '../utils/schemaParser'
+import type { FormField } from '../utils/schemaParser'
 
 // Constants matching backend limitations
 const MAX_NAME_LENGTH = 255
@@ -57,6 +60,9 @@ export function CreateAppModal({
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [dynamicFormFields, setDynamicFormFields] = useState<FormField[] | null>(null)
+  const [dynamicFormData, setDynamicFormData] = useState<Record<string, unknown>>({})
+  const [isLoadingSchema, setIsLoadingSchema] = useState(false)
 
   // Update form when selected template changes
   useEffect(() => {
@@ -66,19 +72,85 @@ export function CreateAppModal({
         templateId: String(selectedTemplate.id),
         jsonData: selectedTemplate.json_data,
       }))
+
+      // Parse the template schema
+      if (selectedTemplate.json_data) {
+        try {
+          const fields = parseTemplateSchema(selectedTemplate.json_data)
+          setDynamicFormFields(fields)
+
+          // Initialize form data from parsed schema
+          const initialData = fields.reduce<Record<string, unknown>>((acc, field) => {
+            if (field.defaultValue !== undefined) {
+              acc[field.name] = field.defaultValue
+            }
+            return acc
+          }, {})
+
+          setDynamicFormData(initialData)
+          // Set jsonData with the initial values
+          setFormData(prev => ({
+            ...prev,
+            jsonData: formDataToJson(initialData),
+          }))
+        } catch (error) {
+          console.error('Error parsing template schema:', error)
+          setDynamicFormFields(null)
+        }
+      } else if (selectedTemplate.id) {
+        void loadTemplateSchema(selectedTemplate.id)
+      }
     }
   }, [selectedTemplate])
 
   /**
-   * Validates the form data
+   * Loads the template schema from the server
+   * @param templateId - The ID of the template to load
+   */
+  const loadTemplateSchema = async (templateId: number): Promise<void> => {
+    if (!templateId) return
+
+    setIsLoadingSchema(true)
+    try {
+      const template = await getTemplateById(templateId)
+      if (template.json_data) {
+        // Parse the template schema
+        const fields = parseTemplateSchema(template.json_data)
+        setDynamicFormFields(fields)
+
+        // Initialize form data from parsed schema
+        const initialData = fields.reduce<Record<string, unknown>>((acc, field) => {
+          if (field.defaultValue !== undefined) {
+            acc[field.name] = field.defaultValue
+          }
+          return acc
+        }, {})
+
+        setDynamicFormData(initialData)
+        // Set jsonData with the initial values
+        setFormData(prev => ({
+          ...prev,
+          jsonData: formDataToJson(initialData),
+        }))
+      }
+    } catch (error) {
+      console.error('Error loading template schema:', error)
+    } finally {
+      setIsLoadingSchema(false)
+    }
+  }
+
+  /**
+   * Validates the provided form data
+   * @param dataToValidate Form data to validate
    * @returns {boolean} True if form is valid, false otherwise
    */
-  const validateForm = (): boolean => {
+  const validateFormData = (dataToValidate: FormData): boolean => {
     const newErrors: FormErrors = {}
-    const trimmedName = formData.name.trim()
-    const trimmedDescription = formData.description.trim()
-    const templateId = formData.templateId.trim()
-    const jsonData = formData.jsonData.trim()
+    const trimmedName = dataToValidate.name.trim()
+    const trimmedDescription = dataToValidate.description.trim()
+    const templateId = dataToValidate.templateId.trim()
+    const jsonData = dataToValidate.jsonData.trim()
 
     // Validate name
     if (!trimmedName) {
@@ -124,15 +196,33 @@ export function CreateAppModal({
     setError(null)
     setSuccess(null)
 
-    if (!validateForm() || !address) {
+    // Update jsonData with current dynamicFormData
+    let currentJsonData = formData.jsonData
+    if (dynamicFormFields && dynamicFormFields.length > 0) {
+      currentJsonData = formDataToJson(dynamicFormData)
+      // Update form data for validation
+      setFormData(prev => ({
+        ...prev,
+        jsonData: currentJsonData,
+      }))
+    }
+
+    // Create a copy of form data with the updated jsonData for validation
+    const updatedFormData = {
+      ...formData,
+      jsonData: currentJsonData,
+    }
+
+    // Validate with the updated form data
+    if (!validateFormData(updatedFormData) || !address) {
       return
     }
 
     setIsCreating(true)
 
     try {
-      const templateId = Number(formData.templateId.trim())
-      const message = `Create app: ${formData.name.trim()}`
+      const templateId = Number(updatedFormData.templateId.trim())
+      const message = `Create app: ${updatedFormData.name.trim()}`
 
       const signature = await signMessageAsync({
         message,
@@ -140,11 +230,11 @@ export function CreateAppModal({
 
       await createApp(
         address,
-        formData.name.trim(),
-        formData.description.trim() || undefined,
+        updatedFormData.name.trim(),
+        updatedFormData.description.trim() || undefined,
         signature,
         templateId,
-        formData.jsonData.trim(),
+        currentJsonData.trim(),
       )
 
       setSuccess('App created successfully!')
@@ -154,6 +244,8 @@ export function CreateAppModal({
         templateId: '',
         jsonData: '{}',
       })
+      setDynamicFormData({})
+      setDynamicFormFields(null)
       await onSuccess()
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create app'
@@ -162,8 +254,7 @@ export function CreateAppModal({
         setError('Authentication error: Invalid signature. Please try again.')
       } else if (errorMessage.includes('Invalid JSON data')) {
         // Extract the specific validation error
-        const match = errorMessage.match(/Invalid JSON data: (.+)/)
-        const validationError = match ? match[1] : 'Invalid JSON format'
+        const validationError = /Invalid JSON data: (.+)/.exec(errorMessage)?.[1] ?? 'Invalid JSON format'
         setErrors(prev => ({
           ...prev,
           jsonData: validationError,
@@ -185,6 +276,28 @@ export function CreateAppModal({
       setErrors(prev => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { [name]: _, ...rest } = prev
+        return rest
+      })
+    }
+  }
+
+  /**
+   * Handles changes to the dynamic form data
+   * @param data - The updated form data
+   */
+  const handleDynamicFormChange = (data: Record<string, unknown>): void => {
+    setDynamicFormData(data)
+    // Update jsonData field
+    setFormData(prev => ({
+      ...prev,
+      jsonData: formDataToJson(data),
+    }))
+
+    // Clear any jsonData error
+    if (errors.jsonData) {
+      setErrors(prev => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { jsonData: _, ...rest } = prev
         return rest
       })
     }
@@ -227,6 +340,8 @@ export function CreateAppModal({
       templateId: '',
       jsonData: '{}',
     })
+    setDynamicFormData({})
+    setDynamicFormFields(null)
     setErrors({})
   }
 
@@ -327,38 +442,61 @@ export function CreateAppModal({
             <Form.Control.Feedback type="invalid">{errors.templateId}</Form.Control.Feedback>
           </Form.Group>
 
-          <Form.Group className="mb-3">
-            <Form.Label htmlFor="jsonData">
-              JSON Data
-              <span className="text-muted ms-2">
-                ({jsonDataCharCount}/{MAX_JSON_DATA_LENGTH})
-              </span>
-            </Form.Label>
-            <Form.Control
-              as="textarea"
-              id="jsonData"
-              name="jsonData"
-              value={formData.jsonData}
-              onChange={handleChange}
-              rows={4}
-              disabled={isCreating}
-              isInvalid={!!errors.jsonData}
-              maxLength={MAX_JSON_DATA_LENGTH}
-              style={{ fontFamily: 'monospace' }}
-            />
-            <Form.Control.Feedback type="invalid">{errors.jsonData}</Form.Control.Feedback>
-            <div className="d-flex justify-content-end">
-              <Button
-                variant="outline-secondary"
-                size="sm"
-                onClick={formatJsonData}
-                disabled={isCreating}
-                className="mt-1"
-              >
-                Format JSON
-              </Button>
+          {formData.templateId && (
+            <div className="mb-3">
+              <Form.Label>Template Data</Form.Label>
+              {isLoadingSchema ? (
+                <div className="text-center py-3">
+                  <Spinner animation="border" size="sm" role="status" className="me-2" />
+                  Loading template schema...
+                </div>
+              ) : dynamicFormFields && dynamicFormFields.length > 0 ? (
+                <div className="border rounded p-3">
+                  <DynamicForm
+                    schema={dynamicFormFields}
+                    onChange={handleDynamicFormChange}
+                    initialValues={dynamicFormData}
+                    isDisabled={isCreating}
+                  />
+                </div>
+              ) : (
+                <Form.Group>
+                  <Form.Label htmlFor="jsonData">
+                    JSON Data
+                    <span className="text-muted ms-2">
+                      ({jsonDataCharCount}/{MAX_JSON_DATA_LENGTH})
+                    </span>
+                  </Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    id="jsonData"
+                    name="jsonData"
+                    value={formData.jsonData}
+                    onChange={handleChange}
+                    rows={4}
+                    disabled={isCreating}
+                    isInvalid={!!errors.jsonData}
+                    maxLength={MAX_JSON_DATA_LENGTH}
+                    style={{ fontFamily: 'monospace' }}
+                  />
+                  <Form.Control.Feedback type="invalid">{errors.jsonData}</Form.Control.Feedback>
+                  <div className="d-flex justify-content-end">
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      onClick={formatJsonData}
+                      disabled={isCreating}
+                      className="mt-1"
+                    >
+                      Format JSON
+                    </Button>
+                  </div>
+                </Form.Group>
+              )}
+
+              {!!errors.jsonData && <div className="text-danger mt-2">{errors.jsonData}</div>}
             </div>
-          </Form.Group>
+          )}
 
           <div className="d-flex justify-content-end gap-2">
             <Button variant="secondary" onClick={handleClose} disabled={isCreating}>
