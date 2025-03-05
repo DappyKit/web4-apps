@@ -35,3 +35,9 @@ coverage
 .eslintrc.yaml
 .eslintrc.yml
 .eslintrc.json
+
+# Prettier legacy format (using JS module config instead)
+.prettierrc
+.prettierrc.json
+.prettierrc.yaml
+.prettierrc.yml
