@@ -401,7 +401,7 @@ export function CreateAppModal({
               isInvalid={!!errors.name}
               disabled={isCreating}
               maxLength={MAX_NAME_LENGTH}
-              placeholder="Enter a descriptive name for your app"
+              placeholder="App name"
             />
             <Form.Control.Feedback type="invalid">{errors.name}</Form.Control.Feedback>
           </Form.Group>
@@ -423,14 +423,17 @@ export function CreateAppModal({
               disabled={isCreating}
               isInvalid={!!errors.description}
               maxLength={MAX_DESCRIPTION_LENGTH}
-              placeholder="Describe your app's purpose and functionality"
+              placeholder="Brief description"
             />
             <Form.Control.Feedback type="invalid">{errors.description}</Form.Control.Feedback>
           </Form.Group>
 
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-5">
             <Form.Label htmlFor="templateId">Template</Form.Label>
             <div className="d-flex">
+              <Button variant="outline-secondary" onClick={showTemplateModal} disabled={isCreating} className="me-2">
+                Select
+              </Button>
               <Form.Control
                 type="text"
                 id="templateId"
@@ -439,12 +442,8 @@ export function CreateAppModal({
                 onChange={handleChange}
                 isInvalid={!!errors.templateId}
                 disabled={true}
-                placeholder="Select a template using the Browse button"
-                className="me-2"
+                placeholder="Select a template"
               />
-              <Button variant="outline-secondary" onClick={showTemplateModal} disabled={isCreating}>
-                Browse
-              </Button>
             </div>
             <Form.Control.Feedback type="invalid">{errors.templateId}</Form.Control.Feedback>
           </Form.Group>
@@ -506,7 +505,7 @@ export function CreateAppModal({
           )}
 
           <div className="d-flex justify-content-end gap-2">
-            <Button variant="secondary" onClick={handleClose} disabled={isCreating}>
+            <Button variant="outline-secondary" onClick={handleClose} disabled={isCreating}>
               Cancel
             </Button>
             <Button type="submit" variant="primary" disabled={isCreating}>
