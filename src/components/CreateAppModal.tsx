@@ -396,6 +396,7 @@ export function CreateAppModal({
               isInvalid={!!errors.name}
               disabled={isCreating}
               maxLength={MAX_NAME_LENGTH}
+              placeholder="Enter a descriptive name for your app"
             />
             <Form.Control.Feedback type="invalid">{errors.name}</Form.Control.Feedback>
           </Form.Group>
@@ -417,6 +418,7 @@ export function CreateAppModal({
               disabled={isCreating}
               isInvalid={!!errors.description}
               maxLength={MAX_DESCRIPTION_LENGTH}
+              placeholder="Describe your app's purpose and functionality"
             />
             <Form.Control.Feedback type="invalid">{errors.description}</Form.Control.Feedback>
           </Form.Group>
@@ -431,8 +433,8 @@ export function CreateAppModal({
                 value={formData.templateId}
                 onChange={handleChange}
                 isInvalid={!!errors.templateId}
-                disabled={isCreating}
-                placeholder="Enter template ID"
+                disabled={true}
+                placeholder="Select a template using the Browse button"
                 className="me-2"
               />
               <Button variant="outline-secondary" onClick={showTemplateModal} disabled={isCreating}>
