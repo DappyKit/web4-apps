@@ -16,6 +16,7 @@ interface FormData {
   name: string
   description: string
   templateId: string
+  templateName: string
   jsonData: string
 }
 
@@ -54,6 +55,7 @@ export function CreateAppModal({
     name: '',
     description: '',
     templateId: '',
+    templateName: '',
     jsonData: '{}',
   })
   const [errors, setErrors] = useState<FormErrors>({})
@@ -70,6 +72,7 @@ export function CreateAppModal({
       setFormData(prev => ({
         ...prev,
         templateId: String(selectedTemplate.id),
+        templateName: selectedTemplate.title,
         jsonData: selectedTemplate.json_data,
       }))
 
@@ -242,6 +245,7 @@ export function CreateAppModal({
         name: '',
         description: '',
         templateId: '',
+        templateName: '',
         jsonData: '{}',
       })
       setDynamicFormData({})
@@ -338,6 +342,7 @@ export function CreateAppModal({
       name: '',
       description: '',
       templateId: '',
+      templateName: '',
       jsonData: '{}',
     })
     setDynamicFormData({})
@@ -424,13 +429,13 @@ export function CreateAppModal({
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label htmlFor="templateId">Template ID</Form.Label>
+            <Form.Label htmlFor="templateId">Template</Form.Label>
             <div className="d-flex">
               <Form.Control
                 type="text"
                 id="templateId"
                 name="templateId"
-                value={formData.templateId}
+                value={formData.templateName}
                 onChange={handleChange}
                 isInvalid={!!errors.templateId}
                 disabled={true}
