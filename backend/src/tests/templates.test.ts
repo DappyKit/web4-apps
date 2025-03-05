@@ -1,19 +1,13 @@
 import request from 'supertest'
-import express from 'express'
 import { Knex } from 'knex'
-import knex from 'knex'
+import express from 'express'
 import { createTemplatesRouter } from '../routes/templates'
 import { TEMPLATE_VALIDATION } from '../types/template'
-import * as dotenv from 'dotenv'
-import knexConfig from '../knexfile'
-import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts'
-import { createWalletClient, http } from 'viem'
-import { mainnet } from 'viem/chains'
+import { type PrivateKeyAccount } from 'viem/accounts'
+import { createWalletClient } from 'viem'
+import { TestDb } from './utils/testDb'
 import { Router } from 'express'
-
-interface DbUser {
-  address: string
-}
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts'
 
 interface DbTemplate {
   id: number
@@ -26,10 +20,9 @@ interface DbTemplate {
   moderated: boolean
 }
 
-dotenv.config()
-
 describe('Templates API', () => {
   let expressApp: express.Application
+  let testDb: TestDb
   let db: Knex
   let testAccount: PrivateKeyAccount
   let otherAccount: PrivateKeyAccount
@@ -37,42 +30,20 @@ describe('Templates API', () => {
   let otherWalletClient: ReturnType<typeof createWalletClient>
 
   beforeAll(async () => {
-    // Initialize database connection once
-    db = knex(knexConfig['development'])
+    // Initialize test database and accounts
+    testDb = new TestDb()
+    const accounts = testDb.initTestAccounts()
+    testAccount = accounts.testAccount
+    otherAccount = accounts.otherAccount
+    walletClient = accounts.walletClient
+    otherWalletClient = accounts.otherWalletClient
+    db = testDb.getDb()
   })
 
   beforeEach(async () => {
-    const testPrivateKey = generatePrivateKey()
-    const otherPrivateKey = generatePrivateKey()
-    testAccount = privateKeyToAccount(testPrivateKey)
-    otherAccount = privateKeyToAccount(otherPrivateKey)
-
-    walletClient = createWalletClient({
-      account: testAccount,
-      chain: mainnet,
-      transport: http(),
-    })
-
-    otherWalletClient = createWalletClient({
-      account: otherAccount,
-      chain: mainnet,
-      transport: http(),
-    })
-
     try {
-      // Rollback and migrate
-      await db.migrate.rollback()
-      await db.migrate.latest()
-
-      // Create test users
-      await db<DbUser>('users').insert([
-        {
-          address: testAccount.address,
-        },
-        {
-          address: otherAccount.address,
-        },
-      ])
+      // Apply migrations before each test (creates users automatically)
+      await testDb.setupTestDb()
 
       // Setup express app
       expressApp = express()
@@ -85,16 +56,13 @@ describe('Templates API', () => {
   })
 
   afterEach(async () => {
-    try {
-      await db.migrate.rollback()
-    } catch (error: unknown) {
-      console.error('Cleanup failed:', error instanceof Error ? error.message : 'Unknown error')
-    }
+    // Rollback migrations after each test
+    await testDb.teardownTestDb()
   })
 
   afterAll(async () => {
     // Close database connection
-    await db.destroy()
+    await testDb.closeConnection()
   })
 
   describe('POST /', () => {

@@ -5,6 +5,7 @@ import knexConfig from './knexfile'
 import { createAppsRouter } from './routes/apps'
 import { createUsersRouter } from './routes/users'
 import { createTemplatesRouter } from './routes/templates'
+import { createAiRouter } from './routes/ai'
 import cors from 'cors'
 
 // Load environment variables
@@ -25,8 +26,8 @@ db.raw('SELECT 1')
   .then(() => {
     console.log('Database connected successfully')
   })
-  .catch((err: unknown) => {
-    console.error('Database connection failed:', err)
+  .catch((error: unknown) => {
+    console.error('Database connection failed:', error)
     process.exit(1)
   })
 
@@ -44,9 +45,13 @@ app.use((_err: unknown, _req: express.Request, res: express.Response, _next: exp
 app.use('/api', createAppsRouter(db))
 app.use('/api', createUsersRouter(db))
 app.use('/api/templates', createTemplatesRouter(db))
+app.use('/api/ai', createAiRouter(db))
 
 const port = process.env.PORT || 3001
 app.listen(port, () => {
   console.log(`Server running on port ${port}`)
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
 })
+
+// Export for testing
+export default app

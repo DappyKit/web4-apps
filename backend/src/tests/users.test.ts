@@ -1,38 +1,31 @@
 import request from 'supertest'
 import { Knex } from 'knex'
-import knex from 'knex'
-import * as dotenv from 'dotenv'
-import knexConfig from '../knexfile'
 import express from 'express'
 import { createUsersRouter } from '../routes/users'
-import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts'
-import { createWalletClient, http } from 'viem'
-import { mainnet } from 'viem/chains'
-
-dotenv.config()
+import { type PrivateKeyAccount } from 'viem/accounts'
+import { createWalletClient } from 'viem'
+import { TestDb } from './utils/testDb'
 
 describe('Users API', () => {
   let app: express.Application
+  let testDb: TestDb
   let db: Knex
   let testAccount: PrivateKeyAccount
   let walletClient: ReturnType<typeof createWalletClient>
 
   beforeAll(async () => {
-    db = knex(knexConfig['development'])
+    // Initialize test database and accounts
+    testDb = new TestDb()
+    const accounts = testDb.initTestAccounts()
+    testAccount = accounts.testAccount
+    walletClient = accounts.walletClient
+    db = testDb.getDb()
   })
 
   beforeEach(async () => {
-    const privateKey = generatePrivateKey()
-    testAccount = privateKeyToAccount(privateKey)
-    walletClient = createWalletClient({
-      account: testAccount,
-      chain: mainnet,
-      transport: http(),
-    })
-
     try {
-      await db.migrate.rollback()
-      await db.migrate.latest()
+      // Apply migrations before each test (creates users automatically)
+      await testDb.setupTestDb(false) // Don't create users automatically for user tests
 
       app = express()
       app.use(express.json())
@@ -44,15 +37,13 @@ describe('Users API', () => {
   })
 
   afterEach(async () => {
-    try {
-      await db.migrate.rollback()
-    } catch (error) {
-      console.error('Cleanup failed:', error)
-    }
+    // Rollback migrations after each test
+    await testDb.teardownTestDb()
   })
 
   afterAll(async () => {
-    await db.destroy()
+    // Close database connection
+    await testDb.closeConnection()
   })
 
   describe('POST /api/register', () => {

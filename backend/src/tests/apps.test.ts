@@ -1,15 +1,10 @@
 import request from 'supertest'
 import { Knex } from 'knex'
-import knex from 'knex'
-import * as dotenv from 'dotenv'
-import knexConfig from '../knexfile'
 import express from 'express'
 import { createAppsRouter } from '../routes/apps'
-import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts'
-import { createWalletClient, http } from 'viem'
-import { mainnet } from 'viem/chains'
-
-dotenv.config()
+import { type PrivateKeyAccount } from 'viem/accounts'
+import { createWalletClient } from 'viem'
+import { TestDb } from './utils/testDb'
 
 const quizSchema = {
   type: 'object',
@@ -69,6 +64,7 @@ const quizData = JSON.stringify({
 
 describe('Apps API', () => {
   let expressApp: express.Application
+  let testDb: TestDb
   let db: Knex
   let testAccount: PrivateKeyAccount
   let otherAccount: PrivateKeyAccount
@@ -77,42 +73,20 @@ describe('Apps API', () => {
   let templateId: number
 
   beforeAll(async () => {
-    // Initialize database connection once
-    db = knex(knexConfig['development'])
+    // Initialize test database and accounts
+    testDb = new TestDb()
+    const accounts = testDb.initTestAccounts()
+    testAccount = accounts.testAccount
+    otherAccount = accounts.otherAccount
+    walletClient = accounts.walletClient
+    otherWalletClient = accounts.otherWalletClient
+    db = testDb.getDb()
   })
 
   beforeEach(async () => {
-    const testPrivateKey = generatePrivateKey()
-    const otherPrivateKey = generatePrivateKey()
-    testAccount = privateKeyToAccount(testPrivateKey)
-    otherAccount = privateKeyToAccount(otherPrivateKey)
-
-    walletClient = createWalletClient({
-      account: testAccount,
-      chain: mainnet,
-      transport: http(),
-    })
-
-    otherWalletClient = createWalletClient({
-      account: otherAccount,
-      chain: mainnet,
-      transport: http(),
-    })
-
     try {
-      // Rollback and migrate
-      await db.migrate.rollback()
-      await db.migrate.latest()
-
-      // Create test users
-      await db('users').insert([
-        {
-          address: testAccount.address,
-        },
-        {
-          address: otherAccount.address,
-        },
-      ])
+      // Apply migrations before each test (creates users automatically)
+      await testDb.setupTestDb()
 
       // Create a test template
       const [id] = await db('templates').insert({
@@ -135,16 +109,13 @@ describe('Apps API', () => {
   })
 
   afterEach(async () => {
-    try {
-      await db.migrate.rollback()
-    } catch (error) {
-      console.error('Cleanup failed:', error)
-    }
+    // Rollback migrations after each test
+    await testDb.teardownTestDb()
   })
 
   afterAll(async () => {
     // Close database connection
-    await db.destroy()
+    await testDb.closeConnection()
   })
 
   describe('GET /api/my-apps', () => {
@@ -625,13 +596,8 @@ describe('Apps API', () => {
     })
 
     it('should handle errors gracefully', async () => {
-      // Mock db to simulate database error
-      const mockDb = {
-        ...db,
-        async where() {
-          throw new Error('Database error')
-        },
-      } as unknown as Knex
+      // Use the TestDb utility to create a mock database that throws errors
+      const mockDb = testDb.createMockDbWithError('simple')
 
       // Create app with the mocked db
       const errorApp = express()
@@ -778,33 +744,8 @@ describe('Apps API', () => {
     })
 
     it('should handle errors gracefully', async () => {
-      // Mock db to simulate database error for listing apps
-      const mockDb = {
-        ...db,
-        where() {
-          // Return an object with count and other methods that will throw
-          return {
-            orderBy() {
-              return {
-                limit() {
-                  return {
-                    offset() {
-                      throw new Error('Database error')
-                    },
-                  }
-                },
-              }
-            },
-            count() {
-              return {
-                first() {
-                  throw new Error('Database error')
-                },
-              }
-            },
-          }
-        },
-      } as unknown as Knex
+      // Use the TestDb utility to create a mock database that throws errors
+      const mockDb = testDb.createMockDbWithError('complex')
 
       // Create app with the mocked db
       const errorApp = express()
