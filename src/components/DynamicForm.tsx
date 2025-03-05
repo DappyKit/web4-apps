@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Form, Row, Col, Button, Card } from 'react-bootstrap'
 
 interface FormField {
@@ -40,13 +40,93 @@ export function DynamicForm({
   const [errors, setErrors] = useState<Record<string, string>>({})
   // Create a ref to track the previous form values
   const prevFormDataRef = useRef('')
+  const initialized = useRef(false)
+
+  /**
+   * Initialize array fields with minimum items if specified
+   * @param fields Form fields schema
+   * @param values Current form values
+   * @returns Updated form values with initialized arrays
+   */
+  const initializeArrayFields = useCallback(
+    (fields: FormField[], values: Record<string, unknown>): Record<string, unknown> => {
+      const updatedValues = { ...values }
+
+      fields.forEach(field => {
+        // Handle array fields
+        if (field.type === 'array' && field.arrayItemSchema) {
+          const fieldValue = updatedValues[field.name]
+          const currentArray = Array.isArray(fieldValue) ? fieldValue : []
+
+          // If minItems is specified and the array has fewer items, add items to meet the minimum
+          if (field.minItems !== undefined && currentArray.length < field.minItems) {
+            const arrayToUpdate = [...currentArray]
+
+            // Create default items based on the item schema type
+            for (let i = currentArray.length; i < field.minItems; i++) {
+              let defaultValue: unknown = ''
+
+              if (field.arrayItemSchema.type === 'object' && field.arrayItemSchema.fields) {
+                defaultValue = {}
+
+                // If the array item is an object with its own fields, recursively initialize those fields
+                if (
+                  field.arrayItemSchema.fields.some(
+                    nestedField => nestedField.type === 'array' && nestedField.minItems !== undefined,
+                  )
+                ) {
+                  defaultValue = initializeArrayFields(
+                    field.arrayItemSchema.fields,
+                    defaultValue as Record<string, unknown>,
+                  )
+                }
+              } else if (field.arrayItemSchema.type === 'array') {
+                defaultValue = []
+              } else if (field.arrayItemSchema.type === 'number') {
+                defaultValue = 0
+              } else if (field.arrayItemSchema.type === 'boolean') {
+                defaultValue = false
+              }
+
+              arrayToUpdate.push(defaultValue)
+            }
+
+            updatedValues[field.name] = arrayToUpdate
+          }
+        }
+
+        // Handle nested object fields
+        if (field.type === 'object' && field.fields) {
+          const fieldValue = updatedValues[field.name] as Record<string, unknown> | undefined
+          const objectValue = fieldValue ?? {}
+
+          // Recursively initialize arrays in nested objects
+          if (field.fields.some(nestedField => nestedField.type === 'array' && nestedField.minItems !== undefined)) {
+            updatedValues[field.name] = initializeArrayFields(field.fields, objectValue)
+          }
+        }
+      })
+
+      return updatedValues
+    },
+    [],
+  )
+
+  // Initialize the form with minimum array items when schema changes
+  useEffect(() => {
+    if (schema && !initialized.current) {
+      initialized.current = true
+      setFormValues(prevValues => initializeArrayFields(schema, prevValues))
+    }
+  }, [schema, initializeArrayFields])
 
   // Update form values when initialValues change
   useEffect(() => {
     if (Object.keys(initialValues).length > 0) {
-      setFormValues(initialValues)
+      const updatedValues = schema ? initializeArrayFields(schema, initialValues) : initialValues
+      setFormValues(updatedValues)
     }
-  }, [initialValues])
+  }, [initialValues, schema, initializeArrayFields])
 
   // Update parent component with form data when values change
   useEffect(() => {
