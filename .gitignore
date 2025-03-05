@@ -27,3 +27,11 @@ dist-ssr
 
 # Test coverage
 coverage
+
+# ESLint legacy format (using flat config instead)
+.eslintrc
+.eslintrc.js
+.eslintrc.cjs
+.eslintrc.yaml
+.eslintrc.yml
+.eslintrc.json
