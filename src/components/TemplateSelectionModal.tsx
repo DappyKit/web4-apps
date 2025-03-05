@@ -24,7 +24,7 @@ export function TemplateSelectionModal({
       <Modal.Header closeButton>
         <Modal.Title>Select a Template</Modal.Title>
       </Modal.Header>
-      <Modal.Body>
+      <Modal.Body className="mb-4">
         {templates.length === 0 ? (
           <p className="text-center">No templates available. Please create a template first.</p>
         ) : (
@@ -62,7 +62,7 @@ export function TemplateSelectionModal({
         )}
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={onHide}>
+        <Button variant="outline-secondary" onClick={onHide}>
           Close
         </Button>
       </Modal.Footer>

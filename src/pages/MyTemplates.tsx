@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAccount, useSignMessage } from 'wagmi'
-import { Alert, Button, Form, Spinner, Modal } from 'react-bootstrap'
+import { Alert, Button } from 'react-bootstrap'
 import { createTemplate, getMyTemplates, deleteTemplate } from '../services/api'
 import type { Template } from '../services/api'
 import TemplateList from '../components/TemplateList'
 import { Pagination } from '../components/Pagination'
+import { CreateTemplateModal } from '../components/CreateTemplateModal'
+import { DeleteTemplateModal } from '../components/DeleteTemplateModal'
 
 // Constants
 const ITEMS_PER_PAGE = 12
@@ -149,12 +151,19 @@ export function MyTemplates(): React.JSX.Element {
     [address, formData, loadTemplates, signMessageAsync, validateForm],
   )
 
-  const handleFormSubmit = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault()
-      void handleSubmit(e)
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const { name, value } = e.target
+      setFormData(prev => ({ ...prev, [name]: value }))
+      // Clear error when user starts typing
+      if (errors[name as keyof FormErrors]) {
+        setErrors(prev => ({
+          ...prev,
+          [name]: undefined,
+        }))
+      }
     },
-    [handleSubmit],
+    [errors],
   )
 
   const handleDeleteTemplate = useCallback(
@@ -199,21 +208,6 @@ export function MyTemplates(): React.JSX.Element {
     }
   }, [handleDeleteTemplate, templateToDelete])
 
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const { name, value } = e.target
-      setFormData(prev => ({ ...prev, [name]: value }))
-      // Clear error when user starts typing
-      if (errors[name as keyof FormErrors]) {
-        setErrors(prev => ({
-          ...prev,
-          [name]: undefined,
-        }))
-      }
-    },
-    [errors],
-  )
-
   // Get current page items
   const getCurrentPageItems = useCallback(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
@@ -224,6 +218,14 @@ export function MyTemplates(): React.JSX.Element {
   // Handle page change
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page)
+  }, [])
+
+  const handleHideCreateModal = useCallback(() => {
+    setShowCreateModal(false)
+  }, [])
+
+  const handleHideDeleteModal = useCallback(() => {
+    setShowDeleteModal(false)
   }, [])
 
   return (
@@ -260,139 +262,27 @@ export function MyTemplates(): React.JSX.Element {
         )}
       </div>
 
-      {/* Create Modal */}
-      <Modal
+      {/* Use the new modal components */}
+      <CreateTemplateModal
         show={showCreateModal}
-        onHide={() => {
-          setShowCreateModal(false)
+        onHide={handleHideCreateModal}
+        formData={formData}
+        errors={errors}
+        isCreating={isCreating}
+        onChange={handleChange}
+        onSubmit={e => {
+          void handleSubmit(e)
         }}
-        size="lg"
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Create New Template</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleFormSubmit}>
-            <Form.Group className="mb-3">
-              <Form.Label>Title</Form.Label>
-              <Form.Control
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                isInvalid={!!errors.title}
-              />
-              {errors.title && <Form.Control.Feedback type="invalid">{errors.title}</Form.Control.Feedback>}
-            </Form.Group>
+      />
 
-            <Form.Group className="mb-3">
-              <Form.Label>Description (Optional)</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={2}
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                isInvalid={!!errors.description}
-              />
-              {errors.description && <Form.Control.Feedback type="invalid">{errors.description}</Form.Control.Feedback>}
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>URL</Form.Label>
-              <Form.Control
-                type="text"
-                name="url"
-                value={formData.url}
-                onChange={handleChange}
-                isInvalid={!!errors.url}
-              />
-              {errors.url && <Form.Control.Feedback type="invalid">{errors.url}</Form.Control.Feedback>}
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>JSON Data</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={4}
-                name="jsonData"
-                value={formData.jsonData}
-                onChange={handleChange}
-                isInvalid={!!errors.jsonData}
-                style={{ fontFamily: 'monospace' }}
-              />
-              {errors.jsonData && <Form.Control.Feedback type="invalid">{errors.jsonData}</Form.Control.Feedback>}
-            </Form.Group>
-
-            <div className="d-flex justify-content-end gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setShowCreateModal(false)
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isCreating}>
-                {isCreating ? (
-                  <>
-                    <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
-                    Creating...
-                  </>
-                ) : (
-                  'Create Template'
-                )}
-              </Button>
-            </div>
-          </Form>
-        </Modal.Body>
-      </Modal>
-
-      {/* Delete Confirmation Modal */}
-      <Modal
+      <DeleteTemplateModal
         show={showDeleteModal}
-        onHide={() => {
-          setShowDeleteModal(false)
+        onHide={handleHideDeleteModal}
+        isDeleting={isDeleting !== null}
+        onConfirmDelete={() => {
+          void handleConfirmDelete()
         }}
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Delete Template</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>Are you sure you want to delete this template?</p>
-          <Alert variant="warning">
-            <i className="bi bi-exclamation-triangle me-2"></i>
-            Warning: Some apps might be using this template. Deleting it will not affect existing apps, but they may
-            lose access to the template&apos;s source.
-          </Alert>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setShowDeleteModal(false)
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => {
-              void handleConfirmDelete()
-            }}
-            disabled={isDeleting !== null}
-          >
-            {isDeleting !== null ? (
-              <>
-                <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
-                Deleting...
-              </>
-            ) : (
-              'Delete Template'
-            )}
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      />
     </div>
   )
 }
