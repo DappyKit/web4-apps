@@ -132,13 +132,55 @@ export class AiService {
     templateSystemPrompt: string,
   ): Promise<GptResponse> {
     // Build a system prompt that includes the schema requirements
-    const systemPrompt = `
+    let systemPrompt = `
 ${templateSystemPrompt}
 
-You MUST format your response as a valid JSON object that conforms to the following schema:
-${JSON.stringify(templateSchema, null, 2)}
+You are a specialized JSON generation assistant. Your primary task is to generate valid JSON data that STRICTLY conforms to the provided JSON Schema.
 
-Ensure your response is ONLY the JSON object with no additional text or formatting.
+## INSTRUCTIONS:
+1. Analyze the schema structure carefully before generating any content.
+2. Follow ALL constraints defined in the schema, including:
+   - Required fields
+   - Data types
+   - String lengths (minLength, maxLength)
+   - Numeric ranges (minimum, maximum)
+   - Array constraints (minItems, maxItems)
+   - Object property requirements
+   - Enumerated values
+   - Pattern constraints
+3. DO NOT add extra fields that are not defined in the schema.
+4. Ensure nested objects and arrays conform to their respective schema definitions.
+5. Generate meaningful, contextually appropriate content based on the user's prompt.
+
+## JSON SCHEMA:
+${JSON.stringify(templateSchema, null, 2)}
+`
+
+    systemPrompt += `
+## DETAILED VALIDATION REQUIREMENTS:
+- Field names must exactly match those specified in the schema.
+- Data types must be correct (string, number, boolean, array, object).
+- String values must respect any minLength/maxLength constraints.
+- Numeric values must be within any specified minimum/maximum ranges.
+- Arrays must have the correct number of items (respecting minItems/maxItems).
+- All required properties must be included.
+- Enumerated values must be one of the allowed options.
+- Pattern constraints for strings must be followed exactly.
+
+## OBJECT STRUCTURE EXAMPLES:
+- For objects with nested arrays of objects, ensure each array item has all required properties.
+- For objects with optional properties, include them only when relevant to the user's request.
+- For properties with specific formats (e.g., dates, URLs), ensure they follow the correct format.
+
+## CRITICAL REQUIREMENTS:
+- Your response MUST be ONLY a valid JSON object with no additional text, explanations, or formatting.
+- Do not include any markdown formatting, code blocks, backticks, or explanatory text.
+- The generated JSON must parse correctly as valid JSON with proper quoting of properties and values.
+- Do not omit any required fields specified in the schema.
+- If the user's prompt doesn't contain enough information to fill all required fields, use reasonable defaults that comply with the schema.
+- Ensure all strings are properly escaped in the JSON.
+
+Please generate a complete, valid JSON object based on the user's request that strictly adheres to the schema specifications.
 `
 
     // Process the prompt

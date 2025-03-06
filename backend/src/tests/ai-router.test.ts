@@ -126,8 +126,12 @@ describe('AI Router', () => {
       expect(responseBody.data?.result).toEqual(mockResponse.parsedData)
       expect(responseBody.data?.requiredValidation).toBe(false)
 
-      // Verify AI service was called with correct parameters
-      expect(processTemplatePromptMock).toHaveBeenCalledWith('Test prompt', expect.any(Object), expect.any(String))
+      // Verify AI service was called with correct parameters - now allows for 4 parameters with the last being optional
+      expect(processTemplatePromptMock).toHaveBeenCalledWith(
+        'Test prompt',
+        expect.any(Object),
+        expect.stringContaining('TEMPLATE: Test Template'),
+      )
     })
 
     it('should handle invalid JSON responses', async () => {
@@ -292,11 +296,11 @@ describe('AI Router', () => {
       // Make request
       await request(app).post('/api/ai/process-prompt').send(requestData).expect(200)
 
-      // Verify AI service was called with the correct parameters
+      // Verify AI service was called with the correct parameters - now accepts 4 parameters
       expect(processTemplatePromptMock).toHaveBeenCalledWith(
         'Generate a user named Test User',
-        expect.any(Object),
-        expect.any(String),
+        templateSchema,
+        expect.stringContaining('TEMPLATE: Test Template with Metadata'),
       )
     })
   })
