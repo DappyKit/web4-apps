@@ -120,12 +120,12 @@ describe('Apps API', () => {
 
   // Silence expected console errors during error tests
   let originalConsoleError: typeof console.error
-  
+
   beforeEach(() => {
     // Store the original console.error
     originalConsoleError = console.error
   })
-  
+
   afterEach(() => {
     // Restore the original console.error
     console.error = originalConsoleError
@@ -611,7 +611,7 @@ describe('Apps API', () => {
     it('should handle errors gracefully', async () => {
       // Silence console.error during this test
       console.error = jest.fn()
-      
+
       // Use the TestDb utility to create a mock database that throws errors
       const mockDb = testDb.createMockDbWithError('simple')
 
@@ -762,7 +762,7 @@ describe('Apps API', () => {
     it('should handle errors gracefully', async () => {
       // Silence console.error during this test
       console.error = jest.fn()
-      
+
       // Use the TestDb utility to create a mock database that throws errors
       const mockDb = testDb.createMockDbWithError('complex')
 

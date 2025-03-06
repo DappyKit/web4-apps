@@ -36,12 +36,12 @@ describe('AI Routes', () => {
 
   // Silence expected console errors during error tests
   let originalConsoleError: typeof console.error
-  
+
   beforeEach(() => {
     // Store the original console.error
     originalConsoleError = console.error
   })
-  
+
   afterEach(() => {
     // Restore the original console.error
     console.error = originalConsoleError
@@ -57,15 +57,14 @@ describe('AI Routes', () => {
 
       // Create a test template to use in tests
       const db = testDb.getDb()
-      await db('templates')
-        .insert({
-          id: 1,
-          title: 'Test Template',
-          description: 'A template for testing AI',
-          url: 'https://example.com/template',
-          json_data: JSON.stringify({ type: 'test' }),
-          owner_address: testDb.getTestAccount().address,
-        })
+      await db('templates').insert({
+        id: 1,
+        title: 'Test Template',
+        description: 'A template for testing AI',
+        url: 'https://example.com/template',
+        json_data: JSON.stringify({ type: 'test' }),
+        owner_address: testDb.getTestAccount().address,
+      })
 
       // Make request
       const response = await request(app)

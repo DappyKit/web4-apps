@@ -67,12 +67,12 @@ describe('Templates API', () => {
 
   // Silence expected console errors during error tests
   let originalConsoleError: typeof console.error
-  
+
   beforeEach(() => {
     // Store the original console.error
     originalConsoleError = console.error
   })
-  
+
   afterEach(() => {
     // Restore the original console.error
     console.error = originalConsoleError

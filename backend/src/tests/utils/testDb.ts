@@ -78,7 +78,7 @@ export class TestDb {
     // Create a more complete mock without the 'db is not a function' error
 
     // First create a function that can be called like db('table')
-    const knexFn = function() {
+    const knexFn = function () {
       return mockMethods
     } as unknown as Knex
 
@@ -108,7 +108,7 @@ export class TestDb {
 
     // Use a type assertion to add Knex-specific properties
     // since TypeScript doesn't know these exist at runtime
-    const mockedDb = knexFn as unknown as Knex & Record<string, any>
+    const mockedDb = knexFn as unknown as Knex & Record<string, jest.Mock | Record<string, jest.Mock>>
 
     // Add knex properties with type assertions for TypeScript
     mockedDb.migrate = {
@@ -144,7 +144,7 @@ export class TestDb {
         ...mockMethods,
         first: jest.fn().mockImplementation(() => {
           throw new Error('Database error')
-        })
+        }),
       })
     } else {
       // For complex errors, make where().orderBy().limit().offset() throw
@@ -156,15 +156,15 @@ export class TestDb {
             ...mockMethods,
             offset: jest.fn().mockImplementation(() => {
               throw new Error('Database error')
-            })
-          })
+            }),
+          }),
         }),
         count: jest.fn().mockReturnValue({
           ...mockMethods,
           first: jest.fn().mockImplementation(() => {
             throw new Error('Database error')
-          })
-        })
+          }),
+        }),
       })
     }
 
