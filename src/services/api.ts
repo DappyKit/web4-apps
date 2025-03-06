@@ -401,3 +401,61 @@ export async function getAllTemplates(page = 1, limit = 12): Promise<PaginatedTe
     throw error
   }
 }
+
+/**
+ * Interface for AI prompt response from the backend
+ */
+interface AiPromptApiResponse {
+  success: boolean
+  data?: {
+    result: Record<string, unknown>
+  }
+  error?: string
+}
+
+/**
+ * Generates template data using AI
+ * @param templateId - The ID of the template to fill with AI-generated data
+ * @param prompt - User instructions for AI generation
+ * @returns Promise with the AI-generated JSON data for the template
+ */
+export async function generateTemplateDataWithAI(templateId: number, prompt: string): Promise<string> {
+  if (!templateId) {
+    throw new Error('Template ID is required')
+  }
+
+  if (!prompt) {
+    throw new Error('Prompt is required')
+  }
+
+  try {
+    const response = await fetch('/api/ai/process-prompt', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        templateId,
+        prompt,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorData = (await response.json()) as ApiErrorResponse
+      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`)
+    }
+
+    // Parse the AI response
+    const data = (await response.json()) as AiPromptApiResponse
+    if (!data.success) {
+      const errorMessage = data.error ?? 'AI processing failed'
+      throw new Error(errorMessage)
+    }
+
+    // Get the result data and convert to string
+    return JSON.stringify(data.data?.result ?? {})
+  } catch (error) {
+    console.error('Error generating AI template data:', error)
+    throw error
+  }
+}

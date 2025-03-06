@@ -101,7 +101,7 @@ describe('Apps API', () => {
       // Setup express app
       expressApp = express()
       expressApp.use(express.json())
-      expressApp.use('/api', createAppsRouter(db))
+      expressApp.use('/api', createAppsRouter(testDb.getDb()))
     } catch (error) {
       console.error('Setup failed:', error)
       throw error
@@ -116,6 +116,19 @@ describe('Apps API', () => {
   afterAll(async () => {
     // Close database connection
     await testDb.closeConnection()
+  })
+
+  // Silence expected console errors during error tests
+  let originalConsoleError: typeof console.error
+  
+  beforeEach(() => {
+    // Store the original console.error
+    originalConsoleError = console.error
+  })
+  
+  afterEach(() => {
+    // Restore the original console.error
+    console.error = originalConsoleError
   })
 
   describe('GET /api/my-apps', () => {
@@ -596,6 +609,9 @@ describe('Apps API', () => {
     })
 
     it('should handle errors gracefully', async () => {
+      // Silence console.error during this test
+      console.error = jest.fn()
+      
       // Use the TestDb utility to create a mock database that throws errors
       const mockDb = testDb.createMockDbWithError('simple')
 
@@ -744,6 +760,9 @@ describe('Apps API', () => {
     })
 
     it('should handle errors gracefully', async () => {
+      // Silence console.error during this test
+      console.error = jest.fn()
+      
       // Use the TestDb utility to create a mock database that throws errors
       const mockDb = testDb.createMockDbWithError('complex')
 

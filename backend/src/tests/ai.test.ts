@@ -34,6 +34,19 @@ describe('AI Routes', () => {
     await testDb.closeConnection()
   })
 
+  // Silence expected console errors during error tests
+  let originalConsoleError: typeof console.error
+  
+  beforeEach(() => {
+    // Store the original console.error
+    originalConsoleError = console.error
+  })
+  
+  afterEach(() => {
+    // Restore the original console.error
+    console.error = originalConsoleError
+  })
+
   describe('POST /api/ai/process-prompt', () => {
     it('should process a prompt and return a valid response', async () => {
       // Test data
@@ -43,8 +56,8 @@ describe('AI Routes', () => {
       }
 
       // Create a test template to use in tests
-      await testDb
-        .getDb()('templates')
+      const db = testDb.getDb()
+      await db('templates')
         .insert({
           id: 1,
           title: 'Test Template',
@@ -87,41 +100,6 @@ describe('AI Routes', () => {
       expect(response.body.error).toBeDefined()
     })
 
-    it('should include additional context when provided', async () => {
-      // Create a test template to use in tests
-      await testDb
-        .getDb()('templates')
-        .insert({
-          id: 1,
-          title: 'Test Template',
-          description: 'A template for testing AI',
-          url: 'https://example.com/template',
-          json_data: JSON.stringify({ type: 'test' }),
-          owner_address: testDb.getTestAccount().address,
-        })
-
-      // Test data with additional context
-      const requestData: AiPromptRequest = {
-        prompt: 'Test prompt with context',
-        templateId: 1,
-        additionalContext: {
-          userPreference: 'detailed',
-          format: 'json',
-        },
-      }
-
-      // Make request
-      const response = await request(app)
-        .post('/api/ai/process-prompt')
-        .send(requestData)
-        .expect('Content-Type', /json/)
-        .expect(200)
-
-      // Assert response structure
-      const responseBody = response.body as AiPromptResponse
-      expect(responseBody.success).toBe(true)
-    })
-
     it('should return 404 when template does not exist', async () => {
       const requestData: AiPromptRequest = {
         prompt: 'Test prompt',
@@ -139,7 +117,10 @@ describe('AI Routes', () => {
     })
 
     it('should handle database errors gracefully', async () => {
-      // Create a mock database that throws an error
+      // Silence console.error during this test
+      console.error = jest.fn()
+
+      // Use the TestDb utility to create a mock database that throws errors
       const mockDb = testDb.createMockDbWithError('simple')
 
       // Create app with the mocked db

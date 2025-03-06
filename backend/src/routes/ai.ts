@@ -15,7 +15,7 @@ export function createAiRouter(db: Knex): express.Router {
    * POST /api/ai/process-prompt
    */
   router.post('/process-prompt', async (req, res) => {
-    const { prompt, templateId, additionalContext: _additionalContext } = req.body as AiPromptRequest
+    const { prompt, templateId } = req.body as AiPromptRequest
 
     // Validate required fields
     if (!prompt || !templateId) {

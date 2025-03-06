@@ -75,54 +75,100 @@ export class TestDb {
    * @returns A mocked Knex instance
    */
   public createMockDbWithError(errorType: 'simple' | 'nested' | 'complex'): Knex {
-    if (errorType === 'simple') {
-      // Simple error - throws on any where() call
-      return {
-        ...this.db,
-        async where(): Promise<never> {
-          throw new Error('Database error')
-        },
-      } as unknown as Knex
-    } else if (errorType === 'nested') {
-      // Nested error - throws after a chain of calls
-      return {
-        ...this.db,
-        where(): Record<string, unknown> {
-          return {
-            async first(): Promise<never> {
-              throw new Error('Database error')
-            },
-          }
-        },
-      } as unknown as Knex
-    } else {
-      // Complex error - throws after a longer chain of calls (pagination)
-      return {
-        ...this.db,
-        where(): Record<string, unknown> {
-          return {
-            orderBy(): Record<string, unknown> {
-              return {
-                limit(): Record<string, unknown> {
-                  return {
-                    offset(): never {
-                      throw new Error('Database error')
-                    },
-                  }
-                },
-              }
-            },
-            count(): Record<string, unknown> {
-              return {
-                first(): never {
-                  throw new Error('Database error')
-                },
-              }
-            },
-          }
-        },
-      } as unknown as Knex
+    // Create a more complete mock without the 'db is not a function' error
+
+    // First create a function that can be called like db('table')
+    const knexFn = function() {
+      return mockMethods
+    } as unknown as Knex
+
+    // Create standard mock methods that all return objects with appropriate methods
+    const mockMethods: Record<string, jest.Mock> = {
+      where: jest.fn(),
+      first: jest.fn(),
+      orderBy: jest.fn(),
+      limit: jest.fn(),
+      offset: jest.fn(),
+      count: jest.fn(),
+      select: jest.fn(),
+      join: jest.fn(),
+      insert: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      whereRaw: jest.fn(),
     }
+
+    // Make each method return itself for chaining
+    Object.keys(mockMethods).forEach(key => {
+      mockMethods[key].mockReturnValue(mockMethods)
+    })
+
+    // Add all the methods to the function object too
+    Object.assign(knexFn, mockMethods)
+
+    // Use a type assertion to add Knex-specific properties
+    // since TypeScript doesn't know these exist at runtime
+    const mockedDb = knexFn as unknown as Knex & Record<string, any>
+
+    // Add knex properties with type assertions for TypeScript
+    mockedDb.migrate = {
+      latest: jest.fn().mockResolvedValue(undefined),
+      rollback: jest.fn().mockResolvedValue(undefined),
+      up: jest.fn(),
+      down: jest.fn(),
+      status: jest.fn(),
+      currentVersion: jest.fn(),
+      list: jest.fn(),
+      make: jest.fn(),
+    } as unknown as Knex.Migrator
+
+    mockedDb.destroy = jest.fn().mockResolvedValue(undefined)
+    mockedDb.raw = jest.fn()
+
+    mockedDb.fn = {
+      now: jest.fn(),
+      uuid: jest.fn(),
+      uuidToBin: jest.fn(),
+      binToUuid: jest.fn(),
+    } as unknown as Knex.FunctionHelper
+
+    // Now set up the error behavior based on the error type
+    if (errorType === 'simple') {
+      // For simple errors, make where() throw immediately
+      mockMethods.where.mockImplementation(() => {
+        throw new Error('Database error')
+      })
+    } else if (errorType === 'nested') {
+      // For nested errors, make where().first() throw
+      mockMethods.where.mockReturnValue({
+        ...mockMethods,
+        first: jest.fn().mockImplementation(() => {
+          throw new Error('Database error')
+        })
+      })
+    } else {
+      // For complex errors, make where().orderBy().limit().offset() throw
+      mockMethods.where.mockReturnValue({
+        ...mockMethods,
+        orderBy: jest.fn().mockReturnValue({
+          ...mockMethods,
+          limit: jest.fn().mockReturnValue({
+            ...mockMethods,
+            offset: jest.fn().mockImplementation(() => {
+              throw new Error('Database error')
+            })
+          })
+        }),
+        count: jest.fn().mockReturnValue({
+          ...mockMethods,
+          first: jest.fn().mockImplementation(() => {
+            throw new Error('Database error')
+          })
+        })
+      })
+    }
+
+    return mockedDb
   }
 
   /**

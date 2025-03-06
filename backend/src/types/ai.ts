@@ -11,11 +11,6 @@ export interface AiPromptRequest {
    * The ID of the template to use for processing
    */
   templateId: number
-
-  /**
-   * Optional additional context/data provided by the user
-   */
-  additionalContext?: Record<string, unknown>
 }
 
 /**

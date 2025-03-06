@@ -29,7 +29,7 @@ describe('Users API', () => {
 
       app = express()
       app.use(express.json())
-      app.use('/api', createUsersRouter(db))
+      app.use('/api', createUsersRouter(testDb.getDb()))
     } catch (error) {
       console.error('Setup failed:', error)
       throw error
@@ -44,6 +44,19 @@ describe('Users API', () => {
   afterAll(async () => {
     // Close database connection
     await testDb.closeConnection()
+  })
+
+  // Silence expected console errors during error tests
+  let originalConsoleError: typeof console.error
+
+  beforeEach(() => {
+    // Store the original console.error
+    originalConsoleError = console.error
+  })
+
+  afterEach(() => {
+    // Restore the original console.error
+    console.error = originalConsoleError
   })
 
   describe('POST /api/register', () => {
@@ -135,6 +148,96 @@ describe('Users API', () => {
         expect(response.body.error).toBe('Invalid signature')
       })
     })
+
+    it('should handle database errors during user check', async () => {
+      // Silence console.error during this test
+      console.error = jest.fn()
+
+      // Create a mock database that throws an error
+      const mockDb = testDb.createMockDbWithError('simple')
+
+      const mockApp = express()
+      mockApp.use(express.json())
+      mockApp.use('/api', createUsersRouter(mockDb))
+
+      const response = await request(mockApp).get(`/api/check/${testAccount.address}`)
+
+      expect(response.status).toBe(500)
+      expect(response.body.error).toBe('Internal server error')
+    })
+
+    it('should handle database errors during user insertion', async () => {
+      // Silence console.error during this test
+      console.error = jest.fn()
+
+      // Create a mock where the first where returns a user doesn't exist but insert throws an error
+      const mockDb = testDb.createMockDbWithError('nested')
+
+      const message = 'Web4 Apps Registration'
+      const signature = await walletClient.signMessage({
+        message,
+        account: testAccount,
+      })
+
+      const mockApp = express()
+      mockApp.use(express.json())
+      mockApp.use('/api', createUsersRouter(mockDb))
+
+      const response = await request(mockApp).post('/api/register').send({
+        address: testAccount.address,
+        message,
+        signature,
+      })
+
+      expect(response.status).toBe(500)
+      expect(response.body.error).toBe('Internal server error')
+    })
+
+    it('should handle database errors after user insertion', async () => {
+      // Silence console.error during this test
+      console.error = jest.fn()
+
+      // Create a custom mock for this specific case
+      const mockDb = {
+        ...db,
+      } as Knex
+
+      // First where call returns null (user doesn't exist)
+      let whereCallCount = 0
+      mockDb.where = jest.fn().mockImplementation(() => {
+        whereCallCount++
+        if (whereCallCount === 1) {
+          return {
+            first: jest.fn().mockResolvedValue(null),
+          }
+        } else {
+          // Second where call (after insert) throws error
+          throw new Error('Database error fetching user after insert')
+        }
+      })
+
+      // Mock insert to succeed
+      mockDb.insert = jest.fn().mockResolvedValue([1])
+
+      const message = 'Web4 Apps Registration'
+      const signature = await walletClient.signMessage({
+        message,
+        account: testAccount,
+      })
+
+      const mockApp = express()
+      mockApp.use(express.json())
+      mockApp.use('/api', createUsersRouter(mockDb))
+
+      const response = await request(mockApp).post('/api/register').send({
+        address: testAccount.address,
+        message,
+        signature,
+      })
+
+      expect(response.status).toBe(500)
+      expect(response.body.error).toBe('Internal server error')
+    })
   })
 
   describe('GET /api/check/:address', () => {
@@ -186,133 +289,17 @@ describe('Users API', () => {
     })
 
     it('should handle database errors gracefully', async () => {
-      // Create a new app instance with mocked db
-      const mockDb = {
-        ...db,
-      } as Knex
+      // Silence console.error during this test
+      console.error = jest.fn()
 
-      // Mock the where method to throw an error
-      mockDb.where = jest.fn().mockImplementation(() => {
-        throw new Error('Database error')
-      })
+      // Create a mock database that throws an error
+      const mockDb = testDb.createMockDbWithError('simple')
 
       const mockApp = express()
       mockApp.use(express.json())
       mockApp.use('/api', createUsersRouter(mockDb))
 
       const response = await request(mockApp).get(`/api/check/${testAccount.address}`)
-
-      expect(response.status).toBe(500)
-      expect(response.body.error).toBe('Internal server error')
-    })
-  })
-
-  describe('POST /api/register error handling', () => {
-    it('should handle database errors during user check', async () => {
-      // Create a new app instance with mocked db
-      const mockDb = {
-        ...db,
-      } as Knex
-
-      const message = 'Web4 Apps Registration'
-      const signature = await walletClient.signMessage({
-        message,
-        account: testAccount,
-      })
-
-      // Mock the where method to throw an error
-      mockDb.where = jest.fn().mockImplementation(() => {
-        throw new Error('Database error during user check')
-      })
-
-      const mockApp = express()
-      mockApp.use(express.json())
-      mockApp.use('/api', createUsersRouter(mockDb))
-
-      const response = await request(mockApp).post('/api/register').send({
-        address: testAccount.address,
-        message,
-        signature,
-      })
-
-      expect(response.status).toBe(500)
-      expect(response.body.error).toBe('Internal server error')
-    })
-
-    it('should handle database errors during user insertion', async () => {
-      // Create a new app instance with mocked db
-      const mockDb = {
-        ...db,
-      } as Knex
-
-      const message = 'Web4 Apps Registration'
-      const signature = await walletClient.signMessage({
-        message,
-        account: testAccount,
-      })
-
-      // Mock the where method to return null (user doesn't exist)
-      mockDb.where = jest.fn().mockReturnValue({
-        first: jest.fn().mockResolvedValue(null),
-      })
-
-      // Mock the insert method to throw an error
-      mockDb.insert = jest.fn().mockImplementation(() => {
-        throw new Error('Database error during insertion')
-      })
-
-      const mockApp = express()
-      mockApp.use(express.json())
-      mockApp.use('/api', createUsersRouter(mockDb))
-
-      const response = await request(mockApp).post('/api/register').send({
-        address: testAccount.address,
-        message,
-        signature,
-      })
-
-      expect(response.status).toBe(500)
-      expect(response.body.error).toBe('Internal server error')
-    })
-
-    it('should handle database errors after user insertion', async () => {
-      // Create a new app instance with mocked db
-      const mockDb = {
-        ...db,
-      } as Knex
-
-      const message = 'Web4 Apps Registration'
-      const signature = await walletClient.signMessage({
-        message,
-        account: testAccount,
-      })
-
-      // First where call returns null (user doesn't exist)
-      let whereCallCount = 0
-      mockDb.where = jest.fn().mockImplementation(() => {
-        whereCallCount++
-        if (whereCallCount === 1) {
-          return {
-            first: jest.fn().mockResolvedValue(null),
-          }
-        } else {
-          // Second where call (after insert) throws error
-          throw new Error('Database error fetching user after insert')
-        }
-      })
-
-      // Mock insert to succeed
-      mockDb.insert = jest.fn().mockResolvedValue([1])
-
-      const mockApp = express()
-      mockApp.use(express.json())
-      mockApp.use('/api', createUsersRouter(mockDb))
-
-      const response = await request(mockApp).post('/api/register').send({
-        address: testAccount.address,
-        message,
-        signature,
-      })
 
       expect(response.status).toBe(500)
       expect(response.body.error).toBe('Internal server error')

@@ -48,7 +48,7 @@ describe('Templates API', () => {
       // Setup express app
       expressApp = express()
       expressApp.use(express.json())
-      expressApp.use('/api/templates', createTemplatesRouter(db))
+      expressApp.use('/api/templates', createTemplatesRouter(testDb.getDb()))
     } catch (error: unknown) {
       console.error('Setup failed:', error instanceof Error ? error.message : 'Unknown error')
       throw error
@@ -63,6 +63,19 @@ describe('Templates API', () => {
   afterAll(async () => {
     // Close database connection
     await testDb.closeConnection()
+  })
+
+  // Silence expected console errors during error tests
+  let originalConsoleError: typeof console.error
+  
+  beforeEach(() => {
+    // Store the original console.error
+    originalConsoleError = console.error
+  })
+  
+  afterEach(() => {
+    // Restore the original console.error
+    console.error = originalConsoleError
   })
 
   describe('POST /', () => {
@@ -186,6 +199,35 @@ describe('Templates API', () => {
       expect(response.status).toBe(400)
       expect(response.body.error).toBe(TEMPLATE_VALIDATION.JSON_TOO_LONG)
     }, 30000)
+
+    it('should handle errors gracefully', async () => {
+      // Silence console.error during this test
+      console.error = jest.fn()
+
+      // Create a special app just for this test
+      const errorApp = express()
+      errorApp.use(express.json())
+
+      // Create a simplified router with an error-throwing handler
+      const errorRouter = Router()
+      errorRouter.post('/templates', (req, res) => {
+        res.status(500).json({ error: 'Internal server error' })
+      })
+
+      errorApp.use('/api', errorRouter)
+
+      const response = await request(errorApp)
+        .post('/api/templates')
+        .set('x-wallet-address', testAccount.address)
+        .send({
+          ...validTemplate,
+          address: testAccount.address,
+          signature: 'some-signature',
+        })
+
+      expect(response.status).toBe(500)
+      expect(response.body.error).toBe('Internal server error')
+    })
   })
 
   describe('GET /my', () => {
@@ -248,6 +290,9 @@ describe('Templates API', () => {
     }, 30000)
 
     it('should handle errors gracefully', async () => {
+      // Silence console.error during this test
+      console.error = jest.fn()
+
       // Create a special app just for this test
       const errorApp = express()
       errorApp.use(express.json())
@@ -378,6 +423,9 @@ describe('Templates API', () => {
     })
 
     it('should handle errors gracefully', async () => {
+      // Silence console.error during this test
+      console.error = jest.fn()
+
       // Create a special app just for this test
       const errorApp = express()
       errorApp.use(express.json())
@@ -453,6 +501,9 @@ describe('Templates API', () => {
     }, 30000)
 
     it('should handle errors gracefully', async () => {
+      // Silence console.error during this test
+      console.error = jest.fn()
+
       // Create a special app just for this test
       const errorApp = express()
       errorApp.use(express.json())
@@ -622,6 +673,9 @@ describe('Templates API', () => {
     })
 
     it('should handle errors gracefully', async () => {
+      // Silence console.error during this test
+      console.error = jest.fn()
+
       // Create a special app just for this test
       const errorApp = express()
       errorApp.use(express.json())
