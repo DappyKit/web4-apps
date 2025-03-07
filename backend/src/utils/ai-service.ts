@@ -50,7 +50,7 @@ export class AiService {
 
     this.model = config.model || 'gpt-4o-mini'
     this.temperature = config.temperature || 0.7
-    this.maxTokens = config.maxTokens || 500
+    this.maxTokens = config.maxTokens || 5000
   }
 
   /**
