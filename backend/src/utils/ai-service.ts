@@ -86,12 +86,12 @@ export class AiService {
       })
 
       const rawResponse = completion.choices[0]?.message?.content || ''
-      
+
       // Extract token usage information
       const tokenUsage: TokenUsage = {
         promptTokens: completion.usage?.prompt_tokens || 0,
         completionTokens: completion.usage?.completion_tokens || 0,
-        totalTokens: completion.usage?.total_tokens || 0
+        totalTokens: completion.usage?.total_tokens || 0,
       }
 
       // Try to parse JSON from the response if it looks like JSON
@@ -108,7 +108,7 @@ export class AiService {
           rawResponse,
           isValid: false,
           validationErrors: ['Failed to parse JSON response'],
-          tokenUsage
+          tokenUsage,
         }
       }
 
@@ -116,7 +116,7 @@ export class AiService {
         rawResponse,
         parsedData,
         isValid,
-        tokenUsage
+        tokenUsage,
       }
     } catch (error) {
       console.error('Error calling OpenAI API:', error)
@@ -127,8 +127,8 @@ export class AiService {
         tokenUsage: {
           promptTokens: 0,
           completionTokens: 0,
-          totalTokens: 0
-        }
+          totalTokens: 0,
+        },
       }
     }
   }

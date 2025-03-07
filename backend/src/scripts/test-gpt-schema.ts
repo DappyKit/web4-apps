@@ -68,179 +68,179 @@ async function main(): Promise<void> {
   //   required: ['name', 'description', 'questions'],
   // }
   const templateSchema = {
-    "type": "object",
-    "properties": {
-      "recipeId": {
-        "type": "string",
-        "pattern": "^RCP-[0-9]{6}$"
+    type: 'object',
+    properties: {
+      recipeId: {
+        type: 'string',
+        pattern: '^RCP-[0-9]{6}$',
       },
-      "title": {
-        "type": "string",
-        "minLength": 5,
-        "maxLength": 100
+      title: {
+        type: 'string',
+        minLength: 5,
+        maxLength: 100,
       },
-      "description": {
-        "type": "string",
-        "minLength": 10,
-        "maxLength": 500
+      description: {
+        type: 'string',
+        minLength: 10,
+        maxLength: 500,
       },
-      "author": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 3,
-            "maxLength": 100
+      author: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            minLength: 3,
+            maxLength: 100,
           },
-          "email": {
-            "type": "string",
-            "format": "email"
-          }
+          email: {
+            type: 'string',
+            format: 'email',
+          },
         },
-        "required": ["name"]
+        required: ['name'],
       },
-      "prepTime": {
-        "type": "number",
-        "minimum": 1
+      prepTime: {
+        type: 'number',
+        minimum: 1,
       },
-      "cookTime": {
-        "type": "number",
-        "minimum": 0
+      cookTime: {
+        type: 'number',
+        minimum: 0,
       },
-      "totalTime": {
-        "type": "number",
-        "minimum": 1
+      totalTime: {
+        type: 'number',
+        minimum: 1,
       },
-      "servings": {
-        "type": "number",
-        "minimum": 1
+      servings: {
+        type: 'number',
+        minimum: 1,
       },
-      "difficulty": {
-        "type": "string",
-        "enum": ["easy", "medium", "hard"]
+      difficulty: {
+        type: 'string',
+        enum: ['easy', 'medium', 'hard'],
       },
-      "cuisine": {
-        "type": "string",
-        "minLength": 3,
-        "maxLength": 50
+      cuisine: {
+        type: 'string',
+        minLength: 3,
+        maxLength: 50,
       },
-      "categories": {
-        "type": "array",
-        "items": {
-          "type": "string",
-          "minLength": 3,
-          "maxLength": 30
+      categories: {
+        type: 'array',
+        items: {
+          type: 'string',
+          minLength: 3,
+          maxLength: 30,
         },
-        "minItems": 1,
-        "maxItems": 5
+        minItems: 1,
+        maxItems: 5,
       },
-      "ingredients": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string",
-              "minLength": 2,
-              "maxLength": 100
+      ingredients: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              minLength: 2,
+              maxLength: 100,
             },
-            "quantity": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 30
+            quantity: {
+              type: 'string',
+              minLength: 1,
+              maxLength: 30,
             },
-            "unit": {
-              "type": "string",
-              "maxLength": 20
+            unit: {
+              type: 'string',
+              maxLength: 20,
             },
-            "notes": {
-              "type": "string",
-              "maxLength": 200
-            }
+            notes: {
+              type: 'string',
+              maxLength: 200,
+            },
           },
-          "required": ["name", "quantity"]
+          required: ['name', 'quantity'],
         },
-        "minItems": 1
+        minItems: 1,
       },
-      "steps": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "number": {
-              "type": "number",
-              "minimum": 1
+      steps: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            number: {
+              type: 'number',
+              minimum: 1,
             },
-            "description": {
-              "type": "string",
-              "minLength": 10,
-              "maxLength": 500
+            description: {
+              type: 'string',
+              minLength: 10,
+              maxLength: 500,
             },
-            "timers": {
-              "type": "array",
-              "items": {
-                "type": "number",
-                "minimum": 1
-              }
-            }
+            timers: {
+              type: 'array',
+              items: {
+                type: 'number',
+                minimum: 1,
+              },
+            },
           },
-          "required": ["number", "description"]
+          required: ['number', 'description'],
         },
-        "minItems": 1
+        minItems: 1,
       },
-      "nutrition": {
-        "type": "object",
-        "properties": {
-          "calories": {
-            "type": "number",
-            "minimum": 0
+      nutrition: {
+        type: 'object',
+        properties: {
+          calories: {
+            type: 'number',
+            minimum: 0,
           },
-          "fat": {
-            "type": "number",
-            "minimum": 0
+          fat: {
+            type: 'number',
+            minimum: 0,
           },
-          "carbs": {
-            "type": "number",
-            "minimum": 0
+          carbs: {
+            type: 'number',
+            minimum: 0,
           },
-          "protein": {
-            "type": "number",
-            "minimum": 0
-          }
-        }
+          protein: {
+            type: 'number',
+            minimum: 0,
+          },
+        },
       },
-      "isVegetarian": {
-        "type": "boolean"
+      isVegetarian: {
+        type: 'boolean',
       },
-      "isVegan": {
-        "type": "boolean"
+      isVegan: {
+        type: 'boolean',
       },
-      "isGlutenFree": {
-        "type": "boolean"
-      }
+      isGlutenFree: {
+        type: 'boolean',
+      },
     },
-    "required": [
-      "recipeId",
-      "title",
-      "description",
-      "prepTime",
-      "cookTime",
-      "totalTime",
-      "servings",
-      "ingredients",
-      "steps"
-    ]
+    required: [
+      'recipeId',
+      'title',
+      'description',
+      'prepTime',
+      'cookTime',
+      'totalTime',
+      'servings',
+      'ingredients',
+      'steps',
+    ],
   }
 
   // In a real endpoint, template metadata would be pulled from the database
   const templateMetadata = {
-    systemPrompt: 'Generate a recipe. Follow the schema exactly.'
+    systemPrompt: 'Generate a recipe. Follow the schema exactly.',
   }
 
   // In a real endpoint, this would come from the request body
   const userRequestData = {
     prompt: 'Ice cream',
-    templateId: 1
+    templateId: 1,
   }
 
   console.log('Simulating API request to process a prompt using a template...')
@@ -253,7 +253,7 @@ async function main(): Promise<void> {
     const response = await aiService.processTemplatePrompt(
       userRequestData.prompt,
       templateSchema,
-      templateMetadata.systemPrompt
+      templateMetadata.systemPrompt,
     )
 
     // In a real endpoint, this would be the response processing logic
@@ -265,7 +265,7 @@ async function main(): Promise<void> {
         data: {
           result: response.parsedData,
           requiredValidation: false,
-        }
+        },
       })
 
       console.log('\nFINAL VALIDATION RESULT:')
@@ -281,7 +281,7 @@ async function main(): Promise<void> {
             message: 'AI response could not be parsed as valid JSON.',
           },
           requiredValidation: true,
-        }
+        },
       })
 
       if (response.validationErrors) {
@@ -300,7 +300,9 @@ async function main(): Promise<void> {
     console.log('SUMMARY:')
     console.log(`✓ Response JSON valid: ${response.isValid ? 'YES' : 'NO'}`)
     console.log(`✓ Total tokens used: ${response.tokenUsage?.totalTokens || 0}`)
-    console.log(`✓ Cost of this generation: $${((response.tokenUsage?.totalTokens || 0) * 0.00015 / 1000).toFixed(6)} USD`)
+    console.log(
+      `✓ Cost of this generation: $${(((response.tokenUsage?.totalTokens || 0) * 0.00015) / 1000).toFixed(6)} USD`,
+    )
     console.log(`✓ Is script correct: ${response.isValid ? 'YES' : 'NO'}`)
     console.log('---------------------------------------------------')
   } catch (error) {
