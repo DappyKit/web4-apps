@@ -6,7 +6,8 @@ import { useAppSelector } from './redux/hooks'
 import { selectAuth } from './redux/reducers/authSlice'
 import { MainLogged } from './MainLogged'
 import { MainNoAuth } from './MainNoAuth'
-import { BrowserRouter, Navigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { TopAppCreators } from './pages/TopAppCreators'
 
 /**
  * Main content component that handles authentication state and routing
@@ -19,6 +20,19 @@ function AppContent(): React.JSX.Element {
   useEffect(() => {
     document.body.className = auth.isAuthenticated ? '' : 'p-1 p-lg-2'
   }, [auth.isAuthenticated])
+
+  // Special case for top-creators - accessible to both authenticated and non-authenticated users
+  if (location.pathname === '/top-creators') {
+    return (
+      <div className={auth.isAuthenticated ? '' : 'overflow-x-hidden rounded-top-4 pt-2 pt-lg-4'}>
+        {!auth.isAuthenticated && <Header />}
+        <Routes>
+          <Route path="/top-creators" element={<TopAppCreators />} />
+        </Routes>
+        {!auth.isAuthenticated && <FooterNoAuth />}
+      </div>
+    )
+  }
 
   // If trying to access root path while authenticated, redirect to dashboard
   if (auth.isAuthenticated && location.pathname === '/') {

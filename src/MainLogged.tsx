@@ -7,6 +7,7 @@ import { MyTemplates } from './pages/MyTemplates'
 import { AllApps } from './pages/AllApps'
 import { AllTemplates } from './pages/AllTemplates'
 import { Settings } from './pages/Settings'
+import { TopAppCreators } from './pages/TopAppCreators'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { useDispatch } from 'react-redux'
 import { logout } from './redux/reducers/authSlice'
@@ -50,6 +51,7 @@ const NAV_ITEMS = [
   { to: '/my-templates', icon: 'cart', label: 'My Templates' },
   { to: '/all-apps', icon: 'people', label: 'All Apps' },
   { to: '/all-templates', icon: 'graph-up', label: 'All Templates' },
+  { to: '/top-creators', icon: 'trophy', label: 'Top Creators' },
 ]
 
 /**
@@ -62,6 +64,7 @@ const ROUTES = [
   { path: '/my-templates', element: <MyTemplates /> },
   { path: '/all-apps', element: <AllApps /> },
   { path: '/all-templates', element: <AllTemplates /> },
+  { path: '/top-creators', element: <TopAppCreators /> },
   { path: '/settings', element: <Settings /> },
 ]
 
@@ -174,12 +177,29 @@ const MainContent = memo(({ handleShowMobileMenu }: { handleShowMobileMenu: () =
     </header>
     <div className="px-3 px-md-4 flex-grow-1">
       <Routes>
-        {ROUTES.map(({ path, element }) => (
-          <Route key={path} path={path} element={<ProtectedRoute>{element}</ProtectedRoute>} />
-        ))}
-        <Route path="/apps/:id" element={<ViewApp />} />
-        <Route path="/templates/:id" element={<ViewTemplate />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        {ROUTES.map(({ path, element }) => {
+          if (path === '/top-creators') {
+            return <Route key={path} path={path} element={element} />
+          }
+          return <Route key={path} path={path} element={<ProtectedRoute>{element}</ProtectedRoute>} />
+        })}
+        <Route
+          path="/app/:id"
+          element={
+            <ProtectedRoute>
+              <ViewApp />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/template/:id"
+          element={
+            <ProtectedRoute>
+              <ViewTemplate />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </div>
     <FooterLogged />

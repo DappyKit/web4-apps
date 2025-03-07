@@ -44,6 +44,24 @@ export interface Template {
   updated_at: string
 }
 
+export interface UserWithAppCount {
+  trimmed_address: string
+  app_count: number
+  is_user?: boolean
+}
+
+export interface UserRecord {
+  trimmed_address: string
+  app_count: number
+  is_user: boolean
+  rank: number
+}
+
+export interface TopCreatorsResponse {
+  users: UserWithAppCount[]
+  user_record: UserRecord | null
+}
+
 // User registration methods
 export async function checkUserRegistration(address: string): Promise<boolean> {
   try {
@@ -456,6 +474,31 @@ export async function generateTemplateDataWithAI(templateId: number, prompt: str
     return JSON.stringify(data.data?.result ?? {})
   } catch (error) {
     console.error('Error generating AI template data:', error)
+    throw error
+  }
+}
+
+/**
+ * Fetches users with app counts, limited to users who have created at least one app
+ * Returns maximum 100 users sorted by app count in descending order
+ *
+ * @param {string} [address] - Optional wallet address to highlight user's position
+ * @returns {Promise<TopCreatorsResponse>} Object with users array and optional user record
+ */
+export async function getUsersWithAppCounts(address?: string): Promise<TopCreatorsResponse> {
+  try {
+    const url = address ? `/api/with-app-counts?address=${address}` : '/api/with-app-counts'
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      const errorData: ApiErrorResponse = await response.json()
+      throw new Error(errorData.error || 'Failed to fetch users with app counts')
+    }
+
+    const data = await response.json()
+    return data as TopCreatorsResponse
+  } catch (error) {
+    console.error('Error fetching users with app counts:', error)
     throw error
   }
 }

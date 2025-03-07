@@ -305,4 +305,65 @@ describe('Users API', () => {
       expect(response.body.error).toBe('Internal server error')
     })
   })
+
+  describe('GET /api/with-app-counts', () => {
+    it('should return users with app counts', async () => {
+      // Create a test user
+      const address = '0x1234567890123456789012345678901234567890'
+      await db('users').insert({ address })
+
+      // Create a test template first
+      const [templateId] = await db('templates').insert({
+        title: 'Test Template',
+        url: 'https://example.com',
+        json_data: '{}',
+        owner_address: address,
+      })
+
+      // Create some test apps for the user
+      await db('apps').insert([
+        { name: 'Test App 1', owner_address: address, template_id: templateId },
+        { name: 'Test App 2', owner_address: address, template_id: templateId },
+      ])
+
+      const response = await request(app).get('/api/with-app-counts')
+
+      expect(response.status).toBe(200)
+      expect(response.body).toHaveProperty('users')
+      expect(Array.isArray(response.body.users)).toBe(true)
+
+      // Type the response body properly
+      interface UserResponse {
+        trimmed_address: string
+        app_count: string
+      }
+
+      // Check the response
+      const responseBody = response.body.users as UserResponse[]
+      expect(Array.isArray(responseBody)).toBe(true)
+
+      // Find our test user in the response by their trimmed address
+      const expectedTrimmedAddress = `${address.substring(0, 7)}...${address.substring(address.length - 5)}`
+      const testUser = responseBody.find(user => user.trimmed_address === expectedTrimmedAddress)
+      expect(testUser).toBeDefined()
+      expect(Number(testUser?.app_count)).toBe(2) // Count is returned as string from the database
+    })
+
+    it('should handle database errors gracefully', async () => {
+      // Silence console.error during this test
+      console.error = jest.fn()
+
+      // Create a mock database that throws an error
+      const mockDb = testDb.createMockDbWithError('simple')
+
+      const mockApp = express()
+      mockApp.use(express.json())
+      mockApp.use('/api', createUsersRouter(mockDb))
+
+      const response = await request(mockApp).get('/api/with-app-counts')
+
+      expect(response.status).toBe(500)
+      expect(response.body.error).toBe('Internal server error')
+    })
+  })
 })
