@@ -8,7 +8,7 @@ dotenv.config()
  * Script to test the AI service processTemplatePrompt method with a schema
  * This simulates how the AI endpoint would process a request in a production environment
  */
-async function main() {
+async function main(): Promise<void> {
   // Check if API key is available (would be part of environment setup in production)
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) {
@@ -234,9 +234,7 @@ async function main() {
 
   // In a real endpoint, template metadata would be pulled from the database
   const templateMetadata = {
-    title: 'Quiz Template',
-    description: 'A template for generating quizzes',
-    systemPrompt: 'Generate a quiz with questions and multiple choice options. Follow the schema exactly.'
+    systemPrompt: 'Generate a recipe. Follow the schema exactly.'
   }
 
   // In a real endpoint, this would come from the request body
@@ -269,6 +267,9 @@ async function main() {
           requiredValidation: false,
         }
       })
+
+      console.log('\nFINAL VALIDATION RESULT:')
+      console.log('============================================================')
     } else {
       // Similar to how the AI router would handle an invalid JSON response
       console.log('API Response (status 200, but response needs validation):')
@@ -293,6 +294,15 @@ async function main() {
     console.log('---------------------------------------------------')
     console.log('Raw AI response:')
     console.log(response.rawResponse)
+
+    // Final summary for quick reference
+    console.log('---------------------------------------------------')
+    console.log('SUMMARY:')
+    console.log(`✓ Response JSON valid: ${response.isValid ? 'YES' : 'NO'}`)
+    console.log(`✓ Total tokens used: ${response.tokenUsage?.totalTokens || 0}`)
+    console.log(`✓ Cost of this generation: $${((response.tokenUsage?.totalTokens || 0) * 0.00015 / 1000).toFixed(6)} USD`)
+    console.log(`✓ Is script correct: ${response.isValid ? 'YES' : 'NO'}`)
+    console.log('---------------------------------------------------')
   } catch (error) {
     // This simulates how errors would be handled in the real endpoint
     console.error('Error in AI service:')
@@ -308,7 +318,7 @@ async function main() {
 }
 
 // Run the main function
-main().catch(error => {
+main().catch((error: unknown) => {
   console.error('Unhandled error in script execution:', error)
   process.exit(1)
 })

@@ -1,5 +1,5 @@
 import { OpenAI } from 'openai'
-import { GptResponse } from '../types/ai'
+import { GptResponse, TokenUsage } from '../types/ai'
 
 /**
  * Configuration interface for AI services
@@ -86,6 +86,13 @@ export class AiService {
       })
 
       const rawResponse = completion.choices[0]?.message?.content || ''
+      
+      // Extract token usage information
+      const tokenUsage: TokenUsage = {
+        promptTokens: completion.usage?.prompt_tokens || 0,
+        completionTokens: completion.usage?.completion_tokens || 0,
+        totalTokens: completion.usage?.total_tokens || 0
+      }
 
       // Try to parse JSON from the response if it looks like JSON
       let parsedData: Record<string, unknown> | undefined
@@ -101,6 +108,7 @@ export class AiService {
           rawResponse,
           isValid: false,
           validationErrors: ['Failed to parse JSON response'],
+          tokenUsage
         }
       }
 
@@ -108,6 +116,7 @@ export class AiService {
         rawResponse,
         parsedData,
         isValid,
+        tokenUsage
       }
     } catch (error) {
       console.error('Error calling OpenAI API:', error)
@@ -115,6 +124,11 @@ export class AiService {
         rawResponse: '',
         isValid: false,
         validationErrors: [error instanceof Error ? error.message : 'Unknown error calling AI service'],
+        tokenUsage: {
+          promptTokens: 0,
+          completionTokens: 0,
+          totalTokens: 0
+        }
       }
     }
   }

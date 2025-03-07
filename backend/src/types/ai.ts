@@ -44,6 +44,26 @@ export interface AiPromptResponse {
 }
 
 /**
+ * Token usage information from OpenAI API
+ */
+export interface TokenUsage {
+  /**
+   * Number of tokens in the prompt
+   */
+  promptTokens: number
+
+  /**
+   * Number of tokens in the completion
+   */
+  completionTokens: number
+
+  /**
+   * Total number of tokens used
+   */
+  totalTokens: number
+}
+
+/**
  * Internal interface for GPT response handling
  */
 export interface GptResponse {
@@ -66,4 +86,9 @@ export interface GptResponse {
    * Validation errors if any
    */
   validationErrors?: string[]
+
+  /**
+   * Token usage information
+   */
+  tokenUsage?: TokenUsage
 }
