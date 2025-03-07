@@ -36,7 +36,7 @@ export function TopAppCreators(): React.JSX.Element {
 
   // Generate placeholder rows if we have fewer than 100 users
   const generatePlaceholders = (): { key: string; isPlaceholder: boolean }[] => {
-    if (!topCreators || topCreators.users.length >= 100) return []
+    if (!topCreators?.users || topCreators.users.length >= 100) return []
 
     const placeholders = []
     for (let i = 0; i < 100 - topCreators.users.length; i++) {
@@ -94,7 +94,7 @@ export function TopAppCreators(): React.JSX.Element {
         </Card>
       )}
 
-      {!loading && !error && topCreators?.users.length > 0 && (
+      {!loading && !error && topCreators?.users && topCreators.users.length > 0 && (
         <Card>
           <Card.Body>
             <Table responsive hover className="mb-0">
