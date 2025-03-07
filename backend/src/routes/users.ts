@@ -29,14 +29,16 @@ export function createUsersRouter(db: Knex): Router {
       type RawQueryResult = Array<{
         address: string
         app_count: string | number
+        win_1_amount?: string
       }>
 
       const usersWithAppCounts = await db('users')
-        .select('users.address')
+        .select('users.address', 'users.win_1_amount')
         .count('apps.id as app_count')
         .join('apps', 'users.address', 'apps.owner_address')
-        .groupBy('users.address')
+        .groupBy('users.address', 'users.win_1_amount')
         .having(db.raw('count(apps.id) >= 1'))
+        .orderBy('users.win_1_amount', 'desc')
         .orderBy('app_count', 'desc')
         .limit(100)
 
@@ -47,11 +49,12 @@ export function createUsersRouter(db: Knex): Router {
       if (userAddress) {
         // Get all users with app counts to find user's rank even if not in top 100
         const allUsersWithAppCounts = await db('users')
-          .select('users.address')
+          .select('users.address', 'users.win_1_amount')
           .count('apps.id as app_count')
           .join('apps', 'users.address', 'apps.owner_address')
-          .groupBy('users.address')
+          .groupBy('users.address', 'users.win_1_amount')
           .having(db.raw('count(apps.id) >= 1'))
+          .orderBy('users.win_1_amount', 'desc')
           .orderBy('app_count', 'desc')
 
         // Find user's record and rank
@@ -74,6 +77,7 @@ export function createUsersRouter(db: Knex): Router {
             app_count: userData.app_count,
             is_user: true,
             rank: userRank,
+            win_1_amount: userData.win_1_amount,
           }
         }
       }
@@ -88,10 +92,10 @@ export function createUsersRouter(db: Knex): Router {
         const isUser = userAddress && address.toLowerCase() === userAddress.toLowerCase()
 
         return {
-          // Don't include the full address in the response
           trimmed_address: trimmedAddress,
           app_count: user.app_count,
           is_user: isUser,
+          win_1_amount: user.win_1_amount,
         }
       })
 
@@ -106,6 +110,35 @@ export function createUsersRouter(db: Knex): Router {
       console.error('Error fetching users with app counts:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
       res.status(500).json({ error: 'Internal server error', details: errorMessage })
+    }
+  })
+
+  router.get('/winners', async (req, res) => {
+    try {
+      // Get all winners (users with win_1_amount)
+      const winners = await db('users')
+        .select('users.address', 'users.win_1_amount')
+        .count('apps.id as app_count')
+        .join('apps', 'users.address', 'apps.owner_address')
+        .whereNotNull('users.win_1_amount')
+        .where('users.win_1_amount', '>', '0') // Only get users with positive win amount
+        .groupBy('users.address', 'users.win_1_amount')
+        .orderBy('users.win_1_amount', 'desc')
+        .limit(300)
+
+      // Format the response
+      const formattedWinners = winners.map(user => ({
+        address: user.address,
+        app_count: Number(user.app_count),
+        win_1_amount: user.win_1_amount,
+      }))
+
+      res.json({
+        winners: formattedWinners,
+      })
+    } catch (error) {
+      console.error('Error fetching winners:', error)
+      res.status(500).json({ error: 'Failed to fetch winners' })
     }
   })
 

@@ -48,6 +48,7 @@ export interface UserWithAppCount {
   trimmed_address: string
   app_count: number
   is_user?: boolean
+  win_1_amount?: string
 }
 
 export interface UserRecord {
@@ -55,11 +56,20 @@ export interface UserRecord {
   app_count: number
   is_user: boolean
   rank: number
+  win_1_amount?: string
 }
 
 export interface TopCreatorsResponse {
   users: UserWithAppCount[]
   user_record: UserRecord | null
+}
+
+export interface WinnersResponse {
+  winners: {
+    address: string
+    app_count: number
+    win_1_amount: string
+  }[]
 }
 
 // User registration methods
@@ -499,6 +509,26 @@ export async function getUsersWithAppCounts(address?: string): Promise<TopCreato
     return data as TopCreatorsResponse
   } catch (error) {
     console.error('Error fetching users with app counts:', error)
+    throw error
+  }
+}
+
+/**
+ * Fetches the winners data with tier 1 and tier 2 winners
+ * @returns Promise with winners data
+ */
+export async function getWinners(): Promise<WinnersResponse> {
+  try {
+    const response = await fetch('/api/winners')
+
+    if (!response.ok) {
+      const errorData = (await response.json()) as ApiErrorResponse
+      throw new Error(errorData.error || 'Failed to fetch winners')
+    }
+
+    return (await response.json()) as WinnersResponse
+  } catch (error) {
+    console.error('Error fetching winners:', error)
     throw error
   }
 }

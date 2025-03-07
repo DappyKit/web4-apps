@@ -8,6 +8,7 @@ import { MainLogged } from './MainLogged'
 import { MainNoAuth } from './MainNoAuth'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { TopAppCreators } from './pages/TopAppCreators'
+import { Winners } from './pages/Winners'
 
 /**
  * Main content component that handles authentication state and routing
@@ -21,13 +22,14 @@ function AppContent(): React.JSX.Element {
     document.body.className = auth.isAuthenticated ? '' : 'p-1 p-lg-2'
   }, [auth.isAuthenticated])
 
-  // Special case for top-creators - accessible to both authenticated and non-authenticated users
-  if (location.pathname === '/top-creators') {
+  // Special case for top-creators and winners - accessible to both authenticated and non-authenticated users
+  if (location.pathname === '/top-creators' || location.pathname === '/winners') {
     return (
       <div className={auth.isAuthenticated ? '' : 'overflow-x-hidden rounded-top-4 pt-2 pt-lg-4'}>
         {!auth.isAuthenticated && <Header />}
         <Routes>
           <Route path="/top-creators" element={<TopAppCreators />} />
+          <Route path="/winners" element={<Winners />} />
         </Routes>
         {!auth.isAuthenticated && <FooterNoAuth />}
       </div>

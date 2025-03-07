@@ -20,7 +20,7 @@ export interface App {
 
 export interface CreateUserDTO {
   address: string
-  message: string
+  message?: string
   signature: string
 }
 
@@ -29,4 +29,5 @@ export interface User {
   address: string
   created_at: string
   updated_at: string
+  win_1_amount?: string
 }

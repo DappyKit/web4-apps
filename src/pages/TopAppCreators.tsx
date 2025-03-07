@@ -74,6 +74,7 @@ export function TopAppCreators(): React.JSX.Element {
                 <tr>
                   <th className="border-0">#</th>
                   <th className="border-0">Wallet Address</th>
+                  <th className="border-0 text-center">Win Amount</th>
                   <th className="border-0 text-end">Apps Created</th>
                 </tr>
               </thead>
@@ -85,6 +86,9 @@ export function TopAppCreators(): React.JSX.Element {
                     <Badge bg="primary" className="ms-2">
                       You
                     </Badge>
+                  </td>
+                  <td className="border-0 text-center">
+                    {topCreators.user_record.win_1_amount ? `${topCreators.user_record.win_1_amount} L` : '-'}
                   </td>
                   <td className="border-0 text-end fw-bold">{topCreators.user_record.app_count}</td>
                 </tr>
@@ -102,6 +106,7 @@ export function TopAppCreators(): React.JSX.Element {
                 <tr>
                   <th className="border-0">#</th>
                   <th className="border-0">Wallet Address</th>
+                  <th className="border-0 text-center">Win Amount</th>
                   <th className="border-0 text-end">Apps Created</th>
                 </tr>
               </thead>
@@ -117,6 +122,7 @@ export function TopAppCreators(): React.JSX.Element {
                         </Badge>
                       )}
                     </td>
+                    <td className="border-0 text-center">{user.win_1_amount ? `${user.win_1_amount} L` : '-'}</td>
                     <td className="border-0 text-end fw-bold">{user.app_count}</td>
                   </tr>
                 ))}
@@ -126,6 +132,7 @@ export function TopAppCreators(): React.JSX.Element {
                   <tr key={placeholder.key} className="text-muted">
                     <td className="border-0">{topCreators.users.length + index + 1}</td>
                     <td className="border-0 fst-italic">You could be here</td>
+                    <td className="border-0 text-center fst-italic">-</td>
                     <td className="border-0 text-end fst-italic">Create an app to join!</td>
                   </tr>
                 ))}
