@@ -62,49 +62,28 @@ export function createAiRouter(db: Knex, aiServiceOverride?: AiService): express
         })
       }
 
+      if (!template.json_data) {
+        return res.status(400).json({
+          success: false,
+          error: 'Template JSON data is missing',
+        })
+      }
+
       // Log the received request
       console.log(`Processing prompt against template ${templateId}`)
 
-      // Get template schema from json_data if available, otherwise use an empty object
-      let templateSchema: Record<string, unknown> = {}
       // Default system prompt for JSON generation
       const defaultSystemPrompt = `You are a specialized JSON generator. Your task is to create a valid JSON object that matches the provided schema based on the user's request.`
-      let templateSystemPrompt: string = defaultSystemPrompt
-
-      try {
-        // Parse the template's JSON data
-        const jsonData = typeof template.json_data === 'string' ? JSON.parse(template.json_data) : template.json_data
-
-        // Check if the JSON data contains metadata
-        if (jsonData && typeof jsonData === 'object') {
-          // Extract schema if available
-          if (jsonData.metadata && typeof jsonData.metadata === 'object') {
-            if (jsonData.metadata.schema && typeof jsonData.metadata.schema === 'object') {
-              templateSchema = jsonData.metadata.schema as Record<string, unknown>
-            }
-
-            if (jsonData.metadata.systemPrompt && typeof jsonData.metadata.systemPrompt === 'string') {
-              templateSystemPrompt = jsonData.metadata.systemPrompt
-            }
-          } else if (jsonData.schema && typeof jsonData.schema === 'object') {
-            // Support for templates that use schema directly instead of in metadata
-            templateSchema = jsonData.schema as Record<string, unknown>
-          }
-        }
-      } catch (parseError) {
-        console.error('Error parsing template JSON data:', parseError)
-        // Continue with default values if parsing fails
-      }
 
       // Build enhanced system prompt with template context
       const enhancedSystemPrompt = `
-${templateSystemPrompt}
+${defaultSystemPrompt}
 
 This template requires generating JSON that strictly follows this schema specification:
 `
 
       // Process the prompt with AI
-      const aiResponse = await aiService.processTemplatePrompt(prompt, templateSchema, enhancedSystemPrompt)
+      const aiResponse = await aiService.processTemplatePrompt(prompt, template.json_data, enhancedSystemPrompt)
 
       // Check if the response is valid JSON
       if (!aiResponse.isValid) {
