@@ -129,7 +129,7 @@ describe('AI Router', () => {
       // Verify AI service was called with correct parameters - now allows for 4 parameters with the last being optional
       expect(processTemplatePromptMock).toHaveBeenCalledWith(
         'Test prompt',
-        expect.any(Object),
+        JSON.stringify({ type: 'test' }),
         expect.stringContaining('This template requires generating JSON'),
       )
     })
@@ -299,8 +299,14 @@ describe('AI Router', () => {
       // Verify AI service was called with the correct parameters - now accepts 4 parameters
       expect(processTemplatePromptMock).toHaveBeenCalledWith(
         'Generate a user named Test User',
-        templateSchema,
-        expect.stringContaining('Generate user data based on the prompt'),
+        JSON.stringify({
+          type: 'test',
+          metadata: {
+            schema: templateSchema,
+            systemPrompt: systemPrompt,
+          },
+        }),
+        expect.stringContaining('This template requires generating JSON'),
       )
     })
   })
