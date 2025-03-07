@@ -124,7 +124,9 @@ export function createAppsRouter(db: Knex): Router {
         validateInputData({ schema, data: JSON.parse(json_data) })
       } catch (error) {
         if (error instanceof Error) {
-          return res.status(400).json({ error: `Invalid JSON data` })
+          return res
+            .status(400)
+            .json({ error: `Invalid JSON data: ${error.message.replace(/[\n\r\t]/g, ' ').slice(0, 200)}` })
         }
         throw error
       }

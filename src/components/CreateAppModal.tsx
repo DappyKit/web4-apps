@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Alert, Button, Form, Spinner, Modal } from 'react-bootstrap'
 import { useSignMessage } from 'wagmi'
-import { createApp, getTemplateById } from '../services/api'
+import { createApp, getTemplateById, generateTemplateDataWithAI } from '../services/api'
 import type { Template } from '../services/api'
 import { DynamicForm } from './DynamicForm'
 import { parseTemplateSchema, formDataToJson } from '../utils/schemaParser'
@@ -65,6 +65,9 @@ export function CreateAppModal({
   const [dynamicFormFields, setDynamicFormFields] = useState<FormField[] | null>(null)
   const [dynamicFormData, setDynamicFormData] = useState<Record<string, unknown>>({})
   const [isLoadingSchema, setIsLoadingSchema] = useState(false)
+  const [isAiLoading, setIsAiLoading] = useState(false)
+  const [showAiModal, setShowAiModal] = useState(false)
+  const [aiUserInput, setAiUserInput] = useState('')
 
   // Update form when selected template changes
   useEffect(() => {
@@ -291,20 +294,12 @@ export function CreateAppModal({
    */
   const handleDynamicFormChange = (data: Record<string, unknown>): void => {
     setDynamicFormData(data)
-    // Update jsonData field
+
+    // Update jsonData with the dynamic form data
     setFormData(prev => ({
       ...prev,
       jsonData: formDataToJson(data),
     }))
-
-    // Clear any jsonData error
-    if (errors.jsonData) {
-      setErrors(prev => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { jsonData: _, ...rest } = prev
-        return rest
-      })
-    }
   }
 
   const formatJsonData = (): void => {
@@ -350,177 +345,292 @@ export function CreateAppModal({
     setErrors({})
   }
 
+  /**
+   * Handles the submission of the AI input form
+   */
+  const handleAiSubmit = async (): Promise<void> => {
+    if (!formData.templateId || !aiUserInput.trim()) return
+
+    setIsAiLoading(true)
+    setError(null)
+    setShowAiModal(false)
+
+    try {
+      const templateId = Number(formData.templateId)
+
+      // Call the AI function with all parameters
+      const aiGeneratedData = await generateTemplateDataWithAI(templateId, aiUserInput)
+
+      // Update the form data with AI-generated content
+      if (dynamicFormFields && dynamicFormFields.length > 0) {
+        const parsedData = JSON.parse(aiGeneratedData) as Record<string, unknown>
+        setDynamicFormData(parsedData)
+        setFormData(prev => ({
+          ...prev,
+          jsonData: aiGeneratedData,
+        }))
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          jsonData: aiGeneratedData,
+        }))
+      }
+    } catch (error: unknown) {
+      console.error('Error filling with AI:', error)
+      setError('Failed to generate AI content. Please try again.')
+    } finally {
+      setIsAiLoading(false)
+    }
+  }
+
+  /**
+   * Handles the AI modal close event
+   */
+  const handleAiModalClose = (): void => {
+    setShowAiModal(false)
+  }
+
+  /**
+   * Handles the AI submit button click event
+   */
+  const handleAiSubmitClick = (): void => {
+    handleAiSubmit() // eslint-disable-line @typescript-eslint/no-floating-promises
+  }
+
   return (
-    <Modal show={show} onHide={handleClose} size="lg" centered>
-      <Modal.Header closeButton>
-        <Modal.Title>Create New App</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        {error && (
-          <Alert
-            variant="danger"
-            onClose={() => {
-              setError(null)
-            }}
-            dismissible
-          >
-            {error}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert
-            variant="success"
-            onClose={() => {
-              setSuccess(null)
-            }}
-            dismissible
-          >
-            {success}
-          </Alert>
-        )}
-
-        <Form
-          onSubmit={e => {
-            void handleSubmit(e)
-          }}
-        >
-          <Form.Group className="mb-3">
-            <Form.Label htmlFor="name">
-              App Name
-              <span className="text-muted ms-2">
-                ({nameCharCount}/{MAX_NAME_LENGTH})
-              </span>
-            </Form.Label>
-            <Form.Control
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              isInvalid={!!errors.name}
-              disabled={isCreating}
-              maxLength={MAX_NAME_LENGTH}
-              placeholder="App name"
-            />
-            <Form.Control.Feedback type="invalid">{errors.name}</Form.Control.Feedback>
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label htmlFor="description">
-              Description
-              <span className="text-muted ms-2">
-                ({descriptionCharCount}/{MAX_DESCRIPTION_LENGTH})
-              </span>
-            </Form.Label>
-            <Form.Control
-              as="textarea"
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows={3}
-              disabled={isCreating}
-              isInvalid={!!errors.description}
-              maxLength={MAX_DESCRIPTION_LENGTH}
-              placeholder="Brief description"
-            />
-            <Form.Control.Feedback type="invalid">{errors.description}</Form.Control.Feedback>
-          </Form.Group>
-
-          <Form.Group className="mb-5">
-            <Form.Label htmlFor="templateId">Template</Form.Label>
-            <div className="d-flex">
-              <Button variant="outline-secondary" onClick={showTemplateModal} disabled={isCreating} className="me-2">
-                Select
-              </Button>
-              <Form.Control
-                type="text"
-                id="templateId"
-                name="templateId"
-                value={formData.templateName}
-                onChange={handleChange}
-                isInvalid={!!errors.templateId}
-                disabled={true}
-                placeholder="Select a template"
-              />
-            </div>
-            <Form.Control.Feedback type="invalid">{errors.templateId}</Form.Control.Feedback>
-          </Form.Group>
-
-          {formData.templateId && (
-            <div className="mb-3">
-              <Form.Label>Template Data</Form.Label>
-              {isLoadingSchema ? (
-                <div className="text-center py-3">
-                  <Spinner animation="border" size="sm" role="status" className="me-2" />
-                  Loading template schema...
-                </div>
-              ) : dynamicFormFields && dynamicFormFields.length > 0 ? (
-                <div className="border rounded p-3">
-                  <DynamicForm
-                    schema={dynamicFormFields}
-                    onChange={handleDynamicFormChange}
-                    initialValues={dynamicFormData}
-                    isDisabled={isCreating}
-                  />
-                </div>
-              ) : (
-                <Form.Group>
-                  <Form.Label htmlFor="jsonData">
-                    JSON Data
-                    <span className="text-muted ms-2">
-                      ({jsonDataCharCount}/{MAX_JSON_DATA_LENGTH})
-                    </span>
-                  </Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    id="jsonData"
-                    name="jsonData"
-                    value={formData.jsonData}
-                    onChange={handleChange}
-                    rows={4}
-                    disabled={isCreating}
-                    isInvalid={!!errors.jsonData}
-                    maxLength={MAX_JSON_DATA_LENGTH}
-                    style={{ fontFamily: 'monospace' }}
-                  />
-                  <Form.Control.Feedback type="invalid">{errors.jsonData}</Form.Control.Feedback>
-                  <div className="d-flex justify-content-end">
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      onClick={formatJsonData}
-                      disabled={isCreating}
-                      className="mt-1"
-                    >
-                      Format JSON
-                    </Button>
-                  </div>
-                </Form.Group>
-              )}
-
-              {!!errors.jsonData && <div className="text-danger mt-2">{errors.jsonData}</div>}
-            </div>
+    <>
+      <Modal show={show} onHide={handleClose} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Create New App</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {error && (
+            <Alert
+              variant="danger"
+              onClose={() => {
+                setError(null)
+              }}
+              dismissible
+            >
+              {error}
+            </Alert>
           )}
 
-          <div className="d-flex justify-content-end gap-2">
-            <Button variant="outline-secondary" onClick={handleClose} disabled={isCreating}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary" disabled={isCreating}>
-              {isCreating ? (
-                <>
-                  <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
-                  Creating...
-                </>
-              ) : (
-                'Create App'
-              )}
-            </Button>
-          </div>
-        </Form>
-      </Modal.Body>
-    </Modal>
+          {success && (
+            <Alert
+              variant="success"
+              onClose={() => {
+                setSuccess(null)
+              }}
+              dismissible
+            >
+              {success}
+            </Alert>
+          )}
+
+          <Form
+            onSubmit={e => {
+              void handleSubmit(e)
+            }}
+          >
+            <Form.Group className="mb-3">
+              <Form.Label htmlFor="name">
+                App Name
+                <span className="text-muted ms-2">
+                  ({nameCharCount}/{MAX_NAME_LENGTH})
+                </span>
+              </Form.Label>
+              <Form.Control
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                isInvalid={!!errors.name}
+                disabled={isCreating}
+                maxLength={MAX_NAME_LENGTH}
+                placeholder="App name"
+              />
+              <Form.Control.Feedback type="invalid">{errors.name}</Form.Control.Feedback>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label htmlFor="description">
+                Description
+                <span className="text-muted ms-2">
+                  ({descriptionCharCount}/{MAX_DESCRIPTION_LENGTH})
+                </span>
+              </Form.Label>
+              <Form.Control
+                as="textarea"
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={3}
+                disabled={isCreating}
+                isInvalid={!!errors.description}
+                maxLength={MAX_DESCRIPTION_LENGTH}
+                placeholder="Brief description"
+              />
+              <Form.Control.Feedback type="invalid">{errors.description}</Form.Control.Feedback>
+            </Form.Group>
+
+            <Form.Group className="mb-5">
+              <Form.Label htmlFor="templateId">Template</Form.Label>
+              <div className="d-flex">
+                <Button variant="outline-secondary" onClick={showTemplateModal} disabled={isCreating} className="me-2">
+                  Select
+                </Button>
+                <Form.Control
+                  type="text"
+                  id="templateId"
+                  name="templateId"
+                  value={formData.templateName}
+                  onChange={handleChange}
+                  isInvalid={!!errors.templateId}
+                  disabled={true}
+                  placeholder="Select a template"
+                />
+              </div>
+              <Form.Control.Feedback type="invalid">{errors.templateId}</Form.Control.Feedback>
+            </Form.Group>
+
+            {formData.templateId && (
+              <div className="mb-3">
+                <Form.Label>Template Data</Form.Label>
+                <div className="d-flex justify-content-start mb-2">
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    disabled={isCreating || isAiLoading || !formData.templateId}
+                    onClick={() => {
+                      setShowAiModal(true)
+                      setAiUserInput('')
+                    }}
+                  >
+                    {isAiLoading ? (
+                      <>
+                        <Spinner
+                          as="span"
+                          animation="border"
+                          size="sm"
+                          role="status"
+                          aria-hidden="true"
+                          className="me-2"
+                        />
+                        Generating...
+                      </>
+                    ) : (
+                      <>✨ Fill with AI</>
+                    )}
+                  </Button>
+                </div>
+                {isLoadingSchema ? (
+                  <div className="text-center py-3">
+                    <Spinner animation="border" size="sm" role="status" className="me-2" />
+                    Loading template schema...
+                  </div>
+                ) : dynamicFormFields && dynamicFormFields.length > 0 ? (
+                  <div className="border rounded p-3">
+                    <DynamicForm
+                      schema={dynamicFormFields}
+                      onChange={handleDynamicFormChange}
+                      initialValues={dynamicFormData}
+                      isDisabled={isCreating}
+                    />
+                  </div>
+                ) : (
+                  <Form.Group>
+                    <Form.Label htmlFor="jsonData">
+                      JSON Data
+                      <span className="text-muted ms-2">
+                        ({jsonDataCharCount}/{MAX_JSON_DATA_LENGTH})
+                      </span>
+                    </Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      id="jsonData"
+                      name="jsonData"
+                      value={formData.jsonData}
+                      onChange={handleChange}
+                      rows={4}
+                      disabled={isCreating}
+                      isInvalid={!!errors.jsonData}
+                      maxLength={MAX_JSON_DATA_LENGTH}
+                      style={{ fontFamily: 'monospace' }}
+                    />
+                    <Form.Control.Feedback type="invalid">{errors.jsonData}</Form.Control.Feedback>
+                    <div className="d-flex justify-content-end">
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        onClick={formatJsonData}
+                        disabled={isCreating}
+                        className="mt-1"
+                      >
+                        Format JSON
+                      </Button>
+                    </div>
+                  </Form.Group>
+                )}
+
+                {!!errors.jsonData && <div className="text-danger mt-2">{errors.jsonData}</div>}
+              </div>
+            )}
+
+            <div className="d-flex justify-content-end gap-2">
+              <Button variant="outline-secondary" onClick={handleClose} disabled={isCreating}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" disabled={isCreating}>
+                {isCreating ? (
+                  <>
+                    <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create App'
+                )}
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
+
+      {/* AI Input Modal */}
+      <Modal show={showAiModal} onHide={handleAiModalClose} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Fill with AI</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Describe the data you want the AI to generate</Form.Label>
+              <Form.Control
+                as="textarea"
+                value={aiUserInput}
+                onChange={e => {
+                  setAiUserInput(e.target.value)
+                }}
+                placeholder="For example: Generate random user data with names, emails, and birthdays for a user management app..."
+                rows={4}
+              />
+              <Form.Text className="text-muted">
+                Your prompt will be used to generate data that matches the template structure.
+              </Form.Text>
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleAiModalClose}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleAiSubmitClick} disabled={!aiUserInput.trim()}>
+            ✨ Send
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </>
   )
 }

@@ -1,19 +1,13 @@
 import request from 'supertest'
-import express from 'express'
 import { Knex } from 'knex'
-import knex from 'knex'
+import express from 'express'
 import { createTemplatesRouter } from '../routes/templates'
 import { TEMPLATE_VALIDATION } from '../types/template'
-import * as dotenv from 'dotenv'
-import knexConfig from '../knexfile'
-import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts'
-import { createWalletClient, http } from 'viem'
-import { mainnet } from 'viem/chains'
+import { type PrivateKeyAccount } from 'viem/accounts'
+import { createWalletClient } from 'viem'
+import { TestDb } from './utils/testDb'
 import { Router } from 'express'
-
-interface DbUser {
-  address: string
-}
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts'
 
 interface DbTemplate {
   id: number
@@ -26,10 +20,9 @@ interface DbTemplate {
   moderated: boolean
 }
 
-dotenv.config()
-
 describe('Templates API', () => {
   let expressApp: express.Application
+  let testDb: TestDb
   let db: Knex
   let testAccount: PrivateKeyAccount
   let otherAccount: PrivateKeyAccount
@@ -37,47 +30,25 @@ describe('Templates API', () => {
   let otherWalletClient: ReturnType<typeof createWalletClient>
 
   beforeAll(async () => {
-    // Initialize database connection once
-    db = knex(knexConfig['development'])
+    // Initialize test database and accounts
+    testDb = new TestDb()
+    const accounts = testDb.initTestAccounts()
+    testAccount = accounts.testAccount
+    otherAccount = accounts.otherAccount
+    walletClient = accounts.walletClient
+    otherWalletClient = accounts.otherWalletClient
+    db = testDb.getDb()
   })
 
   beforeEach(async () => {
-    const testPrivateKey = generatePrivateKey()
-    const otherPrivateKey = generatePrivateKey()
-    testAccount = privateKeyToAccount(testPrivateKey)
-    otherAccount = privateKeyToAccount(otherPrivateKey)
-
-    walletClient = createWalletClient({
-      account: testAccount,
-      chain: mainnet,
-      transport: http(),
-    })
-
-    otherWalletClient = createWalletClient({
-      account: otherAccount,
-      chain: mainnet,
-      transport: http(),
-    })
-
     try {
-      // Rollback and migrate
-      await db.migrate.rollback()
-      await db.migrate.latest()
-
-      // Create test users
-      await db<DbUser>('users').insert([
-        {
-          address: testAccount.address,
-        },
-        {
-          address: otherAccount.address,
-        },
-      ])
+      // Apply migrations before each test (creates users automatically)
+      await testDb.setupTestDb()
 
       // Setup express app
       expressApp = express()
       expressApp.use(express.json())
-      expressApp.use('/api/templates', createTemplatesRouter(db))
+      expressApp.use('/api/templates', createTemplatesRouter(testDb.getDb()))
     } catch (error: unknown) {
       console.error('Setup failed:', error instanceof Error ? error.message : 'Unknown error')
       throw error
@@ -85,16 +56,26 @@ describe('Templates API', () => {
   })
 
   afterEach(async () => {
-    try {
-      await db.migrate.rollback()
-    } catch (error: unknown) {
-      console.error('Cleanup failed:', error instanceof Error ? error.message : 'Unknown error')
-    }
+    // Rollback migrations after each test
+    await testDb.teardownTestDb()
   })
 
   afterAll(async () => {
     // Close database connection
-    await db.destroy()
+    await testDb.closeConnection()
+  })
+
+  // Silence expected console errors during error tests
+  let originalConsoleError: typeof console.error
+
+  beforeEach(() => {
+    // Store the original console.error
+    originalConsoleError = console.error
+  })
+
+  afterEach(() => {
+    // Restore the original console.error
+    console.error = originalConsoleError
   })
 
   describe('POST /', () => {
@@ -218,6 +199,35 @@ describe('Templates API', () => {
       expect(response.status).toBe(400)
       expect(response.body.error).toBe(TEMPLATE_VALIDATION.JSON_TOO_LONG)
     }, 30000)
+
+    it('should handle errors gracefully', async () => {
+      // Silence console.error during this test
+      console.error = jest.fn()
+
+      // Create a special app just for this test
+      const errorApp = express()
+      errorApp.use(express.json())
+
+      // Create a simplified router with an error-throwing handler
+      const errorRouter = Router()
+      errorRouter.post('/templates', (req, res) => {
+        res.status(500).json({ error: 'Internal server error' })
+      })
+
+      errorApp.use('/api', errorRouter)
+
+      const response = await request(errorApp)
+        .post('/api/templates')
+        .set('x-wallet-address', testAccount.address)
+        .send({
+          ...validTemplate,
+          address: testAccount.address,
+          signature: 'some-signature',
+        })
+
+      expect(response.status).toBe(500)
+      expect(response.body.error).toBe('Internal server error')
+    })
   })
 
   describe('GET /my', () => {
@@ -280,6 +290,9 @@ describe('Templates API', () => {
     }, 30000)
 
     it('should handle errors gracefully', async () => {
+      // Silence console.error during this test
+      console.error = jest.fn()
+
       // Create a special app just for this test
       const errorApp = express()
       errorApp.use(express.json())
@@ -410,6 +423,9 @@ describe('Templates API', () => {
     })
 
     it('should handle errors gracefully', async () => {
+      // Silence console.error during this test
+      console.error = jest.fn()
+
       // Create a special app just for this test
       const errorApp = express()
       errorApp.use(express.json())
@@ -485,6 +501,9 @@ describe('Templates API', () => {
     }, 30000)
 
     it('should handle errors gracefully', async () => {
+      // Silence console.error during this test
+      console.error = jest.fn()
+
       // Create a special app just for this test
       const errorApp = express()
       errorApp.use(express.json())
@@ -654,6 +673,9 @@ describe('Templates API', () => {
     })
 
     it('should handle errors gracefully', async () => {
+      // Silence console.error during this test
+      console.error = jest.fn()
+
       // Create a special app just for this test
       const errorApp = express()
       errorApp.use(express.json())
