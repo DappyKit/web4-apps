@@ -130,7 +130,7 @@ describe('AI Router', () => {
       expect(processTemplatePromptMock).toHaveBeenCalledWith(
         'Test prompt',
         expect.any(Object),
-        expect.stringContaining('TEMPLATE: Test Template'),
+        expect.stringContaining('This template requires generating JSON'),
       )
     })
 
@@ -300,7 +300,7 @@ describe('AI Router', () => {
       expect(processTemplatePromptMock).toHaveBeenCalledWith(
         'Generate a user named Test User',
         templateSchema,
-        expect.stringContaining('TEMPLATE: Test Template with Metadata'),
+        expect.stringContaining('Generate user data based on the prompt'),
       )
     })
   })

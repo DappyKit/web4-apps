@@ -16,7 +16,7 @@ describe('AiService', () => {
       apiKey: 'test-api-key',
       model: 'gpt-4o-mini',
       temperature: 0.7,
-      maxTokens: 500,
+      maxTokens: 5000,
     })
   })
 
@@ -44,7 +44,7 @@ describe('AiService', () => {
         expect.objectContaining({
           model: 'gpt-4o-mini',
           temperature: 0.7,
-          max_tokens: 500,
+          max_tokens: 5000,
         }),
       )
     })
@@ -64,7 +64,7 @@ describe('AiService', () => {
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: 'Test prompt' }],
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: 5000,
       })
 
       // Check the response
@@ -102,7 +102,7 @@ describe('AiService', () => {
           { role: 'user', content: 'Test prompt' },
         ],
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: 5000,
       })
     })
 

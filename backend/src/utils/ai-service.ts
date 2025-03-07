@@ -21,7 +21,7 @@ interface AiServiceConfig {
   temperature?: number
 
   /**
-   * Maximum number of tokens in the completion response (default: 500)
+   * Maximum number of tokens in the completion response (default: 5000)
    */
   maxTokens?: number
 }
