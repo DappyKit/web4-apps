@@ -107,17 +107,26 @@ describe('AiService', () => {
     })
 
     it('should handle API errors gracefully', async () => {
-      // Set up the mock to throw an error
-      const errorMessage = 'API rate limit exceeded'
-      mockErrorResponse(errorMessage)
+      // Mock console.error to prevent it from showing in test output
+      const originalConsoleError = console.error
+      console.error = jest.fn()
 
-      // Call the method
-      const result = await aiService.processPrompt('Test prompt')
+      try {
+        // Set up the mock to throw an error
+        const errorMessage = 'API rate limit exceeded'
+        mockErrorResponse(errorMessage)
 
-      // Check the error handling
-      expect(result.rawResponse).toBe('')
-      expect(result.isValid).toBe(false)
-      expect(result.validationErrors).toEqual([errorMessage])
+        // Call the method
+        const result = await aiService.processPrompt('Test prompt')
+
+        // Check the error handling
+        expect(result.rawResponse).toBe('')
+        expect(result.isValid).toBe(false)
+        expect(result.validationErrors).toEqual([errorMessage])
+      } finally {
+        // Restore original console.error
+        console.error = originalConsoleError
+      }
     })
   })
 
