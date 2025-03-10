@@ -380,18 +380,27 @@ export function CreateAppModal({
       const templateId = Number(formData.templateId)
       const aiGeneratedData = await generateTemplateDataWithAI(templateId, aiUserInput)
 
-      if (dynamicFormFields && dynamicFormFields.length > 0) {
+      try {
+        // Validate that the generated data is valid JSON
         const parsedData = JSON.parse(aiGeneratedData) as Record<string, unknown>
-        setDynamicFormData(parsedData)
-        setFormData(prev => ({
-          ...prev,
-          jsonData: aiGeneratedData,
-        }))
-      } else {
-        setFormData(prev => ({
-          ...prev,
-          jsonData: aiGeneratedData,
-        }))
+
+        if (dynamicFormFields && dynamicFormFields.length > 0) {
+          setDynamicFormData(parsedData)
+          setFormData(prev => ({
+            ...prev,
+            jsonData: aiGeneratedData,
+          }))
+        } else {
+          setFormData(prev => ({
+            ...prev,
+            jsonData: aiGeneratedData,
+          }))
+        }
+
+        showAlert('success', 'AI successfully generated the data!')
+      } catch (parseError) {
+        console.error('Error parsing AI generated data:', parseError)
+        showAlert('error', 'The AI generated invalid JSON data. Please try again.')
       }
     } catch (error) {
       console.error('Error filling with AI:', error)
