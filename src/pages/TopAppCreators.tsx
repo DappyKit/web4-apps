@@ -52,7 +52,7 @@ export function TopAppCreators(): React.JSX.Element {
   return (
     <div>
       <div className="d-flex justify-content-center flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 className="h2">Top App Creators</h1>
+        <h1>Top App Creators</h1>
       </div>
 
       <Alert variant="info" className="mb-4">

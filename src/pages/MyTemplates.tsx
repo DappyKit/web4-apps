@@ -232,7 +232,7 @@ export function MyTemplates(): React.JSX.Element {
     <div>
       <div className="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <div className="flex-grow-1 text-center">
-          <h1 className="h2 mb-0">My Templates</h1>
+          <h1 className="mb-0">My Templates</h1>
         </div>
         <Button
           variant="primary"
