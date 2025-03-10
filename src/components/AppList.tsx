@@ -24,21 +24,10 @@ export function AppList({
   apps,
   isLoading,
   showEmptyMessage = 'No apps available.',
-  // These props are for future implementation of delete functionality
   onDeleteApp,
   isDeleting,
   showDelete = false,
 }: AppListProps): React.JSX.Element {
-  // This is just to make TypeScript not complain about unused variables
-  // Will be implemented in the future
-  /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-  /* eslint-disable no-constant-condition */
-  if (false) {
-    console.log(onDeleteApp, isDeleting, showDelete)
-  }
-  /* eslint-enable no-constant-condition */
-  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-
   const renderAppCard = (app: App): React.JSX.Element => (
     <div key={app.id} className="col">
       <div className="card h-100">
@@ -63,6 +52,17 @@ export function AppList({
             <Link to={`/apps/${String(app.id)}`} className="btn btn-outline-primary btn-sm">
               View
             </Link>
+            {showDelete && onDeleteApp && (
+              <button
+                onClick={() => {
+                  void onDeleteApp(app.id)
+                }}
+                disabled={isDeleting === app.id}
+                className="btn btn-outline-danger btn-sm"
+              >
+                {isDeleting === app.id ? 'Deleting...' : 'Delete'}
+              </button>
+            )}
           </div>
         </div>
       </div>
