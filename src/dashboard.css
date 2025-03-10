@@ -34,6 +34,10 @@
   font-weight: 500;
 }
 
+.sidebar .nav-link i {
+  flex-shrink: 0;
+}
+
 .sidebar .nav-link.active {
   color: #2470dc;
 }

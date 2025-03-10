@@ -51,7 +51,7 @@ export function TopAppCreators(): React.JSX.Element {
 
   return (
     <div>
-      <div className="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+      <div className="d-flex justify-content-center flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 className="h2">Top App Creators</h1>
       </div>
 
@@ -78,8 +78,6 @@ export function TopAppCreators(): React.JSX.Element {
       )}
 
       {error && <Alert variant="danger">{error}</Alert>}
-
-      {!loading && !error && topCreators?.users.length === 0 && <Alert variant="info">No users with apps found.</Alert>}
 
       {/* User's position if they're not in top 100 but have created apps */}
       {auth.isAuthenticated &&
