@@ -1,6 +1,6 @@
 import './dashboard.css'
 import { FooterLogged } from './FooterLogged'
-import { NavLink, Routes, Route, Navigate } from 'react-router-dom'
+import { NavLink, Routes, Route, Navigate, Link } from 'react-router-dom'
 import { Dashboard } from './pages/Dashboard'
 import { MyApps } from './pages/MyApps'
 import { MyTemplates } from './pages/MyTemplates'
@@ -167,9 +167,9 @@ const MainContent = memo(({ handleShowMobileMenu }: { handleShowMobileMenu: () =
   <div className="flex-grow-1 d-flex flex-column w-100">
     <header className="d-md-none p-3 border-bottom bg-body-tertiary">
       <div className="d-flex justify-content-between align-items-center">
-        <a href="#/" className="text-decoration-none">
+        <Link to="/" className="text-decoration-none">
           <span className="fs-4">Web4 Apps</span>
-        </a>
+        </Link>
         <Button variant="outline-secondary" size="sm" onClick={handleShowMobileMenu}>
           <i className="bi bi-list"></i>
         </Button>

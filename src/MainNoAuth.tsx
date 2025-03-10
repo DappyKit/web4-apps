@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 /**
  * Main component for unauthenticated users
  * Displays the landing page with Web4 Apps introduction and hackathon information
@@ -126,9 +128,9 @@ export function MainNoAuth(): React.JSX.Element {
 
           <div className="row mt-6">
             <div className="col-12 text-center">
-              <a href="/top-creators" className="btn btn-lg btn-outline-primary rounded-pill ms-3">
+              <Link to="/top-creators" className="btn btn-lg btn-outline-primary rounded-pill ms-3">
                 View Leaderboard
-              </a>
+              </Link>
             </div>
           </div>
         </div>

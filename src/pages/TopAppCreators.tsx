@@ -3,6 +3,7 @@ import { Card, Container, Table, Spinner, Alert, Badge } from 'react-bootstrap'
 import { getUsersWithAppCounts, TopCreatorsResponse } from '../services/api'
 import { useAppSelector } from '../redux/hooks'
 import { selectAuth } from '../redux/reducers/authSlice'
+import { Link } from 'react-router-dom'
 
 /**
  * Component that displays users who have created at least one app,
@@ -52,6 +53,12 @@ export function TopAppCreators(): React.JSX.Element {
     <Container className="py-4">
       <h1 className="mb-4">Top App Creators</h1>
 
+      {!auth.isAuthenticated && (
+        <Alert variant="info" className="mb-4">
+          <Link to="/" className="alert-link">Go to main page</Link> to connect your wallet and see your position in the rankings.
+        </Alert>
+      )}
+
       {loading && (
         <div className="d-flex justify-content-center my-5">
           <Spinner animation="border" role="status">
@@ -65,7 +72,7 @@ export function TopAppCreators(): React.JSX.Element {
       {!loading && !error && topCreators?.users.length === 0 && <Alert variant="info">No users with apps found.</Alert>}
 
       {/* User's position if they're not in top 100 but have created apps */}
-      {!loading && !error && topCreators?.user_record && !topCreators.users.some(user => user.is_user) && (
+      {auth.isAuthenticated && !loading && !error && topCreators?.user_record && !topCreators.users.some(user => user.is_user) && (
         <Card className="mb-4 border-primary">
           <Card.Header className="bg-primary text-white">Your Position</Card.Header>
           <Card.Body>
@@ -147,11 +154,6 @@ export function TopAppCreators(): React.JSX.Element {
           Showing top app creators sorted by the number of apps they&apos;ve created. Create your own apps to join this
           leaderboard!
         </p>
-        {!auth.isAuthenticated && (
-          <p className="text-muted small">
-            <a href="/">Connect your wallet</a> to see your position in the rankings.
-          </p>
-        )}
       </div>
     </Container>
   )
