@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Card, Container, Table, Spinner, Alert, Badge } from 'react-bootstrap'
+import { Card, Table, Spinner, Alert, Badge } from 'react-bootstrap'
 import { getUsersWithAppCounts, TopCreatorsResponse } from '../services/api'
 import { useAppSelector } from '../redux/hooks'
 import { selectAuth } from '../redux/reducers/authSlice'
@@ -55,8 +55,13 @@ export function TopAppCreators(): React.JSX.Element {
         <h1 className="h2">Top App Creators</h1>
       </div>
 
+      <Alert variant="info" className="mb-4">
+        <h5>Rewards Program</h5>
+        <p className="mb-0">Top 100 creators receive 50 OP tokens each. Deadline: June 1, 2025.</p>
+      </Alert>
+
       {!auth.isAuthenticated && (
-        <Alert variant="info" className="mb-4">
+        <Alert variant="warning" className="mb-4">
           <Link to="/" className="alert-link">
             Go to main page
           </Link>{' '}
@@ -90,7 +95,6 @@ export function TopAppCreators(): React.JSX.Element {
                   <tr>
                     <th className="border-0">#</th>
                     <th className="border-0">Wallet Address</th>
-                    <th className="border-0 text-center">Win Amount</th>
                     <th className="border-0 text-end">Apps Created</th>
                   </tr>
                 </thead>
@@ -102,9 +106,6 @@ export function TopAppCreators(): React.JSX.Element {
                       <Badge bg="primary" className="ms-2">
                         You
                       </Badge>
-                    </td>
-                    <td className="border-0 text-center">
-                      {topCreators.user_record.win_1_amount ? `${topCreators.user_record.win_1_amount} L` : '-'}
                     </td>
                     <td className="border-0 text-end fw-bold">{topCreators.user_record.app_count}</td>
                   </tr>
@@ -122,7 +123,6 @@ export function TopAppCreators(): React.JSX.Element {
                 <tr>
                   <th className="border-0">#</th>
                   <th className="border-0">Wallet Address</th>
-                  <th className="border-0 text-center">Win Amount</th>
                   <th className="border-0 text-end">Apps Created</th>
                 </tr>
               </thead>
@@ -138,7 +138,6 @@ export function TopAppCreators(): React.JSX.Element {
                         </Badge>
                       )}
                     </td>
-                    <td className="border-0 text-center">{user.win_1_amount ? `${user.win_1_amount} L` : '-'}</td>
                     <td className="border-0 text-end fw-bold">{user.app_count}</td>
                   </tr>
                 ))}
@@ -148,7 +147,6 @@ export function TopAppCreators(): React.JSX.Element {
                   <tr key={placeholder.key} className="text-muted">
                     <td className="border-0">{topCreators.users.length + index + 1}</td>
                     <td className="border-0 fst-italic">You could be here</td>
-                    <td className="border-0 text-center fst-italic">-</td>
                     <td className="border-0 text-end fst-italic">Create an app to join!</td>
                   </tr>
                 ))}
@@ -161,7 +159,7 @@ export function TopAppCreators(): React.JSX.Element {
       <div className="mt-4">
         <p className="text-muted small">
           Showing top app creators sorted by the number of apps they&apos;ve created. Create your own apps to join this
-          leaderboard!
+          leaderboard and earn rewards!
         </p>
       </div>
     </div>
