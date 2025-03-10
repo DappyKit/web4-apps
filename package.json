@@ -14,9 +14,9 @@
     "backend:test": "cd backend && npm run test",
     "backend:test:coverage": "cd backend && npm run test:coverage",
     "backend:new": "cd backend && npm run migrate:rollback && npm run migrate && npm run seed && npm run dev",
-    "ui-test": "vitest run",
-    "ui-test:coverage": "vitest run --coverage",
-    "ui-test:ui": "vitest --ui",
+    "ui:test": "vitest run",
+    "ui:test:coverage": "vitest run --coverage",
+    "ui:test:ui": "vitest --ui",
     "code:lines": "./scripts/analyze-code.sh",
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \"backend/src/**/*.ts\" \"backend/migrations/**/*.ts\" --config prettier.config.js",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"backend/src/**/*.ts\" \"backend/migrations/**/*.ts\" --config prettier.config.js",
@@ -24,7 +24,7 @@
     "format:backend": "prettier --check \"backend/src/**/*.ts\" \"backend/migrations/**/*.ts\" --config prettier.config.js",
     "types:check": "tsc --noEmit --project tsconfig.json && npm run types:ui && cd backend && tsc --noEmit --project tsconfig.json",
     "types:ui": "tsc --noEmit --project tsconfig.ui.json",
-    "check:all": "npm run lint:check && npm run format:check && npm run types:check && npm run ui-test && npm run backend:test"
+    "check:all": "npm run lint:check && npm run format:check && npm run types:check && npm run ui:test && npm run backend:test"
   },
   "dependencies": {
     "@dappykit/sdk": "^3.0.1",
