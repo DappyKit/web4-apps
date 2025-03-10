@@ -1,6 +1,8 @@
 /**
  * Interface for form field configuration
  */
+import { capitalizeFieldName } from './stringUtils'
+
 export interface FormField {
   name: string
   type: string
@@ -57,7 +59,7 @@ function parseSchemaProperties(
   return Object.entries(properties).map(([name, property]) => {
     const field: FormField = {
       name,
-      label: property.title ?? name,
+      label: property.title ?? capitalizeFieldName(name),
       required: requiredFields.includes(name),
       placeholder: property.description,
       type: 'text',
@@ -75,7 +77,7 @@ function parseSchemaProperties(
           field.type = 'select'
           field.options = property.enum.map(option => ({
             value: option,
-            label: option,
+            label: capitalizeFieldName(option),
           }))
         } else if (property.format === 'date' || property.format === 'date-time') {
           field.type = 'date'
@@ -165,6 +167,14 @@ function parseSchemaProperties(
     // Set default value if available
     if (property.default !== undefined) {
       field.defaultValue = property.default
+    }
+
+    // For select fields, also update the label in options if it equals the value
+    if (field.type === 'select' && field.options) {
+      field.options = field.options.map(option => ({
+        value: option.value,
+        label: option.value === option.label ? capitalizeFieldName(option.value) : option.label,
+      }))
     }
 
     return field
