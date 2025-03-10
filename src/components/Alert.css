@@ -1,0 +1,51 @@
+.alert-wrapper {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1060;
+  min-width: 300px;
+  max-width: 500px;
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.alert-enter {
+  animation: slideIn 0.3s forwards;
+}
+
+.alert-exit {
+  animation: slideOut 0.3s forwards;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 576px) {
+  .alert-wrapper {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    min-width: auto;
+    max-width: none;
+  }
+} 

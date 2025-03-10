@@ -6,6 +6,8 @@ import type { Template } from '../services/api'
 import { DynamicForm } from './DynamicForm'
 import { parseTemplateSchema, formDataToJson } from '../utils/schemaParser'
 import type { FormField } from '../utils/schemaParser'
+import { Alert as CustomAlert } from './Alert'
+import { truncateError, getErrorMessage } from '../utils/errorUtils'
 
 // Constants matching backend limitations
 const MAX_NAME_LENGTH = 255
@@ -68,6 +70,7 @@ export function CreateAppModal({
   const [isAiLoading, setIsAiLoading] = useState(false)
   const [showAiModal, setShowAiModal] = useState(false)
   const [aiUserInput, setAiUserInput] = useState('')
+  const [alerts, setAlerts] = useState<{ id: string; type: 'error' | 'success'; message: string }[]>([])
 
   // Update form when selected template changes
   useEffect(() => {
@@ -346,6 +349,24 @@ export function CreateAppModal({
   }
 
   /**
+   * Shows an alert message
+   * @param type - Type of alert
+   * @param message - Alert message
+   */
+  const showAlert = (type: 'error' | 'success', message: string): void => {
+    const id = Math.random().toString(36).substring(7)
+    setAlerts(prev => [...prev, { id, type, message: truncateError(message) }])
+  }
+
+  /**
+   * Removes an alert by its ID
+   * @param id - Alert ID to remove
+   */
+  const removeAlert = (id: string): void => {
+    setAlerts(prev => prev.filter(alert => alert.id !== id))
+  }
+
+  /**
    * Handles the submission of the AI input form
    */
   const handleAiSubmit = async (): Promise<void> => {
@@ -357,27 +378,34 @@ export function CreateAppModal({
 
     try {
       const templateId = Number(formData.templateId)
-
-      // Call the AI function with all parameters
       const aiGeneratedData = await generateTemplateDataWithAI(templateId, aiUserInput)
 
-      // Update the form data with AI-generated content
-      if (dynamicFormFields && dynamicFormFields.length > 0) {
+      try {
+        // Validate that the generated data is valid JSON
         const parsedData = JSON.parse(aiGeneratedData) as Record<string, unknown>
-        setDynamicFormData(parsedData)
-        setFormData(prev => ({
-          ...prev,
-          jsonData: aiGeneratedData,
-        }))
-      } else {
-        setFormData(prev => ({
-          ...prev,
-          jsonData: aiGeneratedData,
-        }))
+
+        if (dynamicFormFields && dynamicFormFields.length > 0) {
+          setDynamicFormData(parsedData)
+          setFormData(prev => ({
+            ...prev,
+            jsonData: aiGeneratedData,
+          }))
+        } else {
+          setFormData(prev => ({
+            ...prev,
+            jsonData: aiGeneratedData,
+          }))
+        }
+
+        showAlert('success', 'AI successfully generated the data!')
+      } catch (parseError) {
+        console.error('Error parsing AI generated data:', parseError)
+        showAlert('error', 'The AI generated invalid JSON data. Please try again.')
       }
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('Error filling with AI:', error)
-      setError('Failed to generate AI content. Please try again.')
+      const errorMessage = getErrorMessage(error)
+      showAlert('error', errorMessage)
     } finally {
       setIsAiLoading(false)
     }
@@ -631,6 +659,19 @@ export function CreateAppModal({
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {alerts.map(alert => {
+        return (
+          <CustomAlert
+            key={alert.id}
+            type={alert.type}
+            message={alert.message}
+            onClose={() => {
+              removeAlert(alert.id)
+            }}
+          />
+        )
+      })}
     </>
   )
 }

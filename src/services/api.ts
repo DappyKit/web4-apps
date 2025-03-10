@@ -436,7 +436,14 @@ export async function getAllTemplates(page = 1, limit = 12): Promise<PaginatedTe
 interface AiPromptApiResponse {
   success: boolean
   data?: {
-    result: Record<string, unknown>
+    result:
+      | {
+          rawText?: string
+          message?: string
+          timestamp?: string
+        }
+      | Record<string, unknown>
+    requiredValidation?: boolean
   }
   error?: string
 }
@@ -446,6 +453,7 @@ interface AiPromptApiResponse {
  * @param templateId - The ID of the template to fill with AI-generated data
  * @param prompt - User instructions for AI generation
  * @returns Promise with the AI-generated JSON data for the template
+ * @throws Error if the generation fails or response is invalid
  */
 export async function generateTemplateDataWithAI(templateId: number, prompt: string): Promise<string> {
   if (!templateId) {
@@ -476,12 +484,24 @@ export async function generateTemplateDataWithAI(templateId: number, prompt: str
     // Parse the AI response
     const data = (await response.json()) as AiPromptApiResponse
     if (!data.success) {
-      const errorMessage = data.error ?? 'AI processing failed'
-      throw new Error(errorMessage)
+      throw new Error(data.error ?? 'AI processing failed')
+    }
+
+    if (!data.data?.result) {
+      throw new Error('Invalid AI response: missing result')
+    }
+
+    // Check if we have an error message in the result
+    if ('message' in data.data.result && typeof data.data.result.message === 'string') {
+      throw new Error(data.data.result.message)
     }
 
     // Get the result data and convert to string
-    return JSON.stringify(data.data?.result ?? {})
+    if (typeof data.data.result === 'string' || 'message' in data.data.result) {
+      throw new Error('Invalid AI response format')
+    }
+
+    return JSON.stringify(data.data.result)
   } catch (error) {
     console.error('Error generating AI template data:', error)
     throw error
