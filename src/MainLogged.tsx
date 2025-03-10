@@ -182,7 +182,7 @@ const MainContent = memo(({ handleShowMobileMenu }: { handleShowMobileMenu: () =
         ))}
         <Route path="/top-creators" element={<TopAppCreators />} />
         <Route
-          path="/app/:id"
+          path="/apps/:id"
           element={
             <ProtectedRoute>
               <ViewApp />
@@ -190,7 +190,7 @@ const MainContent = memo(({ handleShowMobileMenu }: { handleShowMobileMenu: () =
           }
         />
         <Route
-          path="/template/:id"
+          path="/templates/:id"
           element={
             <ProtectedRoute>
               <ViewTemplate />

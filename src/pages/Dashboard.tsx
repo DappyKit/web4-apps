@@ -1,10 +1,22 @@
 import { useState, useEffect, useCallback, JSX } from 'react'
 import { useAccount, useSignMessage } from 'wagmi'
-import { checkUserRegistration, registerUser, getMyApps, deleteApp } from '../services/api'
-import type { App } from '../services/api'
+import { Alert } from 'react-bootstrap'
+import { Link } from 'react-router-dom'
+import {
+  checkUserRegistration,
+  registerUser,
+  getMyApps,
+  deleteApp,
+  getMyTemplates,
+  deleteTemplate,
+} from '../services/api'
+import type { App, Template } from '../services/api'
 import { AppList } from '../components/AppList'
+import TemplateList from '../components/TemplateList'
+import { DeleteTemplateModal } from '../components/DeleteTemplateModal'
 
 const REGISTRATION_MESSAGE = 'Web4 Apps Registration'
+const ITEMS_PER_SECTION = 9
 
 export function Dashboard(): JSX.Element {
   const { address } = useAccount()
@@ -13,8 +25,12 @@ export function Dashboard(): JSX.Element {
   const [isRegistering, setIsRegistering] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [apps, setApps] = useState<App[]>([])
+  const [templates, setTemplates] = useState<Template[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [isDeleting, setIsDeleting] = useState<number | null>(null)
+  const [isDeletingApp, setIsDeletingApp] = useState<number | null>(null)
+  const [isDeletingTemplate, setIsDeletingTemplate] = useState<number | null>(null)
+  const [showDeleteTemplateModal, setShowDeleteTemplateModal] = useState(false)
+  const [templateToDelete, setTemplateToDelete] = useState<number | null>(null)
 
   const checkRegistrationStatus = useCallback(async (): Promise<void> => {
     if (!address) return
@@ -28,16 +44,18 @@ export function Dashboard(): JSX.Element {
     }
   }, [address])
 
-  const loadApps = useCallback(async (): Promise<void> => {
+  const loadData = useCallback(async (): Promise<void> => {
     if (!isRegistered || !address) return
 
     setIsLoading(true)
     try {
-      setApps(await getMyApps(address))
+      const [appsData, templatesData] = await Promise.all([getMyApps(address), getMyTemplates(address)])
+      setApps(appsData)
+      setTemplates(templatesData)
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load apps'
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load data'
       setError(errorMessage)
-      console.error('Error loading apps:', error)
+      console.error('Error loading data:', error)
     } finally {
       setIsLoading(false)
     }
@@ -45,13 +63,13 @@ export function Dashboard(): JSX.Element {
 
   useEffect(() => {
     if (address) {
-      checkRegistrationStatus().catch(console.error)
+      void checkRegistrationStatus()
     }
   }, [address, checkRegistrationStatus])
 
   useEffect(() => {
-    loadApps().catch(console.error)
-  }, [loadApps])
+    void loadData()
+  }, [loadData])
 
   const handleRegister = async (): Promise<void> => {
     if (!address || isRegistering) return
@@ -76,9 +94,9 @@ export function Dashboard(): JSX.Element {
   }
 
   const handleDeleteApp = async (appId: number): Promise<void> => {
-    if (!address || isDeleting !== null) return
+    if (!address || isDeletingApp !== null) return
 
-    setIsDeleting(appId)
+    setIsDeletingApp(appId)
     setError(null)
 
     try {
@@ -86,29 +104,53 @@ export function Dashboard(): JSX.Element {
       const signature = await signMessageAsync({ message })
 
       await deleteApp(address, appId, signature)
-      await loadApps()
+      await loadData()
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete app'
       setError(errorMessage)
       alert(`Failed to delete app: ${errorMessage}`)
       console.error('Error deleting app:', error)
     } finally {
-      setIsDeleting(null)
+      setIsDeletingApp(null)
     }
+  }
+
+  const handleDeleteTemplate = async (templateId: number): Promise<void> => {
+    if (!address || isDeletingTemplate !== null) return
+
+    setIsDeletingTemplate(templateId)
+    setError(null)
+
+    try {
+      const message = `Delete template #${String(templateId)}`
+      const signature = await signMessageAsync({ message })
+
+      await deleteTemplate(address, templateId, signature)
+      await loadData()
+      setShowDeleteTemplateModal(false)
+      setTemplateToDelete(null)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete template'
+      setError(errorMessage)
+      console.error('Error deleting template:', error)
+    } finally {
+      setIsDeletingTemplate(null)
+    }
+  }
+
+  const handleTemplateDelete = (templateId: number): void => {
+    setTemplateToDelete(templateId)
+    setShowDeleteTemplateModal(true)
   }
 
   return (
     <div>
       <div className="d-flex justify-content-center flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 className="h2">Dashboard</h1>
+        <h1 className="text-center">Dashboard</h1>
       </div>
       <p className="text-center text-muted">
-        Welcome to your Web4 Apps dashboard. Manage your apps and view your activity.
+        Welcome to your Web4 Apps dashboard. Manage your apps and templates in one place.
       </p>
-
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>My Apps</h2>
-      </div>
 
       {isRegistered === false && (
         <div className="alert alert-info" role="alert">
@@ -132,23 +174,78 @@ export function Dashboard(): JSX.Element {
 
       {isRegistered && (
         <>
-          <div className="w-100" style={{ minWidth: 0 }}>
-            <AppList
-              apps={apps}
-              isLoading={isLoading}
-              onDeleteApp={handleDeleteApp}
-              isDeleting={isDeleting}
-              showEmptyMessage="You don't have any apps yet. Create one to get started!"
-            />
+          {/* Apps Section */}
+          <div className="mb-5">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+              <h2>My Apps</h2>
+            </div>
+            <div className="w-100" style={{ minWidth: 0 }}>
+              <AppList
+                apps={apps.slice(0, ITEMS_PER_SECTION)}
+                isLoading={isLoading}
+                onDeleteApp={handleDeleteApp}
+                isDeleting={isDeletingApp}
+                showEmptyMessage="You don't have any apps yet. Visit My Apps page to create one!"
+              />
+              {apps.length > ITEMS_PER_SECTION && (
+                <div className="text-center mt-3">
+                  <Link to="/my-apps" className="btn btn-outline-primary">
+                    View All Apps
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Templates Section */}
+          <div className="mb-4">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+              <h2>My Templates</h2>
+            </div>
+            <div className="w-100" style={{ minWidth: 0 }}>
+              <TemplateList
+                templates={templates.slice(0, ITEMS_PER_SECTION)}
+                onDeleteTemplate={handleTemplateDelete}
+                isDeleting={isDeletingTemplate}
+                showEmptyMessage="You don't have any templates yet. Visit My Templates page to create one!"
+              />
+              {templates.length > ITEMS_PER_SECTION && (
+                <div className="text-center mt-3">
+                  <Link to="/my-templates" className="btn btn-outline-primary">
+                    View All Templates
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
 
           {error && (
-            <div className="alert alert-danger mt-3" role="alert">
+            <Alert
+              variant="danger"
+              onClose={() => {
+                setError(null)
+              }}
+              dismissible
+            >
               {error}
-            </div>
+            </Alert>
           )}
         </>
       )}
+
+      <DeleteTemplateModal
+        show={showDeleteTemplateModal}
+        onHide={() => {
+          setShowDeleteTemplateModal(false)
+          setTemplateToDelete(null)
+        }}
+        isDeleting={isDeletingTemplate !== null}
+        onConfirmDelete={() => {
+          if (templateToDelete) {
+            void handleDeleteTemplate(templateToDelete)
+          }
+        }}
+      />
     </div>
   )
 }
