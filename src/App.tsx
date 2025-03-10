@@ -24,14 +24,20 @@ function AppContent(): React.JSX.Element {
 
   // Special case for top-creators and winners - accessible to both authenticated and non-authenticated users
   if (location.pathname === '/top-creators' || location.pathname === '/winners') {
+    // If authenticated, show the content within MainLogged layout
+    if (auth.isAuthenticated) {
+      return <MainLogged />
+    }
+
+    // If not authenticated, show standalone view
     return (
-      <div className={auth.isAuthenticated ? '' : 'overflow-x-hidden rounded-top-4 pt-2 pt-lg-4'}>
-        {!auth.isAuthenticated && <Header />}
+      <div className="overflow-x-hidden rounded-top-4 pt-2 pt-lg-4">
+        <Header />
         <Routes>
           <Route path="/top-creators" element={<TopAppCreators />} />
           <Route path="/winners" element={<Winners />} />
         </Routes>
-        {!auth.isAuthenticated && <FooterNoAuth />}
+        <FooterNoAuth />
       </div>
     )
   }

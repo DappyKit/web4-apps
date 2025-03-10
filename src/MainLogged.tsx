@@ -177,12 +177,10 @@ const MainContent = memo(({ handleShowMobileMenu }: { handleShowMobileMenu: () =
     </header>
     <div className="px-3 px-md-4 flex-grow-1">
       <Routes>
-        {ROUTES.map(({ path, element }) => {
-          if (path === '/top-creators') {
-            return <Route key={path} path={path} element={element} />
-          }
-          return <Route key={path} path={path} element={<ProtectedRoute>{element}</ProtectedRoute>} />
-        })}
+        {ROUTES.map(({ path, element }) => (
+          <Route key={path} path={path} element={<ProtectedRoute>{element}</ProtectedRoute>} />
+        ))}
+        <Route path="/top-creators" element={<TopAppCreators />} />
         <Route
           path="/app/:id"
           element={

@@ -50,12 +50,17 @@ export function TopAppCreators(): React.JSX.Element {
   }
 
   return (
-    <Container className="py-4">
-      <h1 className="mb-4">Top App Creators</h1>
+    <div>
+      <div className="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 className="h2">Top App Creators</h1>
+      </div>
 
       {!auth.isAuthenticated && (
         <Alert variant="info" className="mb-4">
-          <Link to="/" className="alert-link">Go to main page</Link> to connect your wallet and see your position in the rankings.
+          <Link to="/" className="alert-link">
+            Go to main page
+          </Link>{' '}
+          to connect your wallet and see your position in the rankings.
         </Alert>
       )}
 
@@ -72,38 +77,42 @@ export function TopAppCreators(): React.JSX.Element {
       {!loading && !error && topCreators?.users.length === 0 && <Alert variant="info">No users with apps found.</Alert>}
 
       {/* User's position if they're not in top 100 but have created apps */}
-      {auth.isAuthenticated && !loading && !error && topCreators?.user_record && !topCreators.users.some(user => user.is_user) && (
-        <Card className="mb-4 border-primary">
-          <Card.Header className="bg-primary text-white">Your Position</Card.Header>
-          <Card.Body>
-            <Table responsive hover className="mb-0">
-              <thead>
-                <tr>
-                  <th className="border-0">#</th>
-                  <th className="border-0">Wallet Address</th>
-                  <th className="border-0 text-center">Win Amount</th>
-                  <th className="border-0 text-end">Apps Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="border-0">{topCreators.user_record.rank}</td>
-                  <td className="border-0">
-                    {topCreators.user_record.trimmed_address}
-                    <Badge bg="primary" className="ms-2">
-                      You
-                    </Badge>
-                  </td>
-                  <td className="border-0 text-center">
-                    {topCreators.user_record.win_1_amount ? `${topCreators.user_record.win_1_amount} L` : '-'}
-                  </td>
-                  <td className="border-0 text-end fw-bold">{topCreators.user_record.app_count}</td>
-                </tr>
-              </tbody>
-            </Table>
-          </Card.Body>
-        </Card>
-      )}
+      {auth.isAuthenticated &&
+        !loading &&
+        !error &&
+        topCreators?.user_record &&
+        !topCreators.users.some(user => user.is_user) && (
+          <Card className="mb-4 border-primary">
+            <Card.Header className="bg-primary text-white">Your Position</Card.Header>
+            <Card.Body>
+              <Table responsive hover className="mb-0">
+                <thead>
+                  <tr>
+                    <th className="border-0">#</th>
+                    <th className="border-0">Wallet Address</th>
+                    <th className="border-0 text-center">Win Amount</th>
+                    <th className="border-0 text-end">Apps Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border-0">{topCreators.user_record.rank}</td>
+                    <td className="border-0">
+                      {topCreators.user_record.trimmed_address}
+                      <Badge bg="primary" className="ms-2">
+                        You
+                      </Badge>
+                    </td>
+                    <td className="border-0 text-center">
+                      {topCreators.user_record.win_1_amount ? `${topCreators.user_record.win_1_amount} L` : '-'}
+                    </td>
+                    <td className="border-0 text-end fw-bold">{topCreators.user_record.app_count}</td>
+                  </tr>
+                </tbody>
+              </Table>
+            </Card.Body>
+          </Card>
+        )}
 
       {!loading && !error && topCreators?.users && topCreators.users.length > 0 && (
         <Card>
@@ -155,6 +164,6 @@ export function TopAppCreators(): React.JSX.Element {
           leaderboard!
         </p>
       </div>
-    </Container>
+    </div>
   )
 }
