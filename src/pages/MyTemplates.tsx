@@ -245,6 +245,9 @@ export function MyTemplates(): React.JSX.Element {
           New Template
         </Button>
       </div>
+      <p className="text-center text-muted">
+        Create and manage your app templates. Share your innovations with the community.
+      </p>
 
       {error && <Alert variant="danger">{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}

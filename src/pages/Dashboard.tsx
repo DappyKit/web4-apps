@@ -102,6 +102,9 @@ export function Dashboard(): JSX.Element {
       <div className="d-flex justify-content-center flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 className="h2">Dashboard</h1>
       </div>
+      <p className="text-center text-muted">
+        Welcome to your Web4 Apps dashboard. Manage your apps and view your activity.
+      </p>
 
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>My Apps</h2>

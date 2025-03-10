@@ -114,6 +114,7 @@ export function MyApps(): React.JSX.Element {
           New App
         </Button>
       </div>
+      <p className="text-center text-muted">Create and manage your Web4 applications. Build something amazing today.</p>
 
       {error && (
         <Alert

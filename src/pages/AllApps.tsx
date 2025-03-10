@@ -87,7 +87,9 @@ export function AllApps(): React.JSX.Element {
       <Row className="mb-4">
         <Col>
           <h1 className="text-center">All Apps</h1>
-          <p className="text-center text-muted">Browse all moderated apps from our community</p>
+          <p className="text-center text-muted">
+            Browse all moderated apps from our community. Get inspired by what others have built.
+          </p>
           {error && <div className="alert alert-danger">{error}</div>}
         </Col>
       </Row>
