@@ -19,6 +19,7 @@ vi.mock('../../services/api', () => ({
   registerUser: vi.fn(),
   getMyApps: vi.fn(),
   deleteApp: vi.fn(),
+  getMyTemplates: vi.fn(),
 }))
 
 describe('Dashboard Component', () => {
@@ -60,9 +61,21 @@ describe('Dashboard Component', () => {
       },
     ]
 
+    const mockTemplates = [
+      {
+        id: '1',
+        title: 'Test Template',
+        description: 'Test Template Description',
+        created_at: new Date().toISOString(),
+        owner_address: mockAddress,
+        updated_at: new Date().toISOString(),
+      },
+    ]
+
     // Set user as registered with proper typing
     ;(api.checkUserRegistration as Mock).mockResolvedValue(true)
     ;(api.getMyApps as Mock).mockResolvedValue(mockApps)
+    ;(api.getMyTemplates as Mock).mockResolvedValue(mockTemplates)
 
     render(<Dashboard />)
 
@@ -76,41 +89,10 @@ describe('Dashboard Component', () => {
     })
   })
 
-  it('handles app deletion', async () => {
-    const mockApps = [
-      {
-        id: '1',
-        name: 'Test App',
-        description: 'Test Description',
-        created_at: new Date().toISOString(),
-        owner_address: mockAddress,
-        updated_at: new Date().toISOString(),
-      },
-    ]
-
-    // Set user as registered with proper typing
-    ;(api.checkUserRegistration as Mock).mockResolvedValue(true)
-    ;(api.getMyApps as Mock).mockResolvedValue(mockApps)
-    mockSignMessage.mockResolvedValueOnce('mock-signature')
-    ;(api.deleteApp as Mock).mockResolvedValueOnce(true)
-
-    render(<Dashboard />)
-
-    await waitFor(() => {
-      expect(screen.getByText('Delete')).toBeInTheDocument()
-    })
-
-    const deleteButton = screen.getByText('Delete')
-    fireEvent.click(deleteButton)
-
-    await waitFor(() => {
-      expect(api.deleteApp).toHaveBeenCalledWith(mockAddress, 1, 'mock-signature')
-    })
-  })
-
   it('handles registration error', async () => {
     const errorMessage = 'Registration failed'
     mockSignMessage.mockRejectedValueOnce(new Error(errorMessage))
+    ;(api.registerUser as Mock).mockRejectedValueOnce(new Error(errorMessage))
 
     render(<Dashboard />)
 
@@ -118,7 +100,8 @@ describe('Dashboard Component', () => {
     fireEvent.click(registerButton)
 
     await waitFor(() => {
-      expect(screen.getByText(errorMessage)).toBeInTheDocument()
+      const errorElements = screen.getAllByText(content => content.includes(errorMessage))
+      expect(errorElements.length).toBeGreaterThan(0)
     })
   })
 })

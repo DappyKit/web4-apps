@@ -1,13 +1,10 @@
 import React from 'react'
-import { Card, Button, Spinner } from 'react-bootstrap'
+import { Card } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 import { Template } from '../services/api'
 
 interface TemplateCardProps {
   template: Template
-  onDelete: () => void
-  isDeleting: boolean
-  showDelete?: boolean
 }
 
 /**
@@ -15,7 +12,7 @@ interface TemplateCardProps {
  * @param {TemplateCardProps} props - Component props
  * @returns {JSX.Element} Template card component
  */
-const TemplateCard: React.FC<TemplateCardProps> = ({ template, onDelete, isDeleting, showDelete = true }) => {
+const TemplateCard: React.FC<TemplateCardProps> = ({ template }) => {
   return (
     <Card>
       <Card.Body>
@@ -25,19 +22,6 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onDelete, isDelet
           <Link to={`/templates/${String(template.id)}`} className="btn btn-outline-primary btn-sm">
             View
           </Link>
-          {showDelete && (
-            <Button variant="outline-danger" size="sm" onClick={onDelete} disabled={isDeleting}>
-              {isDeleting ? (
-                <>
-                  <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
-                  <span className="d-none d-sm-inline">Deleting...</span>
-                  <span className="d-inline d-sm-none">...</span>
-                </>
-              ) : (
-                'Delete'
-              )}
-            </Button>
-          )}
         </div>
       </Card.Body>
     </Card>

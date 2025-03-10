@@ -1,5 +1,5 @@
 import { describe, it, vi, expect, beforeEach } from 'vitest'
-import { screen, fireEvent, waitFor } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import { customRender as render } from '../../test/test-utils-helpers'
 import { MyApps } from '../MyApps'
 import * as wagmi from 'wagmi'
@@ -81,33 +81,6 @@ describe('MyApps Component', () => {
     })
   })
 
-  it('handles app deletion', async () => {
-    const mockApps = [
-      {
-        id: '1',
-        name: 'Test App',
-        description: 'Test Description',
-        created_at: new Date().toISOString(),
-        owner_address: mockAddress,
-        updated_at: new Date().toISOString(),
-      },
-    ]
-
-    ;(api.getMyApps as Mock).mockResolvedValue(mockApps)
-    mockSignMessage.mockResolvedValueOnce('mock-signature')
-    ;(api.deleteApp as Mock).mockResolvedValueOnce(true)
-
-    render(<MyApps />)
-
-    await waitFor(() => {
-      expect(screen.getByText('Delete')).toBeInTheDocument()
-    })
-
-    const deleteButton = screen.getByText('Delete')
-    fireEvent.click(deleteButton)
-
-    await waitFor(() => {
-      expect(api.deleteApp).toHaveBeenCalledWith(mockAddress, 1, 'mock-signature')
-    })
-  })
+  // Remove the app deletion test since delete buttons are now only on view pages
+  // We'll test deletion functionality in the ViewApp component tests
 })

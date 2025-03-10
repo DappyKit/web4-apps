@@ -252,20 +252,22 @@ export function MyTemplates(): React.JSX.Element {
       {error && <Alert variant="danger">{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
 
+      {/* Template List */}
       <div className="mt-4">
         <TemplateList
           templates={getCurrentPageItems()}
           onDeleteTemplate={handleTemplateDelete}
           isDeleting={isDeleting}
+          showDelete={false}
           showEmptyMessage="Click the 'New Template' button to create your first template"
         />
-
-        {templates.length > ITEMS_PER_PAGE && (
-          <div className="d-flex justify-content-center mt-4">
-            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
-          </div>
-        )}
       </div>
+
+      {templates.length > ITEMS_PER_PAGE && (
+        <div className="d-flex justify-content-center mt-4">
+          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+        </div>
+      )}
 
       {/* Use the new modal components */}
       <CreateTemplateModal

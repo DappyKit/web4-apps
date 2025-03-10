@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { Alert, Spinner, Card } from 'react-bootstrap'
-import { getAppById, getTemplateById } from '../services/api'
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+/* eslint-disable @typescript-eslint/no-floating-promises */
+import React, { useState, useEffect } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { Alert, Spinner, Card, Button } from 'react-bootstrap'
+import { getAppById, getTemplateById, deleteApp } from '../services/api'
 import type { App, Template } from '../services/api'
 import { ReadOnlyForm } from '../components/ReadOnlyForm'
 import { parseTemplateSchema } from '../utils/schemaParser'
 import type { FormField } from '../utils/schemaParser'
+import { useAccount, useSignMessage } from 'wagmi'
+import { handlePromiseSafely } from '../utils/promiseUtils'
 
 /**
  * Component for viewing detailed information about a specific app
@@ -15,154 +19,193 @@ export function ViewApp(): React.JSX.Element {
   const { id } = useParams<{ id: string }>()
   const [app, setApp] = useState<App | null>(null)
   const [template, setTemplate] = useState<Template | null>(null)
-  const [formSchema, setFormSchema] = useState<FormField[] | null>(null)
+  const [formSchema, setFormSchema] = useState<FormField[]>([])
   const [formData, setFormData] = useState<Record<string, unknown>>({})
   const [isLoading, setIsLoading] = useState(true)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { address } = useAccount()
+  const { signMessageAsync } = useSignMessage()
+  const navigate = useNavigate()
 
   useEffect(() => {
-    const loadApp = async (): Promise<void> => {
-      if (!id) return
+    const abortController = new AbortController()
+    const { signal } = abortController
 
+    // To prevent the TypeScript error about id potentially being null
+    const currentId = id
+    if (!currentId) return
+
+    setIsLoading(true)
+
+    const fetchData = async (): Promise<void> => {
       try {
-        setIsLoading(true)
-        const appData = await getAppById(Number(id))
+        const appData = await getAppById(Number(currentId))
+
+        if (signal.aborted) return
+
         setApp(appData)
 
         // Load the template to get the schema
-        if (appData.template_id) {
+        const templateId = appData.template_id
+        if (templateId === undefined || templateId === null) return
+
+        try {
+          const templateData = await getTemplateById(templateId)
+
+          if (signal.aborted) return
+
+          setTemplate(templateData)
+
+          // Parse the template schema
+          const schema = parseTemplateSchema(templateData.json_data)
+          setFormSchema(schema)
+
+          // Parse the app's JSON data if available
+          const jsonData = appData.json_data
+          if (jsonData === undefined || jsonData === null) return
+
           try {
-            const templateData = await getTemplateById(appData.template_id)
-            setTemplate(templateData)
+            const parsedData = JSON.parse(jsonData) as Record<string, unknown>
 
-            // Parse the template schema
-            const schema = parseTemplateSchema(templateData.json_data)
-            setFormSchema(schema)
+            if (signal.aborted) return
 
-            // Parse the app's JSON data if available
-            if (appData.json_data) {
-              try {
-                const parsedData = JSON.parse(appData.json_data) as Record<string, unknown>
-                setFormData(parsedData)
-              } catch (jsonError) {
-                console.error('Error parsing app JSON data:', jsonError)
-              }
-            }
-          } catch (templateError) {
-            console.error('Error loading template:', templateError)
-            // We still want to show the app even if we can't load its template
+            setFormData(parsedData)
+          } catch (error: unknown) {
+            console.error('Error parsing app JSON data:', error)
           }
+        } catch (error: unknown) {
+          console.error('Error loading template:', error)
+          // We still want to show the app even if we can't load its template
         }
-      } catch (error) {
+      } catch (error: unknown) {
+        if (signal.aborted) return
+
         const errorMessage = error instanceof Error ? error.message : 'Failed to load app details'
         setError(errorMessage)
         console.error('Error loading app:', error)
       } finally {
-        setIsLoading(false)
+        if (!signal.aborted) {
+          setIsLoading(false)
+        }
       }
     }
 
-    void loadApp()
+    // Execute the fetch and handle the promise safely
+    handlePromiseSafely(fetchData(), error => {
+      console.error('Error in fetchData:', error)
+    })
+
+    // Cleanup function
+    return () => {
+      abortController.abort()
+    }
   }, [id])
+
+  const handleDeleteApp = async (): Promise<void> => {
+    if (!id || !app || !address) return
+
+    setIsDeleting(true)
+
+    try {
+      // Create a signature for deleting the app
+      const message = `Delete application #${String(id)}`
+      const signature = await signMessageAsync({ message })
+
+      await deleteApp(address, Number(id), signature)
+      navigate('/my-apps')
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete app'
+      alert(`Error: ${errorMessage}`)
+      console.error('Error deleting app:', error)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  // Delete confirmation handler
+  const confirmDelete = (): void => {
+    const confirmed = window.confirm('Are you sure you want to delete this app?')
+    if (confirmed) {
+      handlePromiseSafely(handleDeleteApp())
+    }
+  }
+
+  const isOwner = app && address ? app.owner_address.toLowerCase() === address.toLowerCase() : false
 
   if (isLoading) {
     return (
       <div className="text-center p-5">
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </Spinner>
+        <Spinner animation="border" />
+        <p className="mt-3">Loading app details...</p>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="p-3">
-        <Alert variant="danger">{error}</Alert>
-        <Link
-          to="/my-apps"
-          className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
-          style={{ width: '42px', height: '42px' }}
-        >
-          <i className="bi bi-arrow-left" style={{ lineHeight: 0 }}></i>
-        </Link>
-      </div>
+      <Alert variant="danger" className="m-4">
+        {error}
+      </Alert>
     )
   }
 
   if (!app) {
     return (
-      <div className="p-3">
-        <Alert variant="warning">App not found</Alert>
-        <Link
-          to="/my-apps"
-          className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
-          style={{ width: '42px', height: '42px' }}
-        >
-          <i className="bi bi-arrow-left" style={{ lineHeight: 0 }}></i>
-        </Link>
-      </div>
+      <Alert variant="warning" className="m-4">
+        App not found.
+      </Alert>
     )
   }
 
   return (
-    <div className="p-3">
-      <div className="d-flex align-items-center gap-3 mb-4">
+    <div className="container mt-4 mb-5">
+      <div className="d-flex align-items-center mb-4">
         <Link
           to="/my-apps"
-          className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
+          className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center me-3"
           style={{ width: '42px', height: '42px' }}
         >
           <i className="bi bi-arrow-left" style={{ lineHeight: 0 }}></i>
         </Link>
-        <h1 className="h2 mb-0">{app.name}</h1>
+        <h2 className="m-0">{app.name}</h2>
+        {isOwner && (
+          <div className="ms-auto">
+            <Button
+              variant="outline-danger"
+              size="sm"
+              className="ms-auto"
+              onClick={confirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete App'}
+            </Button>
+          </div>
+        )}
       </div>
 
       <Card className="mb-4">
         <Card.Body>
           <Card.Title>App Details</Card.Title>
-          <dl className="row mb-0">
-            <dt className="col-sm-3">ID</dt>
-            <dd className="col-sm-9">{app.id}</dd>
-
-            <dt className="col-sm-3">Description</dt>
-            <dd className="col-sm-9">{app.description ?? 'No description provided'}</dd>
-
-            <dt className="col-sm-3">Owner</dt>
-            <dd className="col-sm-9">
-              <code>{app.owner_address}</code>
-            </dd>
-
-            <dt className="col-sm-3">Template</dt>
-            <dd className="col-sm-9">
-              {template ? template.title : app.template_id ? `ID: ${String(app.template_id)}` : 'None'}
-            </dd>
-
-            <dt className="col-sm-3">Created</dt>
-            <dd className="col-sm-9">{new Date(app.created_at).toLocaleString()}</dd>
-
-            <dt className="col-sm-3">Last Updated</dt>
-            <dd className="col-sm-9">{new Date(app.updated_at).toLocaleString()}</dd>
-          </dl>
+          <div className="mb-3">
+            <strong>Description:</strong> {app.description ?? 'No description'}
+          </div>
+          <div className="mb-3">
+            <strong>Created:</strong> {new Date(app.created_at).toLocaleDateString()}
+          </div>
+          {template && (
+            <div className="mb-3">
+              <strong>Based on Template:</strong> <Link to={`/templates/${String(template.id)}`}>{template.title}</Link>
+            </div>
+          )}
         </Card.Body>
       </Card>
 
-      {app.json_data && (
-        <Card>
+      {template && formSchema.length > 0 && (
+        <Card className="mb-4">
           <Card.Body>
-            <Card.Title>App Configuration</Card.Title>
-
-            {formSchema ? (
-              <ReadOnlyForm schema={formSchema} data={formData} />
-            ) : (
-              <div className="alert alert-warning">
-                <i className="bi bi-exclamation-triangle me-2"></i>
-                Template schema could not be loaded. Showing raw JSON:
-                <pre className="mt-3 mb-0">
-                  <code>{JSON.stringify(JSON.parse(app.json_data), null, 2)}</code>
-                </pre>
-              </div>
-            )}
+            <Card.Title>App Data</Card.Title>
+            <ReadOnlyForm schema={formSchema} data={formData} />
           </Card.Body>
         </Card>
       )}
