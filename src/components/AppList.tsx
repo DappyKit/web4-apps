@@ -1,15 +1,7 @@
-import { Spinner, Alert } from 'react-bootstrap'
-import { Link } from 'react-router-dom'
+import React from 'react'
+import { Row, Col, Spinner } from 'react-bootstrap'
 import type { App } from '../services/api'
-import { OverlayTrigger, Tooltip } from 'react-bootstrap'
-
-const TITLE_MAX_LENGTH = 50
-const DESCRIPTION_MAX_LENGTH = 100
-
-function truncateText(text: string, maxLength: number): string {
-  if (text.length <= maxLength) return text
-  return `${text.slice(0, maxLength)}...`
-}
+import AppCard from './AppCard'
 
 interface AppListProps {
   apps: App[]
@@ -20,6 +12,11 @@ interface AppListProps {
   showDelete?: boolean
 }
 
+/**
+ * Renders a responsive grid of app cards with modern layout
+ * @param {AppListProps} props - Component props
+ * @returns {JSX.Element} App list component
+ */
 export function AppList({
   apps,
   isLoading,
@@ -28,59 +25,10 @@ export function AppList({
   isDeleting,
   showDelete = false,
 }: AppListProps): React.JSX.Element {
-  const renderAppCard = (app: App): React.JSX.Element => (
-    <div key={app.id} className="col">
-      <div className="card h-100">
-        <div className="card-body">
-          <OverlayTrigger
-            placement="top"
-            overlay={<Tooltip id={`title-tooltip-${String(app.id)}`}>{app.name}</Tooltip>}
-          >
-            <h5 className="card-title text-truncate">{truncateText(app.name, TITLE_MAX_LENGTH)}</h5>
-          </OverlayTrigger>
-
-          <OverlayTrigger
-            placement="top"
-            overlay={
-              <Tooltip id={`description-tooltip-${String(app.id)}`}>{app.description ?? 'No description'}</Tooltip>
-            }
-          >
-            <p className="card-text">{truncateText(app.description ?? 'No description', DESCRIPTION_MAX_LENGTH)}</p>
-          </OverlayTrigger>
-
-          <div className="d-flex justify-content-between align-items-center mt-3">
-            <Link to={`/apps/${String(app.id)}`} className="btn btn-outline-primary btn-sm">
-              View
-            </Link>
-            {showDelete && onDeleteApp && (
-              <button
-                onClick={() => {
-                  void onDeleteApp(app.id)
-                }}
-                disabled={isDeleting === app.id}
-                className="btn btn-outline-danger btn-sm"
-              >
-                {isDeleting === app.id ? 'Deleting...' : 'Delete'}
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-
   // Show spinner only on initial load when there are no apps yet
   if (isLoading && apps.length === 0) {
     return (
-      <div
-        className="text-center"
-        style={{
-          minHeight: '200px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
         <Spinner animation="border" role="status">
           <span className="visually-hidden">Loading...</span>
         </Spinner>
@@ -91,16 +39,28 @@ export function AppList({
   // Show empty message only when not loading and no apps
   if (!isLoading && apps.length === 0) {
     return (
-      <div style={{ minHeight: '200px' }}>
-        <Alert variant="info">{showEmptyMessage}</Alert>
+      <div className="text-center mt-4 p-5 bg-light rounded-3">
+        <h5 className="text-muted">{showEmptyMessage}</h5>
       </div>
     )
   }
 
-  // Main content - simple and direct rendering
   return (
-    <div className="w-100">
-      <div className="mx-0 row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3 g-md-4">{apps.map(renderAppCard)}</div>
-    </div>
+    <Row xs={1} sm={2} md={2} lg={3} xl={4} className="g-4">
+      {apps.map(app => (
+        <Col key={app.id}>
+          <AppCard
+            app={app}
+            showDelete={showDelete}
+            isDeleting={isDeleting === app.id}
+            onDelete={() => {
+              if (onDeleteApp) {
+                void onDeleteApp(app.id)
+              }
+            }}
+          />
+        </Col>
+      ))}
+    </Row>
   )
 }

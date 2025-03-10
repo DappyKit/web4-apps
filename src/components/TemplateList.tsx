@@ -12,7 +12,7 @@ interface TemplateListProps {
 }
 
 /**
- * Renders a grid of template cards
+ * Renders a responsive grid of template cards with modern layout
  * @param {TemplateListProps} props - Component props
  * @returns {JSX.Element} Template list component
  */
@@ -35,11 +35,15 @@ const TemplateList: React.FC<TemplateListProps> = ({
   /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
   if (templates.length === 0) {
-    return <div className="text-center mt-4">{showEmptyMessage}</div>
+    return (
+      <div className="text-center mt-4 p-5 bg-light rounded-3">
+        <h5 className="text-muted">{showEmptyMessage}</h5>
+      </div>
+    )
   }
 
   return (
-    <Row xs={1} sm={2} lg={3} className="g-3 g-md-4">
+    <Row xs={1} sm={2} md={2} lg={3} xl={4} className="g-4">
       {templates.map(template => (
         <Col key={template.id}>
           <TemplateCard template={template} />

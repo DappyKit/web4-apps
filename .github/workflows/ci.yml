@@ -47,13 +47,13 @@ jobs:
         run: npm run types:ui
         
       - name: Run tests
-        run: npm run ui-test
+        run: npm run ui:test
         
       - name: Upload test coverage
         uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: ui-coverage-node-${{ matrix.node-version }}
+          name: ui:coverage-node-${{ matrix.node-version }}
           path: coverage/
           retention-days: 5
 

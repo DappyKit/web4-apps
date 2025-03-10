@@ -116,7 +116,7 @@ This script will rollback migrations, run them again, seed the database, and sta
 Run frontend tests:
 
 ```sh
-npm run ui-test
+npm run ui:test
 ```
 
 Run backend tests:
@@ -194,7 +194,7 @@ web4-apps/
 - `npm run backend:dev`: Start the backend development server
 - `npm run build`: Build the frontend for production
 - `npm run backend:build`: Build the backend for production
-- `npm run ui-test`: Run frontend tests
+- `npm run ui:test`: Run frontend tests
 - `npm run backend:test`: Run backend tests
 
 ## 📄 License

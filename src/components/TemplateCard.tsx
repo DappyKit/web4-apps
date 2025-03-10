@@ -2,25 +2,35 @@ import React from 'react'
 import { Card } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 import { Template } from '../services/api'
+import { formatDate } from '../utils/dateUtils'
 
 interface TemplateCardProps {
   template: Template
 }
 
 /**
- * Renders a card displaying template information with actions
- * @param {TemplateCardProps} props - Component props
+ * Renders a modern card displaying template information with hover effects and responsive design
+ * @param {TemplateCardProps} props - Component props containing template data
  * @returns {JSX.Element} Template card component
  */
 const TemplateCard: React.FC<TemplateCardProps> = ({ template }) => {
   return (
-    <Card>
-      <Card.Body>
-        <Card.Title className="mb-2">{template.title}</Card.Title>
-        {template.description && <Card.Text className="text-muted small">{template.description}</Card.Text>}
-        <div className="d-flex flex-wrap gap-2 justify-content-between align-items-center mt-3">
-          <Link to={`/templates/${String(template.id)}`} className="btn btn-outline-primary btn-sm">
-            View
+    <Card className="h-100 template-card border border-light shadow-sm">
+      <Card.Body className="d-flex flex-column">
+        <div className="template-card-header mb-3">
+          <Card.Title className="h5 text-primary mb-2">{template.title}</Card.Title>
+          {template.description && (
+            <Card.Text className="text-muted small text-truncate">{template.description}</Card.Text>
+          )}
+        </div>
+        <div className="template-card-meta small text-muted mt-auto">
+          <div className="d-flex justify-content-between align-items-center mb-2">
+            <span>Created: {formatDate(template.created_at)}</span>
+          </div>
+        </div>
+        <div className="template-card-actions mt-3">
+          <Link to={`/templates/${String(template.id)}`} className="btn btn-outline-primary btn-sm w-100 hover-lift">
+            View Template
           </Link>
         </div>
       </Card.Body>

@@ -39,7 +39,7 @@ jobs:
         run: npm run types:ui
         
       - name: Run tests with coverage
-        run: npm run ui-test:coverage
+        run: npm run ui:test:coverage
         
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3

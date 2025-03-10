@@ -1,0 +1,53 @@
+.template-card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  border-width: 1px !important;
+}
+
+.template-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+  border-color: #e9ecef !important;
+}
+
+.template-card .card-title {
+  font-weight: 600;
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+
+.template-card .text-truncate {
+  max-width: 100%;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  line-height: 1.5;
+}
+
+.template-card-meta {
+  font-size: 0.875rem;
+}
+
+.hover-lift {
+  transition: transform 0.15s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-1px);
+}
+
+@media (max-width: 576px) {
+  .template-card {
+    margin-bottom: 1rem;
+  }
+  
+  .template-card:hover {
+    transform: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  }
+} 
