@@ -103,5 +103,25 @@ export interface GptResponse {
   tokenUsage?: TokenUsage
 }
 
+/**
+ * DTO for verifying an AI challenge
+ */
+export interface AiChallengeVerifyDTO {
+  /**
+   * The user's wallet address
+   */
+  address: string
+
+  /**
+   * The challenge UUID to verify
+   */
+  challenge: string
+
+  /**
+   * The cryptographic signature of the challenge
+   */
+  signature: string
+}
+
 // Export all types from this file
 export * from './ai'

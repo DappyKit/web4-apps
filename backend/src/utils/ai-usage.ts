@@ -1,236 +1,204 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/restrict-plus-operands */
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+/* eslint-disable @typescript-eslint/no-misused-promises */
 import { v4 as uuidv4 } from 'uuid'
 import { Knex } from 'knex'
 import { verifySignature } from './auth'
 import { User } from '../types'
 
 /**
- * Maximum number of AI requests allowed per day for each user
+ * Maximum number of AI requests allowed per day per user
  */
 const MAX_AI_REQUESTS_PER_DAY = 10
 
 /**
- * AiUsageService handles user AI usage tracking, challenges, and limits
+ * Extended User interface with AI-related fields
+ */
+interface UserWithAi extends User {
+  ai_usage_count?: number
+  ai_usage_reset_date?: Date | string | null
+  ai_challenge_uuid?: string | null
+  ai_challenge_created_at?: Date | string | null
+}
+
+/**
+ * Service for managing AI usage limits
  */
 export class AiUsageService {
   private db: Knex
 
   /**
-   * Creates a new AiUsageService
-   * @param db - Knex database connection
+   * Creates a new AiUsageService instance
+   * @param db - Knex database instance
    */
   constructor(db: Knex) {
     this.db = db
   }
 
   /**
-   * Generates a new cryptographic challenge for the specified user
+   * Generates a challenge for AI usage verification
    * @param address - User's wallet address
-   * @returns Promise with challenge UUID and user data
+   * @returns The generated challenge UUID
    */
-  async generateChallenge(address: string): Promise<{
-    challenge: string
-    user: User
-    remainingAttempts: number
-  }> {
-    // Normalize the address
-    const normalizedAddress = address.toLowerCase()
-
-    // Generate a new UUID for the challenge
-    const challengeUuid = uuidv4()
-
-    // Get the current date in UTC
-    const now = new Date()
-    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
-
-    // Find or create the user and update their challenge
-    let user = await this.db<User>('users').where({ address: normalizedAddress }).first()
+  async generateChallenge(address: string): Promise<string> {
+    // Get user from database
+    const user = await this.db<UserWithAi>('users').where({ address }).first()
 
     if (!user) {
-      // Handle error safely
-      console.error('User not found')
       throw new Error('User not found')
     }
 
-    // Reset counter if it's a new day
-    const resetDate = user.ai_usage_reset_date ? new Date(user.ai_usage_reset_date) : null
-    if (!resetDate || resetDate.getTime() < today.getTime()) {
-      await this.db<User>('users').where({ address: normalizedAddress }).update({
-        ai_usage_count: 0,
-        ai_usage_reset_date: today,
-      })
-    }
+    // Generate a new challenge
+    const challenge = uuidv4()
+    const now = new Date()
 
-    // Update the user's challenge
-    await this.db<User>('users').where({ address: normalizedAddress }).update({
-      ai_challenge_uuid: challengeUuid,
+    // Update user with new challenge
+    await this.db('users').where({ address }).update({
+      ai_challenge_uuid: challenge,
       ai_challenge_created_at: now,
     })
 
-    // Get the updated user
-    user = await this.db<User>('users').where({ address: normalizedAddress }).first()
-
-    if (!user) {
-      // Handle error safely
-      console.error('User not found after update')
-      throw new Error('User not found after update')
-    }
-
-    const remainingAttempts = MAX_AI_REQUESTS_PER_DAY - (user.ai_usage_count || 0)
-
-    return {
-      challenge: challengeUuid,
-      user,
-      remainingAttempts: Math.max(0, remainingAttempts),
-    }
+    return challenge
   }
 
   /**
    * Verifies a challenge signature and increments usage if valid
    * @param address - User's wallet address
-   * @param challenge - The challenge UUID to verify
-   * @param signature - The cryptographic signature of the challenge
-   * @returns Promise with verification result
+   * @param challenge - Challenge UUID to verify
+   * @param signature - Signature to verify
+   * @returns Object with success status and remaining attempts
    */
   async verifyChallenge(
     address: string,
     challenge: string,
     signature: string,
-  ): Promise<{
-    success: boolean
-    remainingAttempts: number
-  }> {
-    // Normalize the address
-    const normalizedAddress = address.toLowerCase()
-
-    // Find the user
-    const user = await this.db<User>('users').where({ address: normalizedAddress }).first()
+  ): Promise<{ success: boolean; remaining_attempts: number; max_attempts: number }> {
+    // Get user from database
+    const user = await this.db<UserWithAi>('users').where({ address }).first()
 
     if (!user) {
-      // Handle error safely
-      console.error('User not found')
       throw new Error('User not found')
     }
 
-    // Check if the user has a valid challenge
+    // Check if challenge exists and is valid
     if (!user.ai_challenge_uuid || user.ai_challenge_uuid !== challenge) {
       return {
         success: false,
-        remainingAttempts: 0,
+        remaining_attempts: 0,
+        max_attempts: MAX_AI_REQUESTS_PER_DAY,
       }
     }
 
-    // Check if the challenge is too old (expire after 5 minutes)
-    const challengeTime = user.ai_challenge_created_at ? new Date(user.ai_challenge_created_at) : null
-    const now = new Date()
-    if (!challengeTime || now.getTime() - challengeTime.getTime() > 5 * 60 * 1000) {
-      return {
-        success: false,
-        remainingAttempts: 0,
-      }
-    }
-
-    // Get the current date in UTC
-    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
-
-    // Reset counter if it's a new day
-    const resetDate = user.ai_usage_reset_date ? new Date(user.ai_usage_reset_date) : null
-    if (!resetDate || resetDate.getTime() < today.getTime()) {
-      await this.db<User>('users').where({ address: normalizedAddress }).update({
-        ai_usage_count: 0,
-        ai_usage_reset_date: today,
-      })
-
-      // Refetch the user
-      const updatedUser = await this.db<User>('users').where({ address: normalizedAddress }).first()
-      if (updatedUser) {
-        user.ai_usage_count = updatedUser.ai_usage_count
-        user.ai_usage_reset_date = updatedUser.ai_usage_reset_date
-      }
-    }
-
-    // Check if the user has exceeded their daily limit
-    const usageCount = user.ai_usage_count || 0
-    if (usageCount >= MAX_AI_REQUESTS_PER_DAY) {
-      return {
-        success: false,
-        remainingAttempts: 0,
-      }
-    }
-
-    // Verify the signature
-    const isValid = await verifySignature(challenge, signature, normalizedAddress)
+    // Verify signature
+    const isValid = verifySignature(challenge, signature, address)
 
     if (!isValid) {
       return {
         success: false,
-        remainingAttempts: MAX_AI_REQUESTS_PER_DAY - usageCount,
+        remaining_attempts: this.calculateRemainingAttempts(user),
+        max_attempts: MAX_AI_REQUESTS_PER_DAY,
       }
     }
 
-    // Increment the usage count
-    const newUsageCount = usageCount + 1
-    await this.db<User>('users').where({ address: normalizedAddress }).update({
+    // Check if user has reached daily limit
+    const now = new Date()
+    let resetDate: Date | null = null
+
+    if (user.ai_usage_reset_date) {
+      resetDate = new Date(user.ai_usage_reset_date)
+    }
+
+    const usageCount = user.ai_usage_count || 0
+
+    // If reset date has passed, reset usage count
+    const shouldResetUsage = resetDate !== null && resetDate < now
+
+    // Calculate new usage count and reset date
+    const newUsageCount = shouldResetUsage ? 1 : usageCount + 1
+
+    // Determine if we need a new reset date
+    let newResetDate: Date | null = resetDate
+
+    // Create a new reset date if needed
+    if (shouldResetUsage) {
+      // Reset date has passed, create a new one
+      newResetDate = new Date(now.getTime() + 24 * 60 * 60 * 1000) // 24 hours from now
+    } else if (resetDate === null) {
+      // No reset date exists, create one
+      newResetDate = new Date(now.getTime() + 24 * 60 * 60 * 1000) // 24 hours from now
+    }
+
+    // Check if user has reached daily limit
+    if (!shouldResetUsage && usageCount >= MAX_AI_REQUESTS_PER_DAY) {
+      return {
+        success: false,
+        remaining_attempts: 0,
+        max_attempts: MAX_AI_REQUESTS_PER_DAY,
+      }
+    }
+
+    // Update user with new usage count and reset date
+    await this.db('users').where({ address }).update({
       ai_usage_count: newUsageCount,
-      ai_challenge_uuid: null, // Clear the challenge after use
+      ai_usage_reset_date: newResetDate,
+      ai_challenge_uuid: null,
       ai_challenge_created_at: null,
     })
 
+    // Calculate remaining attempts
     const remainingAttempts = MAX_AI_REQUESTS_PER_DAY - newUsageCount
 
     return {
       success: true,
-      remainingAttempts: Math.max(0, remainingAttempts),
+      remaining_attempts: remainingAttempts,
+      max_attempts: MAX_AI_REQUESTS_PER_DAY,
     }
   }
 
   /**
    * Gets the remaining AI requests for a user
    * @param address - User's wallet address
-   * @returns Promise with remaining attempts and reset date
+   * @returns Object with remaining attempts and max attempts
    */
-  async getRemainingRequests(address: string): Promise<{
-    remainingAttempts: number
-    resetDate: Date
-  }> {
-    // Normalize the address
-    const normalizedAddress = address.toLowerCase()
-
-    // Find the user
-    const user = await this.db<User>('users').where({ address: normalizedAddress }).first()
+  async getRemainingRequests(address: string): Promise<{ remaining_attempts: number; max_attempts: number }> {
+    // Get user from database
+    const user = await this.db<UserWithAi>('users').where({ address }).first()
 
     if (!user) {
-      // Handle error safely
-      console.error('User not found')
       throw new Error('User not found')
     }
 
-    // Get the current date in UTC
-    const now = new Date()
-    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
-
-    // Reset counter if it's a new day
-    const resetDate = user.ai_usage_reset_date ? new Date(user.ai_usage_reset_date) : null
-    if (!resetDate || resetDate.getTime() < today.getTime()) {
-      await this.db<User>('users').where({ address: normalizedAddress }).update({
-        ai_usage_count: 0,
-        ai_usage_reset_date: today,
-      })
-
-      return {
-        remainingAttempts: MAX_AI_REQUESTS_PER_DAY,
-        resetDate: new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + 1)),
-      }
-    }
-
-    const remainingAttempts = MAX_AI_REQUESTS_PER_DAY - (user.ai_usage_count || 0)
-    const resetDate2 = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + 1))
+    // Calculate remaining attempts
+    const remainingAttempts = this.calculateRemainingAttempts(user)
 
     return {
-      remainingAttempts: Math.max(0, remainingAttempts),
-      resetDate: resetDate2,
+      remaining_attempts: remainingAttempts,
+      max_attempts: MAX_AI_REQUESTS_PER_DAY,
     }
+  }
+
+  /**
+   * Calculates the remaining attempts for a user
+   * @param user - User object with AI usage data
+   * @returns Number of remaining attempts
+   */
+  private calculateRemainingAttempts(user: UserWithAi): number {
+    const now = new Date()
+    let resetDate: Date | null = null
+
+    if (user.ai_usage_reset_date) {
+      resetDate = new Date(user.ai_usage_reset_date)
+    }
+
+    const usageCount = user.ai_usage_count || 0
+
+    // If reset date has passed, user has max attempts
+    if (resetDate !== null && resetDate < now) {
+      return MAX_AI_REQUESTS_PER_DAY
+    }
+
+    // Calculate remaining attempts
+    const remainingAttempts = MAX_AI_REQUESTS_PER_DAY - usageCount
+
+    return Math.max(0, remainingAttempts)
   }
 }

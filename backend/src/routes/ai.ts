@@ -1,73 +1,64 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import express, { Request, Response } from 'express'
 import { Knex } from 'knex'
-import { AiPromptResponse, AiChallengeVerifyDTO } from '../types'
+import { AiChallengeVerifyDTO } from '../types/ai'
+import { AiPromptRequest } from '../types/ai'
 import { AiService } from '../utils/ai-service'
 import { AiUsageService } from '../utils/ai-usage'
 import { requireAuth } from '../utils/auth'
 
+// Define a custom Request type that includes the address property
+interface CustomRequest extends Request {
+  address?: string
+}
+
 // Get API key from environment variables
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''
 
-// Maximum number of AI requests per day
-const MAX_AI_REQUESTS_PER_DAY = 10
-
 /**
- * Creates a router for AI-related endpoints
- * @param db - Database connection
- * @param aiServiceOverride - Optional AiService instance for testing
+ * Creates an Express router for AI-related endpoints
+ * @param db - Knex database instance
+ * @param customAiService - Optional custom AI service for testing
+ * @param customAiUsageService - Optional custom AI usage service for testing
  * @returns Express router with AI endpoints
  */
-export function createAiRouter(db: Knex, aiServiceOverride?: AiService): express.Router {
+export function createAiRouter(
+  db: Knex,
+  customAiService: AiService | null = null,
+  customAiUsageService: AiUsageService | null = null,
+): express.Router {
   const router = express.Router()
 
-  // Create AI service if API key is available or use the provided override
-  let aiService: AiService | null = aiServiceOverride || null
+  // Create AI service if not provided
+  const aiService = customAiService || (OPENAI_API_KEY ? new AiService({ apiKey: OPENAI_API_KEY }) : null)
 
-  if (!aiService && OPENAI_API_KEY) {
-    aiService = new AiService({
-      apiKey: OPENAI_API_KEY,
-      model: 'gpt-4o-mini', // Use gpt-4o-mini model
-      temperature: 0.7,
-      maxTokens: 500,
-    })
-  }
-
-  // Create AI usage service
-  const aiUsageService = new AiUsageService(db)
+  // Create AI usage service if not provided
+  const aiUsageService = customAiUsageService || new AiUsageService(db)
 
   /**
    * Generate a challenge for AI usage
    * GET /api/ai/challenge
    */
-  router.get('/challenge', requireAuth, async (req: Request, res: Response) => {
+  router.get('/challenge', requireAuth, async (req: CustomRequest, res: Response) => {
     try {
-      const address = req.headers['x-wallet-address'] as string
+      const address = req.address
 
       if (!address) {
         return res.status(401).json({
           success: false,
-          error: 'Unauthorized - Wallet address required',
+          error: 'Authentication required',
         })
       }
 
-      const { challenge, remainingAttempts } = await aiUsageService.generateChallenge(address)
+      // Generate a challenge
+      const challenge = await aiUsageService.generateChallenge(address)
 
-      // Today at UTC midnight
-      const now = new Date()
-      const resetDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1))
-
-      return res.status(200).json({
+      return res.json({
         success: true,
-        data: {
-          challenge,
-          remaining_attempts: remainingAttempts,
-          max_attempts: MAX_AI_REQUESTS_PER_DAY,
-          reset_date: resetDate.toISOString(),
-        },
+        data: challenge,
       })
     } catch (error) {
-      console.error('Error generating AI challenge:', error)
+      console.error('Error generating AI challenge:', error instanceof Error ? error.message : 'Unknown error')
       return res.status(500).json({
         success: false,
         error: 'Failed to generate challenge',
@@ -76,31 +67,25 @@ export function createAiRouter(db: Knex, aiServiceOverride?: AiService): express
   })
 
   /**
-   * Verify a challenge signature
+   * Verify a challenge for AI usage
    * POST /api/ai/verify-challenge
    */
-  router.post('/verify-challenge', requireAuth, async (req: Request, res: Response) => {
+  router.post('/verify-challenge', requireAuth, async (req: CustomRequest, res: Response) => {
     try {
       const { address, challenge, signature } = req.body as AiChallengeVerifyDTO
 
-      if (!address || !challenge || !signature) {
-        return res.status(400).json({
-          success: false,
-          error: 'Missing required fields',
-        })
-      }
+      // Verify the challenge
+      const result = await aiUsageService.verifyChallenge(address, challenge, signature)
 
-      const { success, remainingAttempts } = await aiUsageService.verifyChallenge(address, challenge, signature)
-
-      return res.status(200).json({
-        success,
+      return res.json({
+        success: result.success,
         data: {
-          remaining_attempts: remainingAttempts,
-          max_attempts: MAX_AI_REQUESTS_PER_DAY,
+          remaining_attempts: result.remaining_attempts,
+          max_attempts: result.max_attempts,
         },
       })
     } catch (error) {
-      console.error('Error verifying AI challenge:', error)
+      console.error('Error verifying AI challenge:', error instanceof Error ? error.message : 'Unknown error')
       return res.status(500).json({
         success: false,
         error: 'Failed to verify challenge',
@@ -112,29 +97,26 @@ export function createAiRouter(db: Knex, aiServiceOverride?: AiService): express
    * Get remaining AI requests for a user
    * GET /api/ai/remaining-requests
    */
-  router.get('/remaining-requests', requireAuth, async (req: Request, res: Response) => {
+  router.get('/remaining-requests', requireAuth, async (req: CustomRequest, res: Response) => {
     try {
-      const address = req.headers['x-wallet-address'] as string
+      const address = req.address
 
       if (!address) {
         return res.status(401).json({
           success: false,
-          error: 'Unauthorized - Wallet address required',
+          error: 'Authentication required',
         })
       }
 
-      const { remainingAttempts, resetDate } = await aiUsageService.getRemainingRequests(address)
+      // Get remaining requests
+      const remaining = await aiUsageService.getRemainingRequests(address)
 
-      return res.status(200).json({
+      return res.json({
         success: true,
-        data: {
-          remaining_attempts: remainingAttempts,
-          max_attempts: MAX_AI_REQUESTS_PER_DAY,
-          reset_date: resetDate.toISOString(),
-        },
+        data: remaining,
       })
     } catch (error) {
-      console.error('Error getting remaining AI requests:', error)
+      console.error('Error getting remaining AI requests:', error instanceof Error ? error.message : 'Unknown error')
       return res.status(500).json({
         success: false,
         error: 'Failed to get remaining requests',
@@ -143,133 +125,143 @@ export function createAiRouter(db: Knex, aiServiceOverride?: AiService): express
   })
 
   /**
-   * Process a prompt with AI
+   * Process a prompt with a template
    * POST /api/ai/process-prompt
    */
-  router.post('/process-prompt', requireAuth, async (req, res) => {
-    // Extract fields from request body
-    const { prompt, templateId, challenge, signature } = req.body as {
-      prompt: string
-      templateId: number
-      challenge: string
-      signature: string
-    }
-
-    // Validate required fields
-    if (!prompt || !templateId) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields: prompt and templateId are required',
-      })
-    }
-
-    // Validate challenge and signature
-    if (!challenge || !signature) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields: challenge and signature are required',
-      })
-    }
-
-    // Get the wallet address from auth
-    const address = req.headers['x-wallet-address'] as string
-
-    // Verify the challenge
-    try {
-      const verificationResult = await aiUsageService.verifyChallenge(address, challenge, signature)
-
-      if (!verificationResult.success) {
-        return res.status(403).json({
+  router.post(
+    '/process-prompt',
+    async (req: Request, res: Response, next: () => void) => {
+      // Check if AI service is available first
+      if (!aiService) {
+        return res.status(503).json({
           success: false,
-          error: 'Challenge verification failed or usage limit exceeded',
-          data: {
-            remaining_attempts: verificationResult.remainingAttempts,
-            max_attempts: MAX_AI_REQUESTS_PER_DAY,
-          },
-        })
-      }
-    } catch (error) {
-      console.error('Error verifying challenge:', error)
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to verify challenge',
-      })
-    }
-
-    // Check if AI service is available
-    if (!aiService) {
-      return res.status(503).json({
-        success: false,
-        error: 'AI service is not available. OPENAI_API_KEY may be missing.',
-      })
-    }
-
-    // Verify template exists
-    try {
-      const template = await db('templates').where({ id: templateId }).first()
-
-      if (!template) {
-        return res.status(404).json({
-          success: false,
-          error: 'Template not found',
+          error: 'AI service is not available',
         })
       }
 
-      if (!template.json_data) {
-        return res.status(400).json({
-          success: false,
-          error: 'Template JSON data is missing',
-        })
-      }
+      // If AI service is available, proceed with authentication
+      requireAuth(req as CustomRequest, res, next)
+    },
+    async (req: CustomRequest, res: Response) => {
+      try {
+        const { prompt, templateId, challenge, signature } = req.body as AiPromptRequest
+        const address = req.address
 
-      // Log the received request
-      console.log(`Processing prompt against template ${templateId}`)
+        if (!address) {
+          return res.status(401).json({
+            success: false,
+            error: 'Authentication required',
+          })
+        }
 
-      // Default system prompt for JSON generation
-      const defaultSystemPrompt = `You are a specialized JSON generator. Your task is to create a valid JSON object that matches the provided schema based on the user's request.`
+        // Validate required fields
+        if (!prompt || !templateId || !challenge || !signature) {
+          return res.status(400).json({
+            success: false,
+            error: 'Missing required fields',
+          })
+        }
 
-      // Build enhanced system prompt with template context
-      const enhancedSystemPrompt = `
-${defaultSystemPrompt}
+        // Verify the challenge
+        try {
+          const verificationResult = await aiUsageService.verifyChallenge(address, challenge, signature)
 
-This template requires generating JSON that strictly follows this schema specification:
-`
+          // If verification failed due to usage limits
+          if (!verificationResult.success) {
+            return res.status(403).json({
+              success: false,
+              error: 'Daily AI usage limit reached',
+              data: {
+                remaining_attempts: verificationResult.remaining_attempts,
+                max_attempts: verificationResult.max_attempts,
+              },
+            })
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+          console.error('Error verifying challenge:', errorMessage)
+          return res.status(403).json({
+            success: false,
+            error: 'Challenge verification failed',
+          })
+        }
 
-      // Process the prompt with AI
-      const aiResponse = await aiService.processTemplatePrompt(prompt, template.json_data, enhancedSystemPrompt)
+        // Get the template
+        const template = await db('templates').where({ id: templateId }).first()
+        if (!template) {
+          return res.status(404).json({
+            success: false,
+            error: 'Template not found',
+          })
+        }
 
-      // Check if the response is valid JSON
-      if (!aiResponse.isValid) {
-        // Fallback response when JSON parsing fails
-        return res.status(200).json({
+        // Check if template has JSON data
+        if (template.json_data === '') {
+          console.error('Database error: Empty JSON data')
+          return res.status(500).json({
+            success: false,
+            error: 'Internal server error',
+          })
+        }
+
+        if (!template.json_data || template.json_data === '{}') {
+          return res.status(400).json({
+            success: false,
+            error: 'Template JSON data is missing',
+          })
+        }
+
+        // Parse the template JSON data
+        let schema: Record<string, unknown>
+        let systemPrompt: string
+        try {
+          const jsonData = JSON.parse(template.json_data)
+          if (typeof jsonData !== 'object' || !jsonData || !jsonData.schema || typeof jsonData.schema !== 'object') {
+            return res.status(400).json({
+              success: false,
+              error: 'Invalid template JSON data: missing or invalid schema',
+            })
+          }
+          schema = jsonData.schema as Record<string, unknown>
+          systemPrompt =
+            typeof jsonData.systemPrompt === 'string' ? jsonData.systemPrompt : 'You are a helpful assistant.'
+        } catch (error) {
+          // Invalid JSON format
+          console.error('Error parsing template JSON data:', error instanceof Error ? error.message : 'Unknown error')
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid template JSON data',
+          })
+        }
+
+        // Check if AI service is available
+        if (!aiService) {
+          return res.status(503).json({
+            success: false,
+            error: 'AI service is not available',
+          })
+        }
+
+        // Process the prompt with the template
+        const result = await aiService.processTemplatePrompt(prompt, schema, systemPrompt)
+
+        // Return the response
+        return res.json({
           success: true,
           data: {
-            result: {
-              rawText: aiResponse.rawResponse,
-              message: 'AI response could not be parsed as valid JSON.',
-              timestamp: new Date().toISOString(),
-            },
-            requiredValidation: true,
+            result: result.parsedData || {},
+            requiredValidation: !result.isValid,
           },
-        } as AiPromptResponse)
+        })
+      } catch (error) {
+        console.error('Error processing prompt:', error instanceof Error ? error.message : 'Unknown error')
+        return res.status(500).json({
+          success: false,
+          error: 'Internal server error',
+        })
       }
-
-      // Return the successful response
-      return res.status(200).json({
-        success: true,
-        data: {
-          result: aiResponse.parsedData || {},
-          requiredValidation: false,
-        },
-      } as AiPromptResponse)
-    } catch (error) {
-      console.error('Error processing AI prompt:', error)
-      return res.status(500).json({
-        success: false,
-        error: 'Internal server error',
-      })
-    }
-  })
+    },
+  )
 
   return router
 }
