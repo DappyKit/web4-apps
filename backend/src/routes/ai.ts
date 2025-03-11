@@ -1,11 +1,16 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import express from 'express'
+import express, { Request, Response } from 'express'
 import { Knex } from 'knex'
-import { AiPromptRequest, AiPromptResponse } from '../types/ai'
+import { AiPromptResponse, AiChallengeVerifyDTO } from '../types'
 import { AiService } from '../utils/ai-service'
+import { AiUsageService } from '../utils/ai-usage'
+import { requireAuth } from '../utils/auth'
 
 // Get API key from environment variables
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''
+
+// Maximum number of AI requests per day
+const MAX_AI_REQUESTS_PER_DAY = 10
 
 /**
  * Creates a router for AI-related endpoints
@@ -28,18 +33,166 @@ export function createAiRouter(db: Knex, aiServiceOverride?: AiService): express
     })
   }
 
+  // Create AI usage service
+  const aiUsageService = new AiUsageService(db)
+
+  /**
+   * Generate a challenge for AI usage
+   * GET /api/ai/challenge
+   */
+  router.get('/challenge', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const address = req.headers['x-wallet-address'] as string
+
+      if (!address) {
+        return res.status(401).json({
+          success: false,
+          error: 'Unauthorized - Wallet address required',
+        })
+      }
+
+      const { challenge, remainingAttempts } = await aiUsageService.generateChallenge(address)
+
+      // Today at UTC midnight
+      const now = new Date()
+      const resetDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1))
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          challenge,
+          remaining_attempts: remainingAttempts,
+          max_attempts: MAX_AI_REQUESTS_PER_DAY,
+          reset_date: resetDate.toISOString(),
+        },
+      })
+    } catch (error) {
+      console.error('Error generating AI challenge:', error)
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to generate challenge',
+      })
+    }
+  })
+
+  /**
+   * Verify a challenge signature
+   * POST /api/ai/verify-challenge
+   */
+  router.post('/verify-challenge', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { address, challenge, signature } = req.body as AiChallengeVerifyDTO
+
+      if (!address || !challenge || !signature) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields',
+        })
+      }
+
+      const { success, remainingAttempts } = await aiUsageService.verifyChallenge(address, challenge, signature)
+
+      return res.status(200).json({
+        success,
+        data: {
+          remaining_attempts: remainingAttempts,
+          max_attempts: MAX_AI_REQUESTS_PER_DAY,
+        },
+      })
+    } catch (error) {
+      console.error('Error verifying AI challenge:', error)
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to verify challenge',
+      })
+    }
+  })
+
+  /**
+   * Get remaining AI requests for a user
+   * GET /api/ai/remaining-requests
+   */
+  router.get('/remaining-requests', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const address = req.headers['x-wallet-address'] as string
+
+      if (!address) {
+        return res.status(401).json({
+          success: false,
+          error: 'Unauthorized - Wallet address required',
+        })
+      }
+
+      const { remainingAttempts, resetDate } = await aiUsageService.getRemainingRequests(address)
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          remaining_attempts: remainingAttempts,
+          max_attempts: MAX_AI_REQUESTS_PER_DAY,
+          reset_date: resetDate.toISOString(),
+        },
+      })
+    } catch (error) {
+      console.error('Error getting remaining AI requests:', error)
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to get remaining requests',
+      })
+    }
+  })
+
   /**
    * Process a prompt with AI
    * POST /api/ai/process-prompt
    */
-  router.post('/process-prompt', async (req, res) => {
-    const { prompt, templateId } = req.body as AiPromptRequest
+  router.post('/process-prompt', requireAuth, async (req, res) => {
+    // Extract fields from request body
+    const { prompt, templateId, challenge, signature } = req.body as {
+      prompt: string
+      templateId: number
+      challenge: string
+      signature: string
+    }
 
     // Validate required fields
     if (!prompt || !templateId) {
       return res.status(400).json({
         success: false,
         error: 'Missing required fields: prompt and templateId are required',
+      })
+    }
+
+    // Validate challenge and signature
+    if (!challenge || !signature) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: challenge and signature are required',
+      })
+    }
+
+    // Get the wallet address from auth
+    const address = req.headers['x-wallet-address'] as string
+
+    // Verify the challenge
+    try {
+      const verificationResult = await aiUsageService.verifyChallenge(address, challenge, signature)
+
+      if (!verificationResult.success) {
+        return res.status(403).json({
+          success: false,
+          error: 'Challenge verification failed or usage limit exceeded',
+          data: {
+            remaining_attempts: verificationResult.remainingAttempts,
+            max_attempts: MAX_AI_REQUESTS_PER_DAY,
+          },
+        })
+      }
+    } catch (error) {
+      console.error('Error verifying challenge:', error)
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to verify challenge',
       })
     }
 
