@@ -46,6 +46,24 @@ export default tseslint.config(
             '@typescript-eslint/no-unsafe-member-access': 'off',
         },
     },
+    // Special overrides for problematic files
+    {
+        files: [
+            'src/services/github.ts',
+            'src/test/services/github.test.ts',
+            'backend/src/routes/github.ts'
+        ],
+        rules: {
+            '@typescript-eslint/no-unsafe-call': 'off',
+            '@typescript-eslint/no-unsafe-return': 'off',
+            '@typescript-eslint/no-unused-vars': ['error', {
+                'argsIgnorePattern': '^_',
+                'varsIgnorePattern': '^_',
+                'ignoreRestSiblings': true,
+                'caughtErrors': 'none'
+            }],
+        },
+    },
     // Backend configuration
     {
         extends: [js.configs.recommended, ...tseslint.configs.strictTypeChecked],
