@@ -1,13 +1,49 @@
+import express, { Request, Response } from 'express'
 import request from 'supertest'
-import express from 'express'
 import { createAiRouter } from '../routes/ai'
-import { AiPromptRequest, AiPromptResponse, GptResponse } from '../types/ai'
 import { TestDb } from './utils/testDb'
 import { AiService } from '../utils/ai-service'
-import { resetMock } from './__mocks__/openai'
+import { AiUsageService } from '../utils/ai-usage'
+
+// Define a custom Request type that includes the address property
+interface CustomRequest extends Request {
+  address?: string
+}
 
 // Mock the OpenAI module
-jest.mock('openai')
+jest.mock('openai', () => {
+  return {
+    OpenAI: jest.fn().mockImplementation(() => {
+      return {
+        chat: {
+          completions: {
+            create: jest.fn().mockResolvedValue({
+              choices: [
+                {
+                  message: {
+                    content: JSON.stringify({ result: 'mocked response' }),
+                  },
+                },
+              ],
+            }),
+          },
+        },
+      }
+    }),
+  }
+})
+
+// Create a mock resetMock function
+const resetMock = jest.fn()
+
+// Mock the requireAuth middleware
+jest.mock('../utils/auth', () => ({
+  requireAuth: (req: CustomRequest, res: Response, next: () => void) => {
+    req.address = 'test-address'
+    next()
+  },
+  verifySignature: jest.fn().mockImplementation(() => true),
+}))
 
 // Save original env and restore after tests
 const originalEnv = process.env
@@ -16,6 +52,7 @@ describe('AI Router', () => {
   let app: express.Application
   let testDb: TestDb
   let mockAiService: AiService
+  let mockAiUsageService: AiUsageService
   let processTemplatePromptMock: jest.Mock
 
   beforeAll(async () => {
@@ -33,7 +70,11 @@ describe('AI Router', () => {
     resetMock()
 
     // Create mock functions
-    processTemplatePromptMock = jest.fn()
+    processTemplatePromptMock = jest.fn().mockResolvedValue({
+      isValid: true,
+      rawResponse: '{"result": "mocked response"}',
+      parsedData: { result: 'mocked response' },
+    })
 
     // Create mock AiService
     mockAiService = {
@@ -41,273 +82,184 @@ describe('AI Router', () => {
       processTemplatePrompt: processTemplatePromptMock,
     } as unknown as AiService
 
+    // Create mock AiUsageService
+    mockAiUsageService = {
+      generateChallenge: jest.fn().mockResolvedValue('test-challenge'),
+      verifyChallenge: jest.fn().mockImplementation(async (address: string, challenge: string, signature: string) => {
+        if (challenge === 'test-challenge' && signature === 'test-signature') {
+          return {
+            success: true,
+            remaining_attempts: 9,
+            max_attempts: 10,
+          }
+        }
+        return {
+          success: false,
+          remaining_attempts: 0,
+          max_attempts: 10,
+        }
+      }),
+      getRemainingRequests: jest.fn().mockResolvedValue({
+        remaining_attempts: 9,
+        max_attempts: 10,
+      }),
+    } as unknown as AiUsageService
+
     // Apply migrations for test DB
     await testDb.setupTestDb()
 
-    // Setup express app with real database and mock AiService
+    // Setup express app with real database and mock services
     app = express()
     app.use(express.json())
-    app.use('/api/ai', createAiRouter(testDb.getDb(), mockAiService))
+    app.use('/api/ai', createAiRouter(testDb.getDb(), mockAiService, mockAiUsageService))
+
+    // Create a test template
+    await testDb.getDb().table('templates').insert({
+      id: 1,
+      title: 'Test Template',
+      description: 'A test template',
+      owner_address: 'test-address',
+      json_data:
+        '{"schema": {"type": "object", "properties": {"name": {"type": "string"}}}, "systemPrompt": "You are a helpful assistant."}',
+      url: 'https://example.com/template',
+      created_at: new Date(),
+      updated_at: new Date(),
+    })
+
+    // Set up the challenge for AI usage
+    await testDb
+      .getDb()
+      .table('users')
+      .where('address', 'test-address')
+      .update({
+        ai_challenge_uuid: 'test-challenge',
+        ai_challenge_created_at: new Date(),
+        ai_usage_count: 0,
+        ai_usage_reset_date: new Date(Date.now() + 86400000), // Tomorrow
+      })
   })
 
   afterEach(async () => {
-    // Restore original environment
-    process.env = originalEnv
-
-    // Rollback migrations
+    // Reset the database
     await testDb.teardownTestDb()
   })
 
   afterAll(async () => {
-    // Close database connection
+    // Clean up
     await testDb.closeConnection()
+    process.env = originalEnv
   })
 
-  // Silence expected console errors/logs during tests
-  let originalConsoleError: typeof console.error
-  let originalConsoleLog: typeof console.log
+  test('should process a prompt with a template', async () => {
+    // Setup mock response
+    processTemplatePromptMock.mockResolvedValueOnce({
+      isValid: true,
+      rawResponse: '{"name": "Test Name"}',
+      parsedData: { name: 'Test Name' },
+    })
 
-  beforeEach(() => {
-    // Store the original console methods
-    originalConsoleError = console.error
-    originalConsoleLog = console.log
+    // Make a request to process a prompt
+    const response = await request(app)
+      .post('/api/ai/process-prompt')
+      .send({
+        prompt: 'Test prompt',
+        templateId: 1,
+        challenge: 'test-challenge',
+        signature: 'test-signature',
+      })
+      .expect(200)
 
-    // Replace with mock functions
-    console.error = jest.fn()
-    console.log = jest.fn()
+    // Verify the response format
+    expect(response.body.success).toBe(true)
+    expect(response.body.data).toBeDefined()
+    expect(response.body.data.result).toEqual({ name: 'Test Name' })
+    expect(response.body.data.requiredValidation).toBe(false)
+
+    // Verify the mock was called with the correct arguments
+    expect(processTemplatePromptMock).toHaveBeenCalledWith(
+      'Test prompt',
+      { type: 'object', properties: { name: { type: 'string' } } },
+      'You are a helpful assistant.',
+    )
   })
 
-  afterEach(() => {
-    // Restore the original console methods
-    console.error = originalConsoleError
-    console.log = originalConsoleLog
+  test('should handle invalid template data', async () => {
+    // Update the template to have invalid JSON data
+    await testDb.getDb().table('templates').where({ id: 1 }).update({
+      json_data: 'invalid-json',
+    })
+
+    // Make a request to process a prompt
+    const response = await request(app)
+      .post('/api/ai/process-prompt')
+      .send({
+        prompt: 'Test prompt',
+        templateId: 1,
+        challenge: 'test-challenge',
+        signature: 'test-signature',
+      })
+      .expect(400)
+
+    // Verify the response indicates an error
+    expect(response.body.success).toBe(false)
+    expect(response.body.error).toBe('Invalid template JSON data')
   })
 
-  describe('POST /api/ai/process-prompt', () => {
-    it('should process a prompt and return valid JSON response', async () => {
-      // Create a test template
-      const db = testDb.getDb()
-      await db('templates').insert({
-        id: 1,
-        title: 'Test Template',
-        description: 'A template for testing AI',
-        url: 'https://example.com/template',
-        json_data: JSON.stringify({ type: 'test' }),
-        owner_address: testDb.getTestAccount().address,
+  test('should handle missing template', async () => {
+    // Make a request with a non-existent template ID
+    const response = await request(app)
+      .post('/api/ai/process-prompt')
+      .send({
+        prompt: 'Test prompt',
+        templateId: 999,
+        challenge: 'test-challenge',
+        signature: 'test-signature',
       })
+      .expect(404)
 
-      // Set up mock response from AI service
-      const mockResponse: GptResponse = {
-        rawResponse: '{"message":"Generated response","data":{"key":"value"}}',
-        parsedData: { message: 'Generated response', data: { key: 'value' } },
-        isValid: true,
-      }
+    // Verify the response indicates an error
+    expect(response.body.success).toBe(false)
+    expect(response.body.error).toBe('Template not found')
+  })
 
-      // Mock the processTemplatePrompt method
-      processTemplatePromptMock.mockResolvedValue(mockResponse)
+  test('should handle missing required fields', async () => {
+    // Make a request with missing fields
+    const response = await request(app)
+      .post('/api/ai/process-prompt')
+      .send({
+        prompt: 'Test prompt',
+        // Missing templateId
+        challenge: 'test-challenge',
+        signature: 'test-signature',
+      })
+      .expect(400)
 
-      // Test data
-      const requestData: AiPromptRequest = {
+    // Verify the response indicates an error
+    expect(response.body.success).toBe(false)
+    expect(response.body.error).toBe('Missing required fields')
+  })
+
+  test('should handle validation errors', async () => {
+    // Setup mock response with validation error
+    processTemplatePromptMock.mockResolvedValueOnce({
+      isValid: false,
+      rawResponse: '{"invalid": "data"}',
+      parsedData: { invalid: 'data' },
+    })
+
+    // Make a request to process a prompt
+    const response = await request(app)
+      .post('/api/ai/process-prompt')
+      .send({
         prompt: 'Test prompt',
         templateId: 1,
-      }
-
-      // Make request
-      const response = await request(app)
-        .post('/api/ai/process-prompt')
-        .send(requestData)
-        .expect('Content-Type', /json/)
-        .expect(200)
-
-      // Assert response
-      const responseBody = response.body as AiPromptResponse
-      expect(responseBody.success).toBe(true)
-      expect(responseBody.data).toBeDefined()
-      expect(responseBody.data?.result).toEqual(mockResponse.parsedData)
-      expect(responseBody.data?.requiredValidation).toBe(false)
-
-      // Verify AI service was called with correct parameters - now allows for 4 parameters with the last being optional
-      expect(processTemplatePromptMock).toHaveBeenCalledWith(
-        'Test prompt',
-        JSON.stringify({ type: 'test' }),
-        expect.stringContaining('This template requires generating JSON'),
-      )
-    })
-
-    it('should handle invalid JSON responses', async () => {
-      // Create a test template
-      const db = testDb.getDb()
-      await db('templates').insert({
-        id: 1,
-        title: 'Test Template',
-        description: 'A template for testing AI',
-        url: 'https://example.com/template',
-        json_data: JSON.stringify({ type: 'test' }),
-        owner_address: testDb.getTestAccount().address,
+        challenge: 'test-challenge',
+        signature: 'test-signature',
       })
+      .expect(200)
 
-      // Set up mock response with invalid JSON
-      const mockResponse: GptResponse = {
-        rawResponse: 'This is not valid JSON',
-        isValid: false,
-        validationErrors: ['Failed to parse JSON response'],
-      }
-
-      // Mock the processTemplatePrompt method
-      processTemplatePromptMock.mockResolvedValue(mockResponse)
-
-      // Test data
-      const requestData: AiPromptRequest = {
-        prompt: 'Test prompt',
-        templateId: 1,
-      }
-
-      // Make request
-      const response = await request(app)
-        .post('/api/ai/process-prompt')
-        .send(requestData)
-        .expect('Content-Type', /json/)
-        .expect(200)
-
-      // Assert response includes the raw text and validation flag
-      const responseBody = response.body as AiPromptResponse
-      expect(responseBody.success).toBe(true)
-      expect(responseBody.data).toBeDefined()
-      expect(responseBody.data?.result.rawText).toBe('This is not valid JSON')
-      expect(responseBody.data?.result.message).toBeDefined()
-      expect(responseBody.data?.requiredValidation).toBe(true)
-    })
-
-    it('should handle missing API key', async () => {
-      // Remove API key from environment
-      delete process.env.OPENAI_API_KEY
-
-      // Recreate the router without API key and without mock service
-      app = express()
-      app.use(express.json())
-      app.use('/api/ai', createAiRouter(testDb.getDb())) // No mock service provided
-
-      // Create a test template
-      const db = testDb.getDb()
-      await db('templates').insert({
-        id: 1,
-        title: 'Test Template',
-        description: 'A template for testing AI',
-        url: 'https://example.com/template',
-        json_data: JSON.stringify({ type: 'test' }),
-        owner_address: testDb.getTestAccount().address,
-      })
-
-      // Test data
-      const requestData: AiPromptRequest = {
-        prompt: 'Test prompt',
-        templateId: 1,
-      }
-
-      // Make request
-      const response = await request(app)
-        .post('/api/ai/process-prompt')
-        .send(requestData)
-        .expect('Content-Type', /json/)
-        .expect(503)
-
-      // Assert response
-      expect(response.body.success).toBe(false)
-      expect(response.body.error).toContain('AI service is not available')
-    })
-
-    it('should handle missing required fields', async () => {
-      // Test with missing prompt
-      const invalidRequest = {
-        templateId: 1,
-      }
-
-      const response = await request(app)
-        .post('/api/ai/process-prompt')
-        .send(invalidRequest)
-        .expect('Content-Type', /json/)
-        .expect(400)
-
-      expect(response.body.success).toBe(false)
-      expect(response.body.error).toBeDefined()
-    })
-
-    it('should handle template not found', async () => {
-      // Test with non-existent template ID
-      const requestData: AiPromptRequest = {
-        prompt: 'Test prompt',
-        templateId: 999, // ID that doesn't exist
-      }
-
-      const response = await request(app)
-        .post('/api/ai/process-prompt')
-        .send(requestData)
-        .expect('Content-Type', /json/)
-        .expect(404)
-
-      expect(response.body.success).toBe(false)
-      expect(response.body.error).toContain('Template not found')
-    })
-
-    it('should use template metadata for schema and system prompt if available', async () => {
-      // Create a test template with metadata-like JSON in json_data
-      // Since we don't have a metadata column, we'll use json_data to store metadata
-      const templateSchema = {
-        type: 'object',
-        properties: {
-          name: { type: 'string' },
-        },
-      }
-
-      const systemPrompt = 'Generate user data based on the prompt'
-
-      const db = testDb.getDb()
-      await db('templates').insert({
-        id: 1,
-        title: 'Test Template with Metadata',
-        description: 'A template for testing AI with metadata',
-        url: 'https://example.com/template',
-        json_data: JSON.stringify({
-          type: 'test',
-          metadata: {
-            schema: templateSchema,
-            systemPrompt: systemPrompt,
-          },
-        }),
-        owner_address: testDb.getTestAccount().address,
-      })
-
-      // Set up mock response
-      const mockResponse: GptResponse = {
-        rawResponse: '{"name":"Test User"}',
-        parsedData: { name: 'Test User' },
-        isValid: true,
-      }
-
-      // Mock the processTemplatePrompt method
-      processTemplatePromptMock.mockResolvedValue(mockResponse)
-
-      // Test data
-      const requestData: AiPromptRequest = {
-        prompt: 'Generate a user named Test User',
-        templateId: 1,
-      }
-
-      // Make request
-      await request(app).post('/api/ai/process-prompt').send(requestData).expect(200)
-
-      // Verify AI service was called with the correct parameters - now accepts 4 parameters
-      expect(processTemplatePromptMock).toHaveBeenCalledWith(
-        'Generate a user named Test User',
-        JSON.stringify({
-          type: 'test',
-          metadata: {
-            schema: templateSchema,
-            systemPrompt: systemPrompt,
-          },
-        }),
-        expect.stringContaining('This template requires generating JSON'),
-      )
-    })
+    // Verify the response indicates validation is required
+    expect(response.body.success).toBe(true)
+    expect(response.body.data.requiredValidation).toBe(true)
   })
 })

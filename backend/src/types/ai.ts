@@ -11,6 +11,16 @@ export interface AiPromptRequest {
    * The ID of the template to use for processing
    */
   templateId: number
+
+  /**
+   * The challenge UUID for verification
+   */
+  challenge: string
+
+  /**
+   * The cryptographic signature of the challenge
+   */
+  signature: string
 }
 
 /**
@@ -92,3 +102,26 @@ export interface GptResponse {
    */
   tokenUsage?: TokenUsage
 }
+
+/**
+ * DTO for verifying an AI challenge
+ */
+export interface AiChallengeVerifyDTO {
+  /**
+   * The user's wallet address
+   */
+  address: string
+
+  /**
+   * The challenge UUID to verify
+   */
+  challenge: string
+
+  /**
+   * The cryptographic signature of the challenge
+   */
+  signature: string
+}
+
+// Export all types from this file
+export * from './ai'

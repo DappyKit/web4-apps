@@ -4,10 +4,25 @@ import { createAiRouter } from '../routes/ai'
 import { AiPromptRequest, AiPromptResponse, GptResponse } from '../types/ai'
 import { TestDb } from './utils/testDb'
 import { AiService } from '../utils/ai-service'
-import { resetMock } from './__mocks__/openai'
+import { AiUsageService } from '../utils/ai-usage'
+import { Request, Response } from 'express'
 
 // Mock the OpenAI module
 jest.mock('openai')
+
+// Define a custom Request type that includes the address property
+interface CustomRequest extends Request {
+  address?: string
+}
+
+// Mock the signature verification
+jest.mock('../utils/auth', () => ({
+  verifySignature: jest.fn().mockResolvedValue(true),
+  requireAuth: (req: CustomRequest, res: Response, next: () => void) => {
+    req.address = '0x1234567890123456789012345678901234567890'
+    next()
+  },
+}))
 
 // Save original env and restore after tests
 const originalEnv = process.env
@@ -16,6 +31,7 @@ describe('AI Routes', () => {
   let app: express.Application
   let testDb: TestDb
   let mockAiService: AiService
+  let mockAiUsageService: AiUsageService
   let processTemplatePromptMock: jest.Mock
 
   beforeAll(async () => {
@@ -30,7 +46,6 @@ describe('AI Routes', () => {
 
     // Reset mocks
     jest.clearAllMocks()
-    resetMock()
 
     // Create mock functions
     processTemplatePromptMock = jest.fn()
@@ -41,13 +56,75 @@ describe('AI Routes', () => {
       processTemplatePrompt: processTemplatePromptMock,
     } as unknown as AiService
 
+    // Create mock AiUsageService
+    mockAiUsageService = {
+      generateChallenge: jest.fn().mockResolvedValue('test-challenge'),
+      verifyChallenge: jest.fn().mockImplementation(async (address: string, challenge: string, signature: string) => {
+        if (challenge === 'test-challenge' && signature === 'test-signature') {
+          return {
+            success: true,
+            remaining_attempts: 9,
+            max_attempts: 10,
+          }
+        }
+        return {
+          success: false,
+          remaining_attempts: 0,
+          max_attempts: 10,
+        }
+      }),
+      getRemainingRequests: jest.fn().mockResolvedValue({
+        remaining_attempts: 9,
+        max_attempts: 10,
+      }),
+    } as unknown as AiUsageService
+
     // Apply migrations before each test
     await testDb.setupTestDb()
 
-    // Setup express app with real database and mock AiService
+    // Create test user
+    await testDb.getDb().table('users').insert({
+      address: '0x1234567890123456789012345678901234567890',
+      created_at: new Date(),
+      updated_at: new Date(),
+    })
+
+    // Set up the challenge for AI usage
+    await testDb.getDb().table('users').where('address', '0x1234567890123456789012345678901234567890').update({
+      ai_challenge_uuid: 'test-challenge',
+      ai_challenge_created_at: new Date(),
+      ai_usage_count: 0,
+      ai_usage_reset_date: new Date(),
+    })
+
+    // Create a test template
+    await testDb
+      .getDb()
+      .table('templates')
+      .insert({
+        id: 1,
+        title: 'Test Template',
+        json_data: JSON.stringify({
+          schema: {
+            type: 'object',
+            properties: {
+              message: { type: 'string' },
+              timestamp: { type: 'string' },
+              processed: { type: 'boolean' },
+            },
+          },
+          systemPrompt: 'You are a helpful assistant.',
+        }),
+        url: 'https://example.com',
+        owner_address: '0x1234567890123456789012345678901234567890',
+        created_at: new Date(),
+        updated_at: new Date(),
+      })
+
+    // Setup express app with real database and mock services
     app = express()
     app.use(express.json())
-    app.use('/api/ai', createAiRouter(testDb.getDb(), mockAiService))
+    app.use('/api/ai', createAiRouter(testDb.getDb(), mockAiService, mockAiUsageService))
   })
 
   afterEach(async () => {
@@ -99,26 +176,18 @@ describe('AI Routes', () => {
       // Mock the processTemplatePrompt method
       processTemplatePromptMock.mockResolvedValue(mockResponse)
 
-      // Create a test template to use in tests
-      const db = testDb.getDb()
-      await db('templates').insert({
-        id: 1,
-        title: 'Test Template',
-        description: 'A template for testing AI',
-        url: 'https://example.com/template',
-        json_data: JSON.stringify({ type: 'test' }),
-        owner_address: testDb.getTestAccount().address,
-      })
-
       // Test data
       const requestData: AiPromptRequest = {
         prompt: 'Test prompt',
         templateId: 1,
+        challenge: 'test-challenge',
+        signature: 'test-signature',
       }
 
       // Make request
       const response = await request(app)
         .post('/api/ai/process-prompt')
+        .set('x-wallet-address', '0x1234567890123456789012345678901234567890')
         .send(requestData)
         .expect('Content-Type', /json/)
         .expect(200)
@@ -137,10 +206,13 @@ describe('AI Routes', () => {
       // Test with missing prompt
       const invalidRequest = {
         templateId: 1,
+        challenge: 'test-challenge',
+        signature: 'test-signature',
       }
 
       const response = await request(app)
         .post('/api/ai/process-prompt')
+        .set('x-wallet-address', '0x1234567890123456789012345678901234567890')
         .send(invalidRequest)
         .expect('Content-Type', /json/)
         .expect(400)
@@ -154,10 +226,13 @@ describe('AI Routes', () => {
       const requestData: AiPromptRequest = {
         prompt: 'Test prompt',
         templateId: 999, // Non-existent ID
+        challenge: 'test-challenge',
+        signature: 'test-signature',
       }
 
       const response = await request(app)
         .post('/api/ai/process-prompt')
+        .set('x-wallet-address', '0x1234567890123456789012345678901234567890')
         .send(requestData)
         .expect('Content-Type', /json/)
         .expect(404)
@@ -167,36 +242,78 @@ describe('AI Routes', () => {
     })
 
     it('should handle database errors gracefully', async () => {
-      // Create a test template
-      const db = testDb.getDb()
-      await db('templates').insert({
-        id: 1,
-        title: 'Test Template',
-        description: 'A template for testing AI',
-        url: 'https://example.com/template',
-        json_data: JSON.stringify({ type: 'test' }),
-        owner_address: testDb.getTestAccount().address,
-      })
-
-      // Mock a database error by making the query throw an error
-      jest.spyOn(db, 'where').mockImplementationOnce(() => {
-        throw new Error('Database error')
-      })
-
-      // Test data
+      // Set up test data
       const requestData: AiPromptRequest = {
         prompt: 'Test prompt',
         templateId: 1,
+        challenge: 'test-challenge',
+        signature: 'test-signature',
       }
 
+      // Simulate database error by setting invalid json_data
+      await testDb.getDb().table('templates').where('id', 1).update({
+        json_data: '',
+      })
+
+      // Make request
       const response = await request(app)
         .post('/api/ai/process-prompt')
+        .set('x-wallet-address', '0x1234567890123456789012345678901234567890')
         .send(requestData)
         .expect('Content-Type', /json/)
         .expect(500)
 
       expect(response.body.success).toBe(false)
       expect(response.body.error).toBe('Internal server error')
+    })
+
+    it('should return 400 if template JSON data is missing', async () => {
+      // Update template to have empty object JSON data
+      await testDb.getDb().table('templates').where({ id: 1 }).update({
+        json_data: '{}',
+      })
+
+      const requestData: AiPromptRequest = {
+        prompt: 'Test prompt',
+        templateId: 1,
+        challenge: 'test-challenge',
+        signature: 'test-signature',
+      }
+
+      const response = await request(app)
+        .post('/api/ai/process-prompt')
+        .set('x-wallet-address', '0x1234567890123456789012345678901234567890')
+        .send(requestData)
+        .expect(400)
+
+      expect(response.body.success).toBe(false)
+      expect(response.body.error).toContain('Template JSON data is missing')
+    })
+
+    it('should return 503 if OPENAI_API_KEY is missing', async () => {
+      // Remove API key
+      process.env.OPENAI_API_KEY = ''
+
+      // Recreate app to simulate missing API key
+      app = express()
+      app.use(express.json())
+      app.use('/api/ai', createAiRouter(testDb.getDb()))
+
+      const requestData: AiPromptRequest = {
+        prompt: 'Test prompt',
+        templateId: 1,
+        challenge: 'test-challenge',
+        signature: 'test-signature',
+      }
+
+      const response = await request(app)
+        .post('/api/ai/process-prompt')
+        .set('x-wallet-address', '0x1234567890123456789012345678901234567890')
+        .send(requestData)
+        .expect(503)
+
+      expect(response.body.success).toBe(false)
+      expect(response.body.error).toContain('AI service is not available')
     })
   })
 })
