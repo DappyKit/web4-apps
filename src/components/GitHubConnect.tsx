@@ -69,7 +69,7 @@ const GitHubConnect: React.FC<GitHubConnectProps> = ({ onConnect, onDisconnect, 
   const handleConnect = (): void => {
     setLoading(true)
     try {
-      const authUrl = githubService.getAuthorizationUrl()
+      const authUrl = githubService.generateAuthUrl()
       window.location.href = authUrl
     } catch (error) {
       // Use the error variable

@@ -2,8 +2,6 @@
  * GitHub service for handling GitHub account connections and interactions
  */
 
-import axios, { AxiosError } from 'axios'
-
 /**
  * GitHub API response types
  */
@@ -23,7 +21,7 @@ export class GitHubApiError extends Error {
     if (error instanceof GitHubApiError) {
       return error
     }
-    if (error instanceof AxiosError && typeof error.message === 'string') {
+    if (error instanceof Error && typeof error.message === 'string') {
       const message = error.message.replace(/[^\w\s-]/g, '')
       return new GitHubApiError(`GitHub API request failed: ${message}`)
     }
@@ -70,14 +68,19 @@ export class GitHubService {
     }
 
     try {
-      const response = await axios.get('https://api.github.com/user', {
+      const response = await fetch('https://api.github.com/user', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       })
 
-      assertIsGitHubUser(response.data)
-      return response.data
+      if (!response.ok) {
+        throw new GitHubApiError(`Failed to get user info: ${String(response.status)}`)
+      }
+
+      const data = await response.json()
+      assertIsGitHubUser(data)
+      return data
     } catch (_err) {
       throw new GitHubApiError('Failed to get user info')
     }
@@ -88,13 +91,25 @@ export class GitHubService {
    * @returns Authorization URL string
    * @throws {GitHubApiError} When client ID is not configured
    */
-  getAuthorizationUrl(): string {
-    const clientId = process.env.GITHUB_CLIENT_ID
+  generateAuthUrl(): string {
+    // Get the GitHub client ID from environment variables
+    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID
+
     if (!clientId) {
       throw new GitHubApiError('GitHub client ID is not configured')
     }
 
-    return `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=user:email`
+    // Generate GitHub OAuth URL
+    const redirectUri = `${window.location.origin}/settings`
+    const encodedUri = encodeURIComponent(redirectUri)
+    const clientIdStr = String(clientId)
+    return (
+      'https://github.com/login/oauth/authorize?client_id=' +
+      clientIdStr +
+      '&redirect_uri=' +
+      encodedUri +
+      '&scope=user:email'
+    )
   }
 }
 

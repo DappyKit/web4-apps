@@ -30,4 +30,9 @@ export interface User {
   created_at: string
   updated_at: string
   win_1_amount?: string
+  github_token?: string
+  github_username?: string
+  github_email?: string
+  github_name?: string
+  github_connected_at?: string
 }

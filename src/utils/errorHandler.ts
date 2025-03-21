@@ -1,4 +1,3 @@
-import { AxiosError } from 'axios'
 import { GitHubApiError } from '../services/github'
 import { GitHubError } from '../../backend/src/routes/github'
 
@@ -36,7 +35,7 @@ export function handleGitHubApiError(error: unknown): GitHubApiError {
     return error
   }
 
-  if (error instanceof AxiosError) {
+  if (error instanceof Error) {
     return new GitHubApiError('Failed to fetch user data')
   }
 
@@ -48,7 +47,7 @@ export function handleGitHubError(error: unknown): GitHubError {
     return error
   }
 
-  if (error instanceof AxiosError) {
+  if (error instanceof Error) {
     return new GitHubError('Failed to exchange code for token')
   }
 

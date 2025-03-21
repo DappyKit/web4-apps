@@ -325,21 +325,23 @@ export interface PaginatedAppsResponse {
 }
 
 /**
- * Get all moderated apps with pagination
- * @param {number} page - The page number to retrieve
- * @param {number} limit - The number of items per page
- * @returns {Promise<PaginatedAppsResponse>} The paginated apps data
+ * Get all apps with pagination
  */
 export async function getAllApps(page = 1, limit = 12): Promise<PaginatedAppsResponse> {
   try {
-    const response = await fetch(`/api/apps?page=${String(page)}&limit=${String(limit)}`)
+    const pageStr = String(page)
+    const limitStr = String(limit)
+    const response = await fetch(`/api/apps?page=${pageStr}&limit=${limitStr}`)
 
     if (!response.ok) {
       const errorData = (await response.json()) as ApiErrorResponse
-      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`)
+      throw new Error(errorData.error || `HTTP error! status: ${response.status.toString()}`)
     }
 
     const data = (await response.json()) as PaginatedAppsResponse
+    if (typeof data !== 'object' || !('data' in data) || !('pagination' in data)) {
+      throw new Error('Invalid response format')
+    }
     return data
   } catch (error) {
     console.error('Error fetching all apps:', error)
@@ -354,15 +356,16 @@ export async function getAllApps(page = 1, limit = 12): Promise<PaginatedAppsRes
  */
 export async function getAppById(id: number): Promise<App> {
   try {
-    const response = await fetch(`/api/apps/${String(id)}`)
+    const idStr = id.toString()
+    const response = await fetch(`/api/apps/${idStr}`)
 
     if (!response.ok) {
       const errorData = (await response.json()) as ApiErrorResponse
-      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`)
+      throw new Error(errorData.error || `HTTP error! status: ${response.status.toString()}`)
     }
 
-    const data = (await response.json()) as App
-    return data
+    const data = await response.json()
+    return data as App
   } catch (error) {
     console.error('Error fetching app:', error)
     throw error
@@ -371,21 +374,26 @@ export async function getAppById(id: number): Promise<App> {
 
 /**
  * Fetches a single template by its ID
- * @param {number} id - The ID of the template to fetch
- * @returns {Promise<Template>} The template data
- * @throws {Error} If the template is not found or there's an error fetching it
+ * @param id - The ID of the template to fetch
+ * @returns Promise with the template data
+ * @throws Error if the template is not found or there's an error fetching it
  */
 export async function getTemplateById(id: number): Promise<Template> {
   try {
-    const response = await fetch(`/api/templates/${String(id)}`)
+    const idStr = id.toString()
+    const response = await fetch(`/api/templates/${idStr}`)
 
     if (!response.ok) {
       const errorData = (await response.json()) as ApiErrorResponse
-      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`)
+      throw new Error(errorData.error || `HTTP error! status: ${response.status.toString()}`)
     }
 
-    const data = (await response.json()) as Template
-    return await Promise.resolve(data)
+    const data = await response.json()
+    // Validate the data structure before returning it
+    if (typeof data !== 'object' || data === null || !('id' in data) || typeof data.id !== 'number') {
+      throw new Error('Invalid template data received from server')
+    }
+    return data as Template
   } catch (error) {
     console.error('Error fetching template:', error)
     throw error
@@ -549,6 +557,180 @@ export async function getWinners(): Promise<WinnersResponse> {
     return (await response.json()) as WinnersResponse
   } catch (error) {
     console.error('Error fetching winners:', error)
+    throw error
+  }
+}
+
+/**
+ * GitHub connection interfaces
+ */
+export interface GitHubConnectionStatus {
+  connected: boolean
+  github_username: string | null
+}
+
+/**
+ * Connects a user's wallet address to their GitHub account
+ * @param address - User's wallet address
+ * @param accessToken - GitHub access token
+ * @returns Promise with connection status
+ */
+export async function connectGitHub(address: string, accessToken: string): Promise<GitHubConnectionStatus> {
+  try {
+    const response = await fetch('/api/github/connect', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ address: String(address), accessToken: String(accessToken) }),
+    })
+
+    if (!response.ok) {
+      const errorData = (await response.json()) as { error?: string }
+      throw new Error(errorData.error ?? 'Failed to connect GitHub account')
+    }
+
+    const data = await response.json()
+    return {
+      connected: Boolean(data.connected),
+      github_username: typeof data.github_username === 'string' ? data.github_username : null,
+    }
+  } catch (error) {
+    console.error('Error connecting GitHub account:', error)
+    throw error
+  }
+}
+
+/**
+ * Disconnects the user's GitHub account
+ * @param address - User's address
+ * @returns Promise with disconnection result
+ */
+export async function disconnectGitHub(address: string): Promise<{ disconnected: boolean; token_revoked: boolean }> {
+  try {
+    console.log(`Disconnecting GitHub for address: ${address}`)
+    const response = await fetch('/api/github/disconnect', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ address }),
+    })
+
+    if (!response.ok) {
+      const errorData = (await response.json().catch(() => ({ error: 'Unknown error' }))) as { error?: string }
+      console.error('GitHub disconnection failed:', {
+        status: response.status,
+        errorData,
+      })
+      throw new Error(errorData.error ?? 'HTTP error: ' + response.status.toString())
+    }
+
+    const data = (await response.json()) as { disconnected: boolean; token_revoked: boolean }
+    return {
+      disconnected: Boolean(data.disconnected),
+      token_revoked: Boolean(data.token_revoked),
+    }
+  } catch (error) {
+    console.error('disconnectGitHub error:', error)
+    throw error
+  }
+}
+
+/**
+ * Gets the GitHub connection status for a user
+ * @param address - User's wallet address
+ * @returns Promise with GitHub connection status
+ */
+export async function getGitHubStatus(address: string): Promise<GitHubConnectionStatus> {
+  try {
+    if (!address) {
+      throw new Error('Wallet address is required')
+    }
+
+    // Ensure address is a string and properly formatted
+    const formattedAddress = String(address).toLowerCase()
+
+    // Get API base URL - allow for different environments
+    const baseUrl = process.env.REACT_APP_API_URL ?? ''
+    const url = `${baseUrl}/api/github/status/${formattedAddress}`
+
+    console.log('GitHub status API request:', url)
+
+    const response = await fetch(url)
+
+    // Handle various error responses
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error('User not found')
+      }
+
+      try {
+        const errorData = (await response.json()) as { error?: string }
+        console.error('GitHub status error:', errorData)
+        throw new Error(errorData.error ?? `HTTP error! status: ${response.status.toString()}`)
+      } catch {
+        // If the response isn't valid JSON
+        console.error('GitHub status non-JSON error:', response.status, response.statusText)
+        throw new Error(`Failed to get GitHub status. Server returned ${response.status.toString()}`)
+      }
+    }
+
+    // Parse successful response
+    try {
+      const data = await response.json()
+      return data as GitHubConnectionStatus
+    } catch {
+      throw new Error('Invalid response format from server')
+    }
+  } catch (error) {
+    console.error('Error getting GitHub status:', error)
+    throw error
+  }
+}
+
+/**
+ * Force resets GitHub connection for a user (emergency function)
+ * @param address - User's address
+ * @returns Promise with reset result
+ */
+export async function resetGitHubConnection(address: string): Promise<{ reset: boolean; rows_affected: number }> {
+  try {
+    const addressStr = String(address)
+    console.log('Force resetting GitHub connection for:', addressStr)
+    const response = await fetch('/api/github/reset-connection', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ address: addressStr }),
+    })
+
+    if (!response.ok) {
+      let errorMessage = 'Unknown error'
+      try {
+        const errorData = (await response.json()) as { error?: unknown }
+        if (typeof errorData === 'object' && 'error' in errorData) {
+          errorMessage = typeof errorData.error === 'string' ? errorData.error : 'Unknown error'
+        }
+      } catch {
+        errorMessage = 'HTTP error: ' + response.status.toString()
+      }
+      console.error('GitHub reset failed:', {
+        status: response.status,
+        error: errorMessage,
+      })
+      throw new Error(errorMessage)
+    }
+
+    const responseData = (await response.json()) as { reset?: unknown; rows_affected?: unknown }
+    // Validate and safely convert the response data
+    return {
+      reset: Boolean(responseData.reset),
+      rows_affected: Number(responseData.rows_affected) || 0,
+    }
+  } catch (error) {
+    console.error('resetGitHubConnection error:', error)
     throw error
   }
 }
