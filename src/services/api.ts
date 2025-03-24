@@ -335,7 +335,7 @@ export async function getAllApps(page = 1, limit = 12): Promise<PaginatedAppsRes
 
     if (!response.ok) {
       const errorData = (await response.json()) as ApiErrorResponse
-      throw new Error(errorData.error || `HTTP error! status: ${response.status.toString()}`)
+      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`)
     }
 
     const data = (await response.json()) as PaginatedAppsResponse
@@ -361,7 +361,7 @@ export async function getAppById(id: number): Promise<App> {
 
     if (!response.ok) {
       const errorData = (await response.json()) as ApiErrorResponse
-      throw new Error(errorData.error || `HTTP error! status: ${response.status.toString()}`)
+      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`)
     }
 
     const data = await response.json()
@@ -385,7 +385,7 @@ export async function getTemplateById(id: number): Promise<Template> {
 
     if (!response.ok) {
       const errorData = (await response.json()) as ApiErrorResponse
-      throw new Error(errorData.error || `HTTP error! status: ${response.status.toString()}`)
+      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`)
     }
 
     const data = await response.json()
@@ -623,7 +623,7 @@ export async function disconnectGitHub(address: string): Promise<{ disconnected:
         status: response.status,
         errorData,
       })
-      throw new Error(errorData.error ?? 'HTTP error: ' + response.status.toString())
+      throw new Error(errorData.error ?? 'HTTP error: ' + String(response.status))
     }
 
     const data = (await response.json()) as { disconnected: boolean; token_revoked: boolean }
@@ -714,7 +714,7 @@ export async function resetGitHubConnection(address: string): Promise<{ reset: b
           errorMessage = typeof errorData.error === 'string' ? errorData.error : 'Unknown error'
         }
       } catch {
-        errorMessage = 'HTTP error: ' + response.status.toString()
+        errorMessage = 'HTTP error: ' + String(response.status)
       }
       console.error('GitHub reset failed:', {
         status: response.status,

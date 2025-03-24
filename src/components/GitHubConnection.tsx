@@ -94,7 +94,7 @@ const GitHubConnection: React.FC<GitHubConnectionProps> = ({ githubStatus, addre
             }
           } catch {
             // If we can't parse the error response
-            errorMessage = `HTTP error: ${response.status.toString()}`
+            errorMessage = `HTTP error: ${String(response.status)}`
           }
 
           console.error('GitHub code exchange failed:', {
@@ -284,7 +284,7 @@ const GitHubConnection: React.FC<GitHubConnectionProps> = ({ githubStatus, addre
             }
           } catch {
             // If we can't parse the error response
-            errorMessage = 'HTTP error: ' + response.status.toString()
+            errorMessage = `HTTP error: ${String(response.status)}`
           }
           console.error('GitHub disconnection error:', errorMessage)
           setError(errorMessage)

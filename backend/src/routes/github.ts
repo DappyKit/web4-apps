@@ -1,4 +1,4 @@
-import { Router } from 'express'
+import { Router, Request, Response } from 'express'
 import { Knex } from 'knex'
 import { User } from '../types'
 import crypto from 'crypto'
@@ -171,7 +171,7 @@ async function exchangeCodeForToken(code: string): Promise<TokenResponse> {
         status: response.status,
         statusText: response.statusText,
       })
-      throw new GitHubError(`Failed to exchange code for token: ${response.status.toString()}`)
+      throw new GitHubError(`Failed to exchange code for token: ${String(response.status)}`)
     }
 
     const data = await response.json()
@@ -200,7 +200,7 @@ async function getGitHubUserInfo(accessToken: string): Promise<GitHubUserRespons
     })
 
     if (!response.ok) {
-      throw new GitHubError(`Failed to get GitHub user info: ${response.status.toString()}`)
+      throw new GitHubError(`Failed to get GitHub user info: ${String(response.status)}`)
     }
 
     const data = await response.json()
@@ -285,7 +285,7 @@ export function createGitHubRouter(db: Knex): Router {
 
   // NOTE: Rate limiting has been removed to prevent "Too many requests" errors
 
-  router.post('/exchange', async (req, res) => {
+  router.post('/exchange', async (req: Request, res: Response) => {
     const { code } = req.body
 
     if (!code || typeof code !== 'string') {
@@ -311,7 +311,7 @@ export function createGitHubRouter(db: Knex): Router {
     }
   })
 
-  router.post('/connect', async (req, res) => {
+  router.post('/connect', async (req: Request, res: Response) => {
     const { address, accessToken } = req.body
 
     if (!address || !accessToken) {
@@ -347,7 +347,7 @@ export function createGitHubRouter(db: Knex): Router {
     }
   })
 
-  router.post('/disconnect', async (req, res) => {
+  router.post('/disconnect', async (req: Request, res: Response) => {
     const { address } = req.body
 
     if (!address) {
@@ -429,7 +429,7 @@ export function createGitHubRouter(db: Knex): Router {
     }
   })
 
-  router.get('/status/:address', async (req, res) => {
+  router.get('/status/:address', async (req: Request, res: Response) => {
     const { address } = req.params
 
     if (!address) {
@@ -473,7 +473,7 @@ export function createGitHubRouter(db: Knex): Router {
   })
 
   // Add a special endpoint to forcefully reset GitHub connection (for admin/debugging)
-  router.post('/reset-connection', async (req, res) => {
+  router.post('/reset-connection', async (req: Request, res: Response) => {
     const { address } = req.body
 
     if (!address) {
