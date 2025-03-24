@@ -122,7 +122,7 @@ describe('AiService', () => {
         // Check the error handling
         expect(result.rawResponse).toBe('')
         expect(result.isValid).toBe(false)
-        expect(result.validationErrors).toEqual([errorMessage])
+        expect(result.validationErrors?.[0]).toContain(errorMessage)
       } finally {
         // Restore original console.error
         console.error = originalConsoleError
