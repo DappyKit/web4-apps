@@ -652,7 +652,7 @@ export async function getGitHubStatus(address: string): Promise<GitHubConnection
     const formattedAddress = String(address).toLowerCase()
 
     // Get API base URL - allow for different environments
-    const baseUrl = process.env.REACT_APP_API_URL ?? ''
+    const baseUrl = String(process.env.REACT_APP_API_URL ?? '')
     const url = `${baseUrl}/api/github/status/${formattedAddress}`
 
     console.log('GitHub status API request:', url)
@@ -668,11 +668,11 @@ export async function getGitHubStatus(address: string): Promise<GitHubConnection
       try {
         const errorData = (await response.json()) as { error?: string }
         console.error('GitHub status error:', errorData)
-        throw new Error(errorData.error ?? `HTTP error! status: ${response.status.toString()}`)
+        throw new Error(errorData.error ?? `HTTP error! status: ${String(response.status)}`)
       } catch {
         // If the response isn't valid JSON
         console.error('GitHub status non-JSON error:', response.status, response.statusText)
-        throw new Error(`Failed to get GitHub status. Server returned ${response.status.toString()}`)
+        throw new Error(`Failed to get GitHub status. Server returned ${String(response.status)}`)
       }
     }
 
