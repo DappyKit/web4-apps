@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import React, { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Alert, Spinner, Card, Button } from 'react-bootstrap'
+import { Alert, Spinner, Card, Button, Accordion } from 'react-bootstrap'
 import { getAppById, getTemplateById, deleteApp } from '../services/api'
 import type { App, Template } from '../services/api'
 import { ReadOnlyForm } from '../components/ReadOnlyForm'
@@ -131,6 +131,30 @@ export function ViewApp(): React.JSX.Element {
     }
   }
 
+  /**
+   * Handles downloading app data as a JSON file
+   */
+  const handleDownloadJson = (): void => {
+    if (!app || !formData) return
+
+    const fileName = `${app.name.replace(/\s+/g, '_').toLowerCase()}_data.json`
+    const jsonData = JSON.stringify(formData, null, 2)
+    const blob = new Blob([jsonData], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+
+    // Cleanup
+    setTimeout(() => {
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    }, 100)
+  }
+
   const isOwner = app && address ? app.owner_address.toLowerCase() === address.toLowerCase() : false
 
   if (isLoading) {
@@ -169,19 +193,16 @@ export function ViewApp(): React.JSX.Element {
           <i className="bi bi-arrow-left" style={{ lineHeight: 0 }}></i>
         </Link>
         <h2 className="m-0">{app.name}</h2>
-        {isOwner && (
-          <div className="ms-auto">
-            <Button
-              variant="outline-danger"
-              size="sm"
-              className="ms-auto"
-              onClick={confirmDelete}
-              disabled={isDeleting}
-            >
+        <div className="ms-auto d-flex">
+          <Button variant="primary" size="sm" className="d-flex align-items-center me-2" onClick={handleDownloadJson}>
+            <i className="bi bi-download me-1"></i> Download JSON
+          </Button>
+          {isOwner && (
+            <Button variant="outline-danger" size="sm" onClick={confirmDelete} disabled={isDeleting}>
               {isDeleting ? 'Deleting...' : 'Delete App'}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <Card className="mb-4">
@@ -201,13 +222,65 @@ export function ViewApp(): React.JSX.Element {
         </Card.Body>
       </Card>
 
+      <Card className="mb-4">
+        <Card.Body>
+          <Card.Title>Deployment Instructions</Card.Title>
+          <ol className="ps-3">
+            <li className="mb-2">
+              <strong>Clone the repository:</strong>
+              <div className="bg-light p-2 rounded my-1">
+                <code>
+                  git clone{' '}
+                  {template?.url ?? 'the template url'}
+                </code>
+              </div>
+            </li>
+            <li className="mb-2">
+              <strong>Install dependencies:</strong>
+              <div className="bg-light p-2 rounded my-1">
+                <code>npm ci</code>
+              </div>
+            </li>
+            <li className="mb-2">
+              <strong>
+                Download app data and place it in the project&apos;s <code>src/data</code> directory:
+              </strong>
+              <div className="d-grid d-md-block mt-2">
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  className="d-flex align-items-center mx-auto mx-md-0"
+                  onClick={handleDownloadJson}
+                >
+                  <i className="bi bi-download me-1"></i> Download JSON Data
+                </Button>
+              </div>
+            </li>
+            <li className="mb-2">
+              <strong>Deploy using Netlify:</strong>
+              <div className="bg-light p-2 rounded my-1">
+                <code>npm install -g netlify-cli</code>
+                <br />
+                <code>npm run build</code>
+                <br />
+                <code>netlify deploy</code>
+              </div>
+            </li>
+          </ol>
+        </Card.Body>
+      </Card>
+
       {template && formSchema.length > 0 && (
-        <Card className="mb-4">
-          <Card.Body>
-            <Card.Title>App Data</Card.Title>
-            <ReadOnlyForm schema={formSchema} data={formData} />
-          </Card.Body>
-        </Card>
+        <Accordion defaultActiveKey="" className="mb-4">
+          <Accordion.Item eventKey="0">
+            <Accordion.Header>
+              <strong>App Data</strong>
+            </Accordion.Header>
+            <Accordion.Body>
+              <ReadOnlyForm schema={formSchema} data={formData} />
+            </Accordion.Body>
+          </Accordion.Item>
+        </Accordion>
       )}
     </div>
   )
