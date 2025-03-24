@@ -12,7 +12,6 @@ const config: { [key: string]: Knex.Config } = {
       user: process.env.DB_USER || 'root',
       password: process.env.DB_PASSWORD || '',
       database: process.env.DB_NAME || 'dappykit_apps',
-      socketPath: '/opt/homebrew/var/mysql/mysql.sock',
     },
     migrations: {
       directory: path.join(__dirname, '..', 'migrations'),

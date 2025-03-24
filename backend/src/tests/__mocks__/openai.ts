@@ -39,28 +39,14 @@ export function resetMock(): void {
  * @returns void
  */
 export function mockSuccessResponse(content: string): void {
-  mockCreateCompletion.mockImplementation(params => {
-    return Promise.resolve({
-      choices: [
-        {
-          message: {
-            content,
-            role: 'assistant',
-          },
-          index: 0,
-          finish_reason: 'stop',
+  mockCreateCompletion.mockResolvedValueOnce({
+    choices: [
+      {
+        message: {
+          content,
         },
-      ],
-      usage: {
-        prompt_tokens: 100,
-        completion_tokens: 50,
-        total_tokens: 150,
       },
-      id: 'mock-id',
-      object: 'chat.completion',
-      created: Date.now(),
-      model: params.model,
-    })
+    ],
   })
 }
 
@@ -70,7 +56,5 @@ export function mockSuccessResponse(content: string): void {
  * @returns void
  */
 export function mockErrorResponse(errorMessage: string): void {
-  mockCreateCompletion.mockImplementation(() => {
-    throw new Error(errorMessage)
-  })
+  mockCreateCompletion.mockRejectedValueOnce(new Error(errorMessage))
 }
