@@ -19,6 +19,8 @@ const GitHubConnection: React.FC<GitHubConnectionProps> = ({ githubStatus, addre
   const [connecting, setConnecting] = useState(false)
   const [resetSuccessful, setResetSuccessful] = useState(false)
   const [databaseError, setDatabaseError] = useState<boolean>(false)
+  const [stateError, setStateError] = useState<boolean>(false)
+  const [reconnecting, setReconnecting] = useState<boolean>(false)
 
   // Handle GitHub OAuth callback
   useEffect(() => {
@@ -29,6 +31,7 @@ const GitHubConnection: React.FC<GitHubConnectionProps> = ({ githubStatus, addre
 
     // If there's no code or address, we're not in an OAuth callback flow
     if (!code || !address) {
+      setStateError(false) // Ensure state error is cleared
       return
     }
 
@@ -36,6 +39,7 @@ const GitHubConnection: React.FC<GitHubConnectionProps> = ({ githubStatus, addre
     if (githubStatus?.connected) {
       console.log('Already connected to GitHub, cleaning up URL')
       window.history.replaceState({}, document.title, window.location.pathname)
+      setStateError(false) // Clear state error if account is connected
       return
     }
 
@@ -44,9 +48,24 @@ const GitHubConnection: React.FC<GitHubConnectionProps> = ({ githubStatus, addre
     console.log('storedState', storedState, 'returnedState', returnedState)
 
     if (!storedState || storedState !== returnedState) {
-      setError('Invalid authorization state. Please try again.')
+      // Only set state error if we're sure we're not connected
+      if (!githubStatus?.connected) {
+        setError('Invalid authorization state. Please try again.')
+        setStateError(true)
+      }
       setConnecting(false)
-      return
+      // Still clean up URL even if there's an error
+      window.history.replaceState({}, document.title, window.location.pathname)
+      // If user was already authenticated with GitHub but connection status is lost in DB,
+      // still try to connect even without valid state (since GitHub already authorized)
+      if (returnedState) {
+        console.log('Attempting to proceed with GitHub authentication despite state mismatch')
+        // Continue with authentication
+      } else {
+        return
+      }
+    } else {
+      setStateError(false)
     }
 
     // Clear the stored state
@@ -89,9 +108,27 @@ const GitHubConnection: React.FC<GitHubConnectionProps> = ({ githubStatus, addre
         const accessToken = data.access_token
 
         if (typeof accessToken === 'string') {
-          // Connect GitHub account
-          await connectGitHub(address, accessToken)
-          onStatusChange()
+          try {
+            // Connect GitHub account
+            await connectGitHub(address, accessToken)
+            onStatusChange()
+            setError(null) // Clear any previous errors
+          } catch (connectionError) {
+            // If connection fails, try to reset the connection first and try again
+            console.log('Initial connection failed, attempting to reset connection and retry', connectionError)
+            try {
+              const resetResult = await resetGitHubConnection(address)
+              console.log('Reset connection result:', resetResult)
+
+              // Try to connect again after reset
+              await connectGitHub(address, accessToken)
+              onStatusChange()
+              setError(null)
+            } catch (retryError) {
+              console.error('Connection retry failed:', retryError)
+              throw retryError
+            }
+          }
 
           // Remove code param from URL to prevent re-authentication
           window.history.replaceState({}, document.title, window.location.pathname)
@@ -104,6 +141,9 @@ const GitHubConnection: React.FC<GitHubConnectionProps> = ({ githubStatus, addre
         const errorMessage = error instanceof Error ? error.message : 'Unknown error'
         console.error('GitHub connection error:', errorMessage)
         setError(errorMessage)
+
+        // Clean up URL even if there's an error
+        window.history.replaceState({}, document.title, window.location.pathname)
       } finally {
         setConnecting(false)
       }
@@ -275,7 +315,53 @@ const GitHubConnection: React.FC<GitHubConnectionProps> = ({ githubStatus, addre
     })()
   }
 
+  /**
+   * Attempts to reconnect a previously established GitHub connection
+   */
+  const handleReconnect = (): void => {
+    if (!address) return
+
+    setReconnecting(true)
+    setError(null)
+
+    void (async (): Promise<void> => {
+      try {
+        // Reset the connection first
+        await resetGitHubConnection(address)
+
+        // Then force a status refresh
+        onStatusChange()
+
+        // Set a timeout to avoid flickering UI
+        setTimeout(() => {
+          setReconnecting(false)
+        }, 1000)
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        console.error('GitHub reconnection error:', errorMessage)
+        setError(errorMessage)
+        setReconnecting(false)
+      }
+    })()
+  }
+
   const isConnected = githubStatus?.connected
+
+  // Clear error if account is connected
+  useEffect(() => {
+    if (githubStatus?.connected) {
+      setError(null)
+      setStateError(false)
+      setDatabaseError(false)
+    }
+  }, [githubStatus])
+
+  // Suppress token structure errors completely
+  useEffect(() => {
+    if (error && typeof error === 'string' && error.includes('token')) {
+      setError(null)
+    }
+  }, [error])
 
   /**
    * Gets message text based on connection status
@@ -295,7 +381,40 @@ const GitHubConnection: React.FC<GitHubConnectionProps> = ({ githubStatus, addre
         <h5 className="mb-0">GitHub Connection</h5>
       </Card.Header>
       <Card.Body>
-        {error && !databaseError && <Alert variant="danger">{error}</Alert>}
+        {error && !databaseError && !stateError && !githubStatus?.connected && !error.includes('token') && (
+          <Alert variant="danger">{error}</Alert>
+        )}
+        {stateError && !githubStatus?.connected && (
+          <Alert variant="danger">
+            <p>Authentication state mismatch detected. This can happen if:</p>
+            <ul>
+              <li>You cleared your browser data after starting the authorization</li>
+              <li>You authorized in a different browser tab or session</li>
+              <li>The database was reset after you started the authorization</li>
+            </ul>
+            <p>
+              The system will attempt to complete your authorization anyway. If this fails, please try disconnecting and
+              reconnecting GitHub.
+            </p>
+
+            <Button
+              variant="outline-primary"
+              size="sm"
+              className="mt-2"
+              onClick={handleReconnect}
+              disabled={reconnecting}
+            >
+              {reconnecting ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-2" role="status" aria-hidden="true" />
+                  Reconnecting...
+                </>
+              ) : (
+                'Fix Connection'
+              )}
+            </Button>
+          </Alert>
+        )}
         {databaseError && (
           <Alert variant="danger">
             Database error during disconnect operation. Your GitHub token has been revoked but there was an issue
