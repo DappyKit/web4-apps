@@ -6,7 +6,9 @@ import { createAppsRouter } from './routes/apps'
 import { createUsersRouter } from './routes/users'
 import { createTemplatesRouter } from './routes/templates'
 import { createAiRouter } from './routes/ai'
+import { createGitHubRouter } from './routes/github'
 import cors from 'cors'
+import { Request, Response, NextFunction } from 'express'
 
 // Load environment variables
 dotenv.config()
@@ -35,10 +37,16 @@ db.raw('SELECT 1')
 app.use(cors())
 app.use(express.json())
 
+// Log all incoming requests
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`)
+  next()
+})
+
 // Add error handling middleware
-app.use((_err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error('Unhandled error:', _err)
-  res.status(500).json({ error: 'Internal server error' })
+app.use((error: Error, req: Request, res: Response, _next: NextFunction) => {
+  console.error('Unhandled error:', error)
+  return res.status(500).json({ error: 'Internal server error' })
 })
 
 // Routes
@@ -46,10 +54,16 @@ app.use('/api', createAppsRouter(db))
 app.use('/api', createUsersRouter(db))
 app.use('/api/templates', createTemplatesRouter(db))
 app.use('/api/ai', createAiRouter(db))
+app.use('/api/github', createGitHubRouter(db))
+
+// Test route
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+})
 
 const port = process.env.PORT || 3001
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`)
+  console.log(`Server started on port ${port}`)
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
 })
 
