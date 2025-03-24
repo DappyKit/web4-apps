@@ -205,60 +205,66 @@ export function ViewApp(): React.JSX.Element {
         </div>
       </div>
 
-      <Card className="mb-4">
-        <Card.Body>
-          <Card.Title>App Details</Card.Title>
-          <div className="mb-3">
-            <strong>Description:</strong> {app.description ?? 'No description'}
+      <Card className="mb-4 border-0 shadow-sm">
+        <Card.Body className="p-4">
+          <Card.Title className="mb-3 border-bottom pb-2 d-flex align-items-center">
+            <i className="bi bi-info-circle me-2 text-primary"></i>App Details
+          </Card.Title>
+          <div className="mb-3 ps-2">
+            <strong className="text-muted">Description:</strong>{' '}
+            <span className="ms-2">{app.description ?? 'No description'}</span>
           </div>
-          <div className="mb-3">
-            <strong>Created:</strong> {new Date(app.created_at).toLocaleDateString()}
+          <div className="mb-3 ps-2">
+            <strong className="text-muted">Created:</strong>{' '}
+            <span className="ms-2">{new Date(app.created_at).toLocaleDateString()}</span>
           </div>
           {template && (
-            <div className="mb-3">
-              <strong>Based on Template:</strong> <Link to={`/templates/${String(template.id)}`}>{template.title}</Link>
+            <div className="mb-3 ps-2">
+              <strong className="text-muted">Based on Template:</strong>{' '}
+              <Link to={`/templates/${String(template.id)}`} className="ms-2 text-decoration-none">
+                {template.title}
+              </Link>
             </div>
           )}
         </Card.Body>
       </Card>
 
-      <Card className="mb-4">
-        <Card.Body>
-          <Card.Title>Deployment Instructions</Card.Title>
-          <ol className="ps-3">
-            <li className="mb-2">
-              <strong>Clone the repository:</strong>
-              <div className="bg-light p-2 rounded my-1">
-                <code>
-                  git clone{' '}
-                  {template?.url ?? 'the template url'}
-                </code>
+      <Card className="mb-4 border-0 shadow-sm">
+        <Card.Body className="p-4">
+          <Card.Title className="mb-3 border-bottom pb-2 d-flex align-items-center">
+            <i className="bi bi-rocket-takeoff me-2 text-primary"></i>Deployment Instructions
+          </Card.Title>
+          <ol className="ps-4">
+            <li className="mb-3">
+              <strong className="d-block mb-2">Clone the repository:</strong>
+              <div className="bg-light p-3 rounded-3 border">
+                <code>git clone {template?.url ?? '#'}</code>
               </div>
             </li>
-            <li className="mb-2">
-              <strong>Install dependencies:</strong>
-              <div className="bg-light p-2 rounded my-1">
+            <li className="mb-3">
+              <strong className="d-block mb-2">Install dependencies:</strong>
+              <div className="bg-light p-3 rounded-3 border">
                 <code>npm ci</code>
               </div>
             </li>
-            <li className="mb-2">
-              <strong>
+            <li className="mb-3">
+              <strong className="d-block mb-2">
                 Download app data and place it in the project&apos;s <code>src/data</code> directory:
               </strong>
               <div className="d-grid d-md-block mt-2">
                 <Button
                   variant="outline-primary"
                   size="sm"
-                  className="d-flex align-items-center mx-auto mx-md-0"
+                  className="d-flex align-items-center px-3 py-2 mx-auto mx-md-0"
                   onClick={handleDownloadJson}
                 >
-                  <i className="bi bi-download me-1"></i> Download JSON Data
+                  <i className="bi bi-download me-2"></i> Download JSON Data
                 </Button>
               </div>
             </li>
-            <li className="mb-2">
-              <strong>Deploy using Netlify:</strong>
-              <div className="bg-light p-2 rounded my-1">
+            <li className="mb-3">
+              <strong className="d-block mb-2">Deploy using Netlify:</strong>
+              <div className="bg-light p-3 rounded-3 border">
                 <code>npm install -g netlify-cli</code>
                 <br />
                 <code>npm run build</code>
@@ -271,12 +277,15 @@ export function ViewApp(): React.JSX.Element {
       </Card>
 
       {template && formSchema.length > 0 && (
-        <Accordion defaultActiveKey="" className="mb-4">
-          <Accordion.Item eventKey="0">
-            <Accordion.Header>
-              <strong>App Data</strong>
+        <Accordion defaultActiveKey="" className="mb-4 border-0 shadow-sm">
+          <Accordion.Item eventKey="0" className="border-0">
+            <Accordion.Header className="bg-white p-1">
+              <div className="d-flex align-items-center">
+                <i className="bi bi-database me-2 text-primary"></i>
+                <strong>App Data</strong>
+              </div>
             </Accordion.Header>
-            <Accordion.Body>
+            <Accordion.Body className="bg-white p-4">
               <ReadOnlyForm schema={formSchema} data={formData} />
             </Accordion.Body>
           </Accordion.Item>
