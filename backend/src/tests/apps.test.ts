@@ -5,6 +5,7 @@ import { createAppsRouter } from '../routes/apps'
 import { type PrivateKeyAccount } from 'viem/accounts'
 import { createWalletClient } from 'viem'
 import { TestDb } from './utils/testDb'
+import { MockNotificationService } from './__mocks__/notification'
 
 const quizSchema = {
   type: 'object',
@@ -101,7 +102,7 @@ describe('Apps API', () => {
       // Setup express app
       expressApp = express()
       expressApp.use(express.json())
-      expressApp.use('/api', createAppsRouter(testDb.getDb()))
+      expressApp.use('/api', createAppsRouter(testDb.getDb(), new MockNotificationService()))
     } catch (error) {
       console.error('Setup failed:', error)
       throw error
@@ -618,7 +619,7 @@ describe('Apps API', () => {
       // Create app with the mocked db
       const errorApp = express()
       errorApp.use(express.json())
-      errorApp.use('/api', createAppsRouter(mockDb))
+      errorApp.use('/api', createAppsRouter(mockDb, new MockNotificationService()))
 
       const response = await request(errorApp).get('/api/apps/1')
       expect(response.status).toBe(500)
@@ -769,7 +770,7 @@ describe('Apps API', () => {
       // Create app with the mocked db
       const errorApp = express()
       errorApp.use(express.json())
-      errorApp.use('/api', createAppsRouter(mockDb))
+      errorApp.use('/api', createAppsRouter(mockDb, new MockNotificationService()))
 
       const response = await request(errorApp).get('/api/apps')
       expect(response.status).toBe(500)

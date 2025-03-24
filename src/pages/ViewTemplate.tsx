@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { getTemplateById, deleteTemplate } from '../services/api'
 import type { Template } from '../services/api'
-import { Alert, Spinner, Card, Button } from 'react-bootstrap'
+import { Alert, Spinner, Card, Button, Accordion } from 'react-bootstrap'
 import { useAccount, useSignMessage } from 'wagmi'
 import { handlePromiseSafely } from '../utils/promiseUtils'
 
@@ -138,26 +138,43 @@ export function ViewTemplate(): React.JSX.Element {
         )}
       </div>
 
-      <Card className="mb-4">
-        <Card.Body>
-          <Card.Title>Template Details</Card.Title>
-          <div className="mb-3">
-            <strong>Description:</strong> {template.description ?? 'No description'}
+      <Card className="mb-4 border-0 shadow-sm">
+        <Card.Body className="p-4">
+          <Card.Title className="mb-3 border-bottom pb-2 d-flex align-items-center">
+            <i className="bi bi-info-circle me-2 text-primary"></i>Template Details
+          </Card.Title>
+          <div className="mb-3 ps-2">
+            <strong className="text-muted">Description:</strong>{' '}
+            <span className="ms-2">{template.description ?? 'No description'}</span>
           </div>
-          <div className="mb-3">
-            <strong>Created:</strong> {new Date(template.created_at).toLocaleDateString()}
+          <div className="mb-3 ps-2">
+            <strong className="text-muted">Created:</strong>{' '}
+            <span className="ms-2">{new Date(template.created_at).toLocaleDateString()}</span>
+          </div>
+          <div className="mb-3 ps-2">
+            <strong className="text-muted">Repository URL:</strong>{' '}
+            <a href={template.url} className="ms-2 text-decoration-none" target="_blank" rel="noopener noreferrer">
+              {template.url}
+            </a>
           </div>
         </Card.Body>
       </Card>
 
-      <Card>
-        <Card.Body>
-          <Card.Title>Template JSON Schema</Card.Title>
-          <pre className="bg-light p-3 rounded">
-            <code>{JSON.stringify(JSON.parse(template.json_data), null, 2)}</code>
-          </pre>
-        </Card.Body>
-      </Card>
+      <Accordion defaultActiveKey="" className="mb-4 border-0 shadow-sm">
+        <Accordion.Item eventKey="0" className="border-0">
+          <Accordion.Header className="bg-white p-1">
+            <div className="d-flex align-items-center">
+              <i className="bi bi-code-square me-2 text-primary"></i>
+              <strong>Template JSON Schema</strong>
+            </div>
+          </Accordion.Header>
+          <Accordion.Body className="bg-white p-4">
+            <pre className="bg-light p-3 rounded-3 border">
+              <code>{JSON.stringify(JSON.parse(template.json_data), null, 2)}</code>
+            </pre>
+          </Accordion.Body>
+        </Accordion.Item>
+      </Accordion>
     </div>
   )
 }

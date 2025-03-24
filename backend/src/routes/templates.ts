@@ -3,6 +3,8 @@ import { Knex } from 'knex'
 import { verifySignature, requireAuth } from '../utils/auth'
 import { validateTemplate, ValidationError } from '../utils/templateValidation'
 import { Template, CreateTemplateDTO } from '../types/template'
+import { INotificationService } from '../services/notification'
+import { truncateText } from '../utils/text'
 
 /**
  * Extended request interface for template creation
@@ -31,11 +33,17 @@ interface DeleteTemplateRequest extends Request {
 }
 
 /**
+ * Maximum length for notification descriptions
+ */
+const MAX_NOTIFICATION_DESCRIPTION_LENGTH = 350
+
+/**
  * Creates and configures the templates router
  * @param {Knex} db - The database connection instance
+ * @param {INotificationService} notificationService - The notification service to use
  * @returns {Router} Express router configured with template routes
  */
-export function createTemplatesRouter(db: Knex): Router {
+export function createTemplatesRouter(db: Knex, notificationService: INotificationService): Router {
   const router = Router()
 
   // Create template
@@ -64,6 +72,20 @@ export function createTemplatesRouter(db: Knex): Router {
         ...templateData,
         owner_address: address,
       })
+
+      // Send notification about the newly created template
+      const templateTitle = templateData.title
+      const templateDescription = truncateText(
+        templateData.description || 'No description provided',
+        MAX_NOTIFICATION_DESCRIPTION_LENGTH,
+      )
+
+      try {
+        await notificationService.sendTemplateCreationNotification(templateTitle, templateDescription)
+      } catch (error) {
+        console.error('Failed to send template creation notification:', error)
+        // Non-critical error, don't fail the request
+      }
 
       res.status(201).json({
         id: insertId,

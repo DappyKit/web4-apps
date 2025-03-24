@@ -6,6 +6,8 @@ import { CreateAppDTO, App } from '../types'
 import { Template } from '../types/template'
 import { JsonSchema, validateInputData } from '../utils/input-validation'
 import { validateJson, JsonValidationError } from '../utils/jsonValidation'
+import { INotificationService } from '../services/notification'
+import { truncateText } from '../utils/text'
 
 /**
  * Extended Request type that includes the authenticated wallet address
@@ -25,11 +27,17 @@ const MAX_NAME_LENGTH = 255
 const MAX_DESCRIPTION_LENGTH = 1000
 
 /**
+ * Maximum length for notification descriptions
+ */
+const MAX_NOTIFICATION_DESCRIPTION_LENGTH = 350
+
+/**
  * Creates and configures the apps router
  * @param {Knex} db - The database connection instance
+ * @param {INotificationService} notificationService - The notification service to use
  * @returns {Router} Express router configured with app routes
  */
-export function createAppsRouter(db: Knex): Router {
+export function createAppsRouter(db: Knex, notificationService: INotificationService): Router {
   const router = Router()
 
   // Get apps by owner
@@ -132,6 +140,17 @@ export function createAppsRouter(db: Knex): Router {
       }
 
       const [insertId] = await db<App>('apps').insert(newApp)
+
+      // Send notification about the newly created app
+      const appTitle = trimmedName
+      const appDescription = truncateText(description || 'No description provided', MAX_NOTIFICATION_DESCRIPTION_LENGTH)
+
+      try {
+        await notificationService.sendAppCreationNotification(appTitle, appDescription)
+      } catch (error) {
+        console.error('Failed to send app creation notification:', error)
+        // Non-critical error, don't fail the request
+      }
 
       res.status(201).json({
         id: insertId,
