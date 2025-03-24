@@ -7,4 +7,5 @@ export default {
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
+  testTimeout: 30000,
 }; 

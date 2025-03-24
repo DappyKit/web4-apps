@@ -8,6 +8,7 @@ import { createWalletClient } from 'viem'
 import { TestDb } from './utils/testDb'
 import { Router } from 'express'
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts'
+import { MockNotificationService } from './__mocks__/notification'
 
 interface DbTemplate {
   id: number
@@ -48,7 +49,7 @@ describe('Templates API', () => {
       // Setup express app
       expressApp = express()
       expressApp.use(express.json())
-      expressApp.use('/api/templates', createTemplatesRouter(testDb.getDb()))
+      expressApp.use('/api/templates', createTemplatesRouter(testDb.getDb(), new MockNotificationService()))
     } catch (error: unknown) {
       console.error('Setup failed:', error instanceof Error ? error.message : 'Unknown error')
       throw error
