@@ -70,25 +70,30 @@ A Web3 application platform built with React, TypeScript, and Vite that allows u
    - Copy `.env.example` to `.env` in the backend directory
    - Update the database configuration in `.env`
 
-5. Create the database:
+5. Configure the frontend:
+
+   - Copy `.env.example` to `.env` in the project root
+   - Update the API URL if needed in `.env`
+
+6. Create the database:
 
    ```sh
    mysql -u root -p<YOUR_PASSWORD> -e "CREATE DATABASE IF NOT EXISTS dappykit_apps CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
    ```
 
-6. Create a dedicated database user:
+7. Create a dedicated database user:
 
    ```sh
    mysql -u root -p<YOUR_PASSWORD> -e "CREATE USER 'dappykit_apps'@'localhost' IDENTIFIED BY '<DB_USER_PASSWORD>'; GRANT ALL PRIVILEGES ON dappykit_apps.* TO 'dappykit_apps'@'localhost'; FLUSH PRIVILEGES;"
    ```
 
-7. Run database migrations:
+8. Run database migrations:
 
    ```sh
    npm run migrate
    ```
 
-8. Seed the database with initial data:
+9. Seed the database with initial data:
    ```sh
    npm run seed
    ```
@@ -223,6 +228,18 @@ web4-apps/
 - `npm run backend:build`: Build the backend for production
 - `npm run ui:test`: Run frontend tests
 - `npm run backend:test`: Run backend tests
+
+## 🔧 Environment Variables
+
+### Frontend (.env in project root)
+- `VITE_API_URL`: URL for the backend API server (default: http://localhost:3001)
+
+### Backend (.env in backend directory)
+- `DB_HOST`: Database host
+- `DB_USER`: Database username
+- `DB_PASSWORD`: Database password
+- `DB_NAME`: Database name
+- `PORT`: Backend server port (default: 3001)
 
 ## 📄 License
 
