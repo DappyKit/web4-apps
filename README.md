@@ -70,13 +70,25 @@ A Web3 application platform built with React, TypeScript, and Vite that allows u
    - Copy `.env.example` to `.env` in the backend directory
    - Update the database configuration in `.env`
 
-5. Run database migrations:
+5. Create the database:
+
+   ```sh
+   mysql -u root -p<YOUR_PASSWORD> -e "CREATE DATABASE IF NOT EXISTS dappykit_apps CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+   ```
+
+6. Create a dedicated database user:
+
+   ```sh
+   mysql -u root -p<YOUR_PASSWORD> -e "CREATE USER 'dappykit_apps'@'localhost' IDENTIFIED BY '<DB_USER_PASSWORD>'; GRANT ALL PRIVILEGES ON dappykit_apps.* TO 'dappykit_apps'@'localhost'; FLUSH PRIVILEGES;"
+   ```
+
+7. Run database migrations:
 
    ```sh
    npm run migrate
    ```
 
-6. Seed the database with initial data:
+8. Seed the database with initial data:
    ```sh
    npm run seed
    ```
