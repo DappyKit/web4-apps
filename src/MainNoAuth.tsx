@@ -1,4 +1,6 @@
+import React from 'react'
 import { Link } from 'react-router-dom'
+import { Accordion } from 'react-bootstrap'
 
 /**
  * Main component for unauthenticated users
@@ -55,7 +57,7 @@ export function MainNoAuth(): React.JSX.Element {
                     <li className="d-flex align-items-center mb-3">
                       <i className="bi bi-check-circle-fill text-success me-2 d-flex align-items-center"></i>
                       <span>
-                        <strong>Start:</strong> March 24, 2025
+                        <strong>Start:</strong> March 28, 2025
                       </span>
                     </li>
                     <li className="d-flex align-items-center mb-3">
@@ -109,11 +111,7 @@ export function MainNoAuth(): React.JSX.Element {
                   <ul className="list-unstyled mb-0">
                     <li className="d-flex align-items-center mb-3">
                       <i className="bi bi-star-fill text-warning me-2 d-flex align-items-center"></i>
-                      <span>Top creator: 200 OP Tokens</span>
-                    </li>
-                    <li className="d-flex align-items-center">
-                      <i className="bi bi-people-fill text-info me-2 d-flex align-items-center"></i>
-                      <span>Other developers: 50 OP Tokens each</span>
+                      <span>Top 200 creators: <strong>50 OP</strong> Tokens each</span>
                     </li>
                   </ul>
                   <div className="mt-4">
@@ -198,68 +196,31 @@ export function MainNoAuth(): React.JSX.Element {
 
           <div className="row mt-5">
             <div className="col-lg-8 mx-auto">
-              <div className="accordion" id="hackathonFAQ">
-                <div className="accordion-item">
-                  <h3 className="accordion-header">
-                    <button
-                      className="accordion-button"
-                      type="button"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#faqOne"
-                      aria-expanded="true"
-                    >
-                      Who can participate in the hackathon?
-                    </button>
-                  </h3>
-                  <div id="faqOne" className="accordion-collapse collapse show" data-bs-parent="#hackathonFAQ">
-                    <div className="accordion-body">
-                      The hackathon is open to all Web4 developers. Whether you&apos;re experienced in blockchain
-                      development or just getting started, you&apos;re welcome to join and compete for prizes.
-                    </div>
-                  </div>
-                </div>
+              <Accordion defaultActiveKey="0">
+                <Accordion.Item eventKey="0">
+                  <Accordion.Header>Who can participate in the hackathon?</Accordion.Header>
+                  <Accordion.Body>
+                    The hackathon is open to all Web4 developers. Whether you&apos;re experienced in blockchain
+                    development or just getting started, you&apos;re welcome to join and compete for prizes.
+                  </Accordion.Body>
+                </Accordion.Item>
 
-                <div className="accordion-item">
-                  <h3 className="accordion-header">
-                    <button
-                      className="accordion-button collapsed"
-                      type="button"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#faqTwo"
-                      aria-expanded="false"
-                    >
-                      How are winners selected?
-                    </button>
-                  </h3>
-                  <div id="faqTwo" className="accordion-collapse collapse" data-bs-parent="#hackathonFAQ">
-                    <div className="accordion-body">
-                      For template creators, winners are selected based on the usefulness, quality, and creativity of
-                      the templates. For app creators, the more apps you create, the higher your chance of winning, with
-                      the top creator receiving the main prize.
-                    </div>
-                  </div>
-                </div>
+                <Accordion.Item eventKey="1">
+                  <Accordion.Header>How are winners selected?</Accordion.Header>
+                  <Accordion.Body>
+                    For template creators, winners are selected based on the usefulness, quality, and creativity of the
+                    templates. For app creators, the more apps you create, the higher your chance of winning.
+                  </Accordion.Body>
+                </Accordion.Item>
 
-                <div className="accordion-item">
-                  <h3 className="accordion-header">
-                    <button
-                      className="accordion-button collapsed"
-                      type="button"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#faqThree"
-                      aria-expanded="false"
-                    >
-                      When will prizes be distributed?
-                    </button>
-                  </h3>
-                  <div id="faqThree" className="accordion-collapse collapse" data-bs-parent="#hackathonFAQ">
-                    <div className="accordion-body">
-                      Prizes will be distributed after the results are announced in July 2025. Winners will receive
-                      their OP tokens directly to their registered wallet addresses.
-                    </div>
-                  </div>
-                </div>
-              </div>
+                <Accordion.Item eventKey="2">
+                  <Accordion.Header>When will prizes be distributed?</Accordion.Header>
+                  <Accordion.Body>
+                    Prizes will be distributed after the results are announced in July 2025. Winners will receive their
+                    OP tokens directly to their registered wallet addresses.
+                  </Accordion.Body>
+                </Accordion.Item>
+              </Accordion>
             </div>
           </div>
         </div>
