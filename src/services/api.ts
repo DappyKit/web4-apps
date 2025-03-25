@@ -449,19 +449,200 @@ interface AiPromptApiResponse {
 }
 
 /**
+ * Response for AI challenge request
+ */
+interface AiChallengeResponse {
+  success: boolean
+  data?: {
+    challenge: string
+    remaining_attempts: number
+    max_attempts: number
+    reset_date: string
+  }
+  error?: string
+}
+
+/**
+ * Response for AI challenge verification
+ */
+interface AiChallengeVerifyResponse {
+  success: boolean
+  data?: {
+    remaining_attempts: number
+    max_attempts: number
+  }
+  error?: string
+}
+
+/**
+ * Response for AI remaining requests
+ */
+interface AiRemainingRequestsResponse {
+  success: boolean
+  data?: {
+    remaining_attempts: number
+    max_attempts: number
+    reset_date: string
+  }
+  error?: string
+}
+
+/**
+ * Requests a new AI challenge for the current user
+ * @returns Promise with challenge data
+ * @throws Error if the request fails
+ */
+export async function requestAiChallenge(): Promise<{
+  challenge: string
+  remainingAttempts: number
+  maxAttempts: number
+  resetDate: Date
+}> {
+  try {
+    const response = await fetch('/api/ai/challenge', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = (await response.json()) as ApiErrorResponse
+      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`)
+    }
+
+    const data = (await response.json()) as AiChallengeResponse
+    if (!data.success || !data.data) {
+      throw new Error(data.error ?? 'Failed to get AI challenge')
+    }
+
+    return {
+      challenge: data.data.challenge,
+      remainingAttempts: data.data.remaining_attempts,
+      maxAttempts: data.data.max_attempts,
+      resetDate: new Date(data.data.reset_date),
+    }
+  } catch (error) {
+    console.error('Error requesting AI challenge:', error)
+    throw error
+  }
+}
+
+/**
+ * Verifies an AI challenge with a signature
+ * @param address - User's wallet address
+ * @param challenge - The challenge UUID to verify
+ * @param signature - The cryptographic signature of the challenge
+ * @returns Promise with verification result
+ * @throws Error if the verification fails
+ */
+export async function verifyAiChallenge(
+  address: string,
+  challenge: string,
+  signature: string,
+): Promise<{
+  success: boolean
+  remainingAttempts: number
+  maxAttempts: number
+}> {
+  try {
+    const response = await fetch('/api/ai/verify-challenge', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        address,
+        challenge,
+        signature,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorData = (await response.json()) as ApiErrorResponse
+      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`)
+    }
+
+    const data = (await response.json()) as AiChallengeVerifyResponse
+    if (!data.data) {
+      throw new Error(data.error ?? 'Failed to verify AI challenge')
+    }
+
+    return {
+      success: data.success,
+      remainingAttempts: data.data.remaining_attempts,
+      maxAttempts: data.data.max_attempts,
+    }
+  } catch (error) {
+    console.error('Error verifying AI challenge:', error)
+    throw error
+  }
+}
+
+/**
+ * Gets the remaining AI requests for the current user
+ * @returns Promise with remaining requests data
+ * @throws Error if the request fails
+ */
+export async function getRemainingAiRequests(): Promise<{
+  remainingAttempts: number
+  maxAttempts: number
+  resetDate: Date
+}> {
+  try {
+    const response = await fetch('/api/ai/remaining-requests', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = (await response.json()) as ApiErrorResponse
+      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`)
+    }
+
+    const data = (await response.json()) as AiRemainingRequestsResponse
+    if (!data.success || !data.data) {
+      throw new Error(data.error ?? 'Failed to get remaining AI requests')
+    }
+
+    return {
+      remainingAttempts: data.data.remaining_attempts,
+      maxAttempts: data.data.max_attempts,
+      resetDate: new Date(data.data.reset_date),
+    }
+  } catch (error) {
+    console.error('Error getting remaining AI requests:', error)
+    throw error
+  }
+}
+
+/**
  * Generates template data using AI
  * @param templateId - The ID of the template to fill with AI-generated data
  * @param prompt - User instructions for AI generation
+ * @param challenge - The challenge UUID for verification
+ * @param signature - The cryptographic signature of the challenge
  * @returns Promise with the AI-generated JSON data for the template
  * @throws Error if the generation fails or response is invalid
  */
-export async function generateTemplateDataWithAI(templateId: number, prompt: string): Promise<string> {
+export async function generateTemplateDataWithAI(
+  templateId: number,
+  prompt: string,
+  challenge: string,
+  signature: string,
+): Promise<string> {
   if (!templateId) {
     throw new Error('Template ID is required')
   }
 
   if (!prompt) {
     throw new Error('Prompt is required')
+  }
+
+  if (!challenge || !signature) {
+    throw new Error('Challenge and signature are required')
   }
 
   try {
@@ -473,6 +654,8 @@ export async function generateTemplateDataWithAI(templateId: number, prompt: str
       body: JSON.stringify({
         templateId,
         prompt,
+        challenge,
+        signature,
       }),
     })
 

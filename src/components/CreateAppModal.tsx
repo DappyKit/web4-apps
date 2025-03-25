@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Alert, Button, Form, Spinner, Modal } from 'react-bootstrap'
+import { Alert, Button, Form, Spinner, Modal, ProgressBar } from 'react-bootstrap'
 import { useSignMessage } from 'wagmi'
-import { createApp, getTemplateById, generateTemplateDataWithAI } from '../services/api'
+import { createApp, getTemplateById, generateTemplateDataWithAI, requestAiChallenge } from '../services/api'
 import type { Template } from '../services/api'
 import { DynamicForm } from './DynamicForm'
 import { parseTemplateSchema, formDataToJson } from '../utils/schemaParser'
@@ -71,6 +71,11 @@ export function CreateAppModal({
   const [showAiModal, setShowAiModal] = useState(false)
   const [aiUserInput, setAiUserInput] = useState('')
   const [alerts, setAlerts] = useState<{ id: string; type: 'error' | 'success'; message: string }[]>([])
+  const [aiChallenge, setAiChallenge] = useState<string | null>(null)
+  const [aiRemainingAttempts, setAiRemainingAttempts] = useState<number | null>(null)
+  const [aiMaxAttempts, setAiMaxAttempts] = useState<number | null>(null)
+  const [aiResetDate, setAiResetDate] = useState<Date | null>(null)
+  const [isLoadingChallenge, setIsLoadingChallenge] = useState(false)
 
   // Update form when selected template changes
   useEffect(() => {
@@ -367,18 +372,57 @@ export function CreateAppModal({
   }
 
   /**
+   * Handles opening the AI modal and requesting a challenge
+   */
+  const handleOpenAiModal = async (): Promise<void> => {
+    if (!address) {
+      showAlert('error', 'You must connect your wallet to use AI features')
+      return
+    }
+
+    setIsLoadingChallenge(true)
+    setShowAiModal(true)
+    setAiUserInput('')
+
+    try {
+      // Request a new challenge
+      const challengeData = await requestAiChallenge()
+
+      setAiChallenge(challengeData.challenge)
+      setAiRemainingAttempts(challengeData.remainingAttempts)
+      setAiMaxAttempts(challengeData.maxAttempts)
+      setAiResetDate(challengeData.resetDate)
+
+      if (challengeData.remainingAttempts <= 0) {
+        showAlert('error', `Daily AI usage limit reached. Limit resets at ${challengeData.resetDate.toLocaleString()}.`)
+        setShowAiModal(false)
+      }
+    } catch (error) {
+      console.error('Error requesting AI challenge:', error)
+      const errorMessage = getErrorMessage(error)
+      showAlert('error', `Failed to initialize AI: ${errorMessage}`)
+      setShowAiModal(false)
+    } finally {
+      setIsLoadingChallenge(false)
+    }
+  }
+
+  /**
    * Handles the submission of the AI input form
    */
   const handleAiSubmit = async (): Promise<void> => {
-    if (!formData.templateId || !aiUserInput.trim()) return
+    if (!formData.templateId || !aiUserInput.trim() || !aiChallenge || !address) return
 
     setIsAiLoading(true)
     setError(null)
     setShowAiModal(false)
 
     try {
+      // Sign the challenge
+      const signature = await signMessageAsync({ message: aiChallenge })
+
       const templateId = Number(formData.templateId)
-      const aiGeneratedData = await generateTemplateDataWithAI(templateId, aiUserInput)
+      const aiGeneratedData = await generateTemplateDataWithAI(templateId, aiUserInput, aiChallenge, signature)
 
       try {
         // Validate that the generated data is valid JSON
@@ -398,6 +442,11 @@ export function CreateAppModal({
         }
 
         showAlert('success', 'AI successfully generated the data!')
+
+        // Update remaining attempts
+        if (aiRemainingAttempts !== null) {
+          setAiRemainingAttempts(aiRemainingAttempts - 1)
+        }
       } catch (parseError) {
         console.error('Error parsing AI generated data:', parseError)
         showAlert('error', 'The AI generated invalid JSON data. Please try again.')
@@ -422,7 +471,7 @@ export function CreateAppModal({
    * Handles the AI submit button click event
    */
   const handleAiSubmitClick = (): void => {
-    handleAiSubmit() // eslint-disable-line @typescript-eslint/no-floating-promises
+    void handleAiSubmit()
   }
 
   return (
@@ -533,8 +582,7 @@ export function CreateAppModal({
                     size="sm"
                     disabled={isCreating || isAiLoading || !formData.templateId}
                     onClick={() => {
-                      setShowAiModal(true)
-                      setAiUserInput('')
+                      void handleOpenAiModal()
                     }}
                   >
                     {isAiLoading ? (
@@ -632,29 +680,60 @@ export function CreateAppModal({
           <Modal.Title>Fill with AI</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Describe the data you want the AI to generate</Form.Label>
-              <Form.Control
-                as="textarea"
-                value={aiUserInput}
-                onChange={e => {
-                  setAiUserInput(e.target.value)
-                }}
-                placeholder="For example: Generate random user data with names, emails, and birthdays for a user management app..."
-                rows={4}
-              />
-              <Form.Text className="text-muted">
-                Your prompt will be used to generate data that matches the template structure.
-              </Form.Text>
-            </Form.Group>
-          </Form>
+          {isLoadingChallenge ? (
+            <div className="text-center py-3">
+              <Spinner animation="border" role="status" className="mb-3" />
+              <p>Preparing AI service...</p>
+            </div>
+          ) : (
+            <>
+              {aiRemainingAttempts !== null && aiMaxAttempts !== null && (
+                <div className="mb-3">
+                  <div className="d-flex justify-content-between align-items-center mb-1">
+                    <span>
+                      Daily AI usage: {aiRemainingAttempts} of {aiMaxAttempts} remaining
+                    </span>
+                    {aiResetDate && (
+                      <small className="text-muted">
+                        Resets at {aiResetDate.toLocaleTimeString()} on {aiResetDate.toLocaleDateString()}
+                      </small>
+                    )}
+                  </div>
+                  <ProgressBar
+                    now={(aiRemainingAttempts / aiMaxAttempts) * 100}
+                    variant={aiRemainingAttempts < 3 ? 'warning' : 'success'}
+                  />
+                </div>
+              )}
+              <Form>
+                <Form.Group className="mb-3">
+                  <Form.Label>Describe the data you want the AI to generate</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    value={aiUserInput}
+                    onChange={e => {
+                      setAiUserInput(e.target.value)
+                    }}
+                    placeholder="For example: Generate random user data with names, emails, and birthdays for a user management app..."
+                    rows={4}
+                  />
+                  <Form.Text className="text-muted">
+                    Your prompt will be used to generate data that matches the template structure.
+                  </Form.Text>
+                </Form.Group>
+              </Form>
+            </>
+          )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleAiModalClose}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleAiSubmitClick} disabled={!aiUserInput.trim()}>
+          <Button
+            variant="primary"
+            onClick={handleAiSubmitClick}
+            disabled={isLoadingChallenge || !aiUserInput.trim() || aiRemainingAttempts === 0}
+          >
             ✨ Send
           </Button>
         </Modal.Footer>
