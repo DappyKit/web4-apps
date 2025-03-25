@@ -183,6 +183,182 @@ Check TypeScript types:
 npm run types:check
 ```
 
+## 🚀 Production Deployment
+
+### Complete Deployment Process
+
+Here's a step-by-step guide to deploy both frontend and backend in production:
+
+1. Clone the repository on your server:
+   ```sh
+   git clone https://github.com/DappyKit/web4-apps.git
+   cd web4-apps
+   ```
+
+2. Set up frontend environment:
+   ```sh
+   cp .env.example .env
+   nano .env  # Adjust API URL to your production server
+   ```
+
+3. Build frontend:
+   ```sh
+   npm install
+   npm run build
+   ```
+
+4. Set up backend:
+   ```sh
+   cd backend
+   npm install
+   cp .env.example .env
+   nano .env  # Configure database and other settings for production
+   ```
+
+5. Create the database and user:
+   ```sh
+   mysql -u root -p<YOUR_PASSWORD> -e "CREATE DATABASE IF NOT EXISTS dappykit_apps CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+   mysql -u root -p<YOUR_PASSWORD> -e "CREATE USER 'dappykit_apps'@'localhost' IDENTIFIED BY '<DB_USER_PASSWORD>'; GRANT ALL PRIVILEGES ON dappykit_apps.* TO 'dappykit_apps'@'localhost'; FLUSH PRIVILEGES;"
+   ```
+
+6. Run migrations and build backend:
+   ```sh
+   npm run migrate -- --env production
+   npm run build
+   ```
+
+7. Deploy with PM2:
+
+   ```sh
+   npm install -g pm2
+   npm install -g typescript ts-node
+   pm2 start src/index.ts --name web4 --interpreter ts-node
+   pm2 save
+   pm2 startup  # Follow instructions to enable startup on boot
+   ```
+
+   Note: Alternatively, you can deploy compiled JavaScript version if preferred:
+   ```sh
+   npm install -g pm2
+   npm run build
+   pm2 start dist/index.js --name dappykit-backend
+   pm2 save
+   pm2 startup
+   ```
+
+8. Configure web server (Nginx) to serve static files and proxy API requests:
+   ```nginx
+   server {
+       listen 80;
+       server_name your-domain.com;
+       
+       # Serve frontend static files
+       location / {
+           root /path/to/web4-apps/dist;
+           try_files $uri $uri/ /index.html;
+       }
+       
+       # Proxy API requests to backend
+       location /api {
+           proxy_pass http://localhost:3001;
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection 'upgrade';
+           proxy_set_header Host $host;
+           proxy_cache_bypass $http_upgrade;
+       }
+   }
+   ```
+
+9. Restart Nginx:
+   ```sh
+   sudo service nginx restart
+   ```
+
+### Running Backend with PM2
+
+[PM2](https://pm2.keymetrics.io/) is a process manager for Node.js applications that helps keep your application running in production.
+
+#### Installing PM2
+
+```sh
+npm install -g pm2
+```
+
+#### Building the Backend for Production
+
+This step is optional if you're running TypeScript directly with ts-node:
+
+```sh
+cd backend
+npm run build
+```
+
+#### Setting Up Environment Variables
+
+Make sure you have your production environment variables set up in `.env` in the backend directory:
+
+```sh
+# Copy example environment file
+cp .env.example .env
+
+# Edit with your production settings
+nano .env
+```
+
+#### Starting the Backend
+
+Start TypeScript directly with PM2:
+
+```sh
+cd backend
+pm2 start src/index.ts --name dappykit-backend --interpreter ts-node
+```
+
+You can also start with specific environment variables:
+
+```sh
+pm2 start src/index.ts --name dappykit-backend --interpreter ts-node --env production
+```
+
+Alternatively, if you prefer using compiled JavaScript:
+
+```sh
+cd backend
+npm run build
+pm2 start dist/index.js --name dappykit-backend
+```
+
+#### Managing the Backend Process
+
+```sh
+# Check status
+pm2 status
+
+# View logs
+pm2 logs dappykit-backend
+
+# Restart the backend
+pm2 restart dappykit-backend
+
+# Stop the backend
+pm2 stop dappykit-backend
+
+# Remove from PM2
+pm2 delete dappykit-backend
+```
+
+#### Auto-restart on Server Reboot
+
+Save the PM2 process list and configure it to start on boot:
+
+```sh
+pm2 save
+pm2 startup
+```
+
+Then follow the instructions provided by the `pm2 startup` command.
+
 ## 📁 Project Structure
 
 ```

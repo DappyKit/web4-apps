@@ -96,9 +96,9 @@ const SidebarNav = memo(
           <hr className="my-3" />
 
           <ul className="nav flex-column mb-auto">
-            <NavItem to="/settings" icon="gear-wide-connected">
-              Settings
-            </NavItem>
+            {/*<NavItem to="/settings" icon="gear-wide-connected">*/}
+            {/*  Settings*/}
+            {/*</NavItem>*/}
             <li className="nav-item">
               <button
                 onClick={onLogout}
