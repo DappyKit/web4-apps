@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "deploy": "rm -rf .temp-build && mkdir -p .temp-build && tsc -b && vite build --outDir .temp-build && rm -rf dist && mv .temp-build dist",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:check": "eslint 'src/**/*.{ts,tsx}' 'backend/src/**/*.ts' 'backend/migrations/**/*.ts' --max-warnings 0",
     "lint:ui": "eslint 'src/**/*.{ts,tsx}' --max-warnings 0",
