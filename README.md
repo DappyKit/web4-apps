@@ -113,6 +113,21 @@ A Web3 application platform built with React, TypeScript, and Vite that allows u
 
 3. Access the application at http://localhost:5173
 
+### Running Migrations
+
+#### Development Environment
+```sh
+npm run migrate
+```
+
+#### Production Environment
+```sh
+# Make sure your .env file is properly configured with production database credentials
+npm run migrate -- --env production
+```
+
+> **Note:** For production migrations, ensure your .env file is in the correct location (backend root directory) with proper database credentials (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME).
+
 ### Starting with a fresh database
 
 If you need to reset the database and start fresh:
