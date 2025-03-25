@@ -111,7 +111,9 @@ export function MainNoAuth(): React.JSX.Element {
                   <ul className="list-unstyled mb-0">
                     <li className="d-flex align-items-center mb-3">
                       <i className="bi bi-star-fill text-warning me-2 d-flex align-items-center"></i>
-                      <span>Top 200 creators: <strong>50 OP</strong> Tokens each</span>
+                      <span>
+                        Top 200 creators: <strong>50 OP</strong> Tokens each
+                      </span>
                     </li>
                   </ul>
                   <div className="mt-4">
