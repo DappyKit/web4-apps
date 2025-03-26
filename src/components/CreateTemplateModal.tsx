@@ -81,7 +81,7 @@ export function CreateTemplateModal({
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label>JSON Data</Form.Label>
+            <Form.Label>JSON Schema</Form.Label>
             <Form.Control
               as="textarea"
               name="jsonData"
