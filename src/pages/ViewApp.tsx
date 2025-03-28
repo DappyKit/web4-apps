@@ -184,16 +184,30 @@ export function ViewApp(): React.JSX.Element {
 
   return (
     <div className="container mt-4 mb-5">
-      <div className="d-flex align-items-center mb-4">
-        <Link
-          to="/my-apps"
-          className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center me-3"
-          style={{ width: '42px', height: '42px' }}
-        >
-          <i className="bi bi-arrow-left" style={{ lineHeight: 0 }}></i>
-        </Link>
-        <h2 className="m-0">{app.name}</h2>
-        <div className="ms-auto d-flex">
+      <div className="mb-4">
+        <div className="d-flex align-items-center mb-3">
+          <Link
+            to="/my-apps"
+            className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center me-3"
+            style={{ width: '42px', height: '42px' }}
+          >
+            <i className="bi bi-arrow-left" style={{ lineHeight: 0 }}></i>
+          </Link>
+          <h2 className="m-0">{app.name}</h2>
+          {/* Buttons for desktop view - hidden on mobile */}
+          <div className="ms-auto d-none d-md-flex">
+            <Button variant="primary" size="sm" className="d-flex align-items-center me-2" onClick={handleDownloadJson}>
+              <i className="bi bi-download me-1"></i> Download JSON
+            </Button>
+            {isOwner && (
+              <Button variant="outline-danger" size="sm" onClick={confirmDelete} disabled={isDeleting}>
+                {isDeleting ? 'Deleting...' : 'Delete App'}
+              </Button>
+            )}
+          </div>
+        </div>
+        {/* Buttons for mobile view - hidden on desktop */}
+        <div className="d-flex d-md-none ps-4">
           <Button variant="primary" size="sm" className="d-flex align-items-center me-2" onClick={handleDownloadJson}>
             <i className="bi bi-download me-1"></i> Download JSON
           </Button>
