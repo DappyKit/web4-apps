@@ -6,6 +6,7 @@ import { createAppsRouter } from './routes/apps'
 import { createUsersRouter } from './routes/users'
 import { createTemplatesRouter } from './routes/templates'
 import { createAiRouter } from './routes/ai'
+import { createTelegramRouter } from './routes/telegram'
 import { createNotificationService } from './services/notification'
 import cors from 'cors'
 import path from 'path'
@@ -55,6 +56,7 @@ app.use('/api', createAppsRouter(db, notificationService))
 app.use('/api', createUsersRouter(db))
 app.use('/api/templates', createTemplatesRouter(db, notificationService))
 app.use('/api/ai', createAiRouter(db))
+app.use('/api/telegram', createTelegramRouter(db))
 
 const port = process.env.PORT || 3001
 app.listen(port, () => {
