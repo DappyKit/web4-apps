@@ -249,8 +249,12 @@ export function ViewApp(): React.JSX.Element {
             </li>
             <li className="mb-3">
               <strong className="d-block mb-2">
-                Download the app data and place it into <code>public/data.json</code>, or to the path specified in README.md of the <a
-                href={template?.url} target="_blank" rel="noreferrer nofollow">template</a>.
+                Download the app data and place it into <code>public/data.json</code>, or to the path specified in
+                README.md of the{' '}
+                <a href={template?.url} target="_blank" rel="noreferrer nofollow">
+                  template
+                </a>
+                .
               </strong>
               <div className="d-grid d-md-block mt-2">
                 <Button

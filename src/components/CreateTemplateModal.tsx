@@ -91,6 +91,13 @@ export function CreateTemplateModal({
               isInvalid={!!errors.jsonData}
               style={{ fontFamily: 'monospace' }}
             />
+            <Form.Text className="text-muted">
+              Schema definitions, validation rules and examples can be found in the{' '}
+              <a href="https://github.com/DappyKit/web4-apps-specification" target="_blank" rel="noopener noreferrer">
+                Web4 Apps Specification
+              </a>{' '}
+              repository.
+            </Form.Text>
             {errors.jsonData && <Form.Control.Feedback type="invalid">{errors.jsonData}</Form.Control.Feedback>}
           </Form.Group>
 
