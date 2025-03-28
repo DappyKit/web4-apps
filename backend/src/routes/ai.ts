@@ -24,7 +24,8 @@ export function createAiRouter(db: Knex, aiServiceOverride?: AiService): express
       apiKey: OPENAI_API_KEY,
       model: 'gpt-4o-mini', // Use gpt-4o-mini model
       temperature: 0.7,
-      maxTokens: 50000,
+      // 16384 is the maximum token limit for gpt-4o-mini
+      maxTokens: 16384,
     })
   }
 
