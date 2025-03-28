@@ -31,19 +31,16 @@ export function TemplateSelectionModal({
           <Table striped bordered hover responsive>
             <thead>
               <tr>
-                <th>ID</th>
+                <th>Actions</th>
                 <th>Title</th>
                 <th>Description</th>
-                <th>Action</th>
+                <th>ID</th>
               </tr>
             </thead>
             <tbody>
               {templates.map(template => (
                 <tr key={template.id}>
-                  <td>{template.id}</td>
-                  <td>{template.title}</td>
-                  <td>{template.description ?? '-'}</td>
-                  <td>
+                  <td className="text-center">
                     <Button
                       variant="primary"
                       size="sm"
@@ -55,6 +52,9 @@ export function TemplateSelectionModal({
                       Select
                     </Button>
                   </td>
+                  <td>{template.title}</td>
+                  <td>{template.description ?? '-'}</td>
+                  <td>{template.id}</td>
                 </tr>
               ))}
             </tbody>

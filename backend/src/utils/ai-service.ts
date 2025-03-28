@@ -85,6 +85,8 @@ export class AiService {
         max_tokens: this.maxTokens,
       })
 
+      console.log('OpenAI API response:', JSON.stringify(completion))
+
       const rawResponse = completion.choices[0]?.message?.content || ''
 
       // Extract token usage information
