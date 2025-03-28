@@ -2,7 +2,12 @@ import type { Knex } from 'knex'
 import * as dotenv from 'dotenv'
 import path from 'path'
 
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') })
+// Determine if we're running from dist or directly from src
+const isDist = __dirname.includes('dist')
+const envPath = isDist ? path.resolve(__dirname, '../../.env') : path.resolve(__dirname, '../.env')
+
+// Load environment variables with path that works in both dev and production
+dotenv.config({ path: envPath })
 
 const config: { [key: string]: Knex.Config } = {
   development: {
@@ -14,7 +19,7 @@ const config: { [key: string]: Knex.Config } = {
       database: process.env.DB_NAME || 'dappykit_apps',
     },
     migrations: {
-      directory: path.join(__dirname, '..', 'migrations'),
+      directory: isDist ? path.join(__dirname, '../../migrations') : path.join(__dirname, '../migrations'),
       extension: 'ts',
     },
   },
@@ -27,7 +32,7 @@ const config: { [key: string]: Knex.Config } = {
       database: process.env.DB_NAME,
     },
     migrations: {
-      directory: path.join(__dirname, '..', 'migrations'),
+      directory: isDist ? path.join(__dirname, '../../migrations') : path.join(__dirname, '../migrations'),
       extension: 'ts',
     },
   },

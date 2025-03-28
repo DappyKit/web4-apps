@@ -8,9 +8,14 @@ import { createTemplatesRouter } from './routes/templates'
 import { createAiRouter } from './routes/ai'
 import { createNotificationService } from './services/notification'
 import cors from 'cors'
+import path from 'path'
 
-// Load environment variables
-dotenv.config()
+// Determine if we're running from dist or directly from src
+const isDist = __dirname.includes('dist')
+const envPath = isDist ? path.resolve(__dirname, '../../.env') : path.resolve(__dirname, '../.env')
+
+// Load environment variables with path that works in both dev and production
+dotenv.config({ path: envPath })
 
 // Validate required env vars
 if (!process.env.DB_HOST || !process.env.DB_USER || !process.env.DB_NAME) {
