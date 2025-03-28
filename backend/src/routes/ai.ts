@@ -71,7 +71,7 @@ export function createAiRouter(db: Knex, aiServiceOverride?: AiService): express
       }
 
       // Log the received request
-      console.log(`Processing prompt against template ${templateId}`)
+      console.log(`Processing prompt against template ${templateId}. Prompt: ${prompt}.`)
 
       // Default system prompt for JSON generation
       const defaultSystemPrompt = `You are a specialized JSON generator. Your task is to create a valid JSON object that matches the provided schema based on the user's request.`
