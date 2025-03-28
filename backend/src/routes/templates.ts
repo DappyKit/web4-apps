@@ -125,6 +125,38 @@ export function createTemplatesRouter(db: Knex, notificationService: INotificati
     }
   })
 
+  // Get both user's templates and public templates in a single request
+  router.get('/all-templates', async (req: Request, res: Response) => {
+    try {
+      const address = req.query.address as string
+
+      if (!address) {
+        return res.status(400).json({ error: 'Address parameter is required' })
+      }
+
+      // Get user's templates
+      const userTemplates = await db<Template>('templates')
+        .whereRaw('LOWER(owner_address) = ?', [address.toLowerCase()])
+        .whereNull('deleted_at')
+        .orderBy('id', 'desc')
+
+      // Get public templates (excluding user's templates)
+      const publicTemplates = await db<Template>('templates')
+        .whereRaw('LOWER(owner_address) != ?', [address.toLowerCase()])
+        .where('moderated', true)
+        .whereNull('deleted_at')
+        .orderBy('id', 'desc')
+
+      res.json({
+        userTemplates,
+        publicTemplates
+      })
+    } catch (error) {
+      console.error('Error fetching templates:', error)
+      res.status(500).json({ error: 'Internal server error' })
+    }
+  })
+
   // Delete template
   router.delete('/:id', requireAuth, async (req: DeleteTemplateRequest, res: Response) => {
     try {

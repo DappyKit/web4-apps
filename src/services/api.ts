@@ -552,3 +552,41 @@ export async function getWinners(): Promise<WinnersResponse> {
     throw error
   }
 }
+
+/**
+ * Interface for combined templates response
+ */
+export interface CombinedTemplatesResponse {
+  userTemplates: Template[]
+  publicTemplates: Template[]
+}
+
+/**
+ * Get both user's templates and public templates in a single request
+ * @param {string} address - User's wallet address
+ * @returns {Promise<CombinedTemplatesResponse>} Object with userTemplates and publicTemplates arrays
+ */
+export async function getAllTemplatesForUser(address: string): Promise<CombinedTemplatesResponse> {
+  if (!address) {
+    throw new Error('Wallet address is required')
+  }
+
+  try {
+    const response = await fetch(`/api/templates/all-templates?address=${address}`, {
+      headers: {
+        'x-wallet-address': address,
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = (await response.json()) as ApiErrorResponse
+      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`)
+    }
+
+    const data = (await response.json()) as CombinedTemplatesResponse
+    return data
+  } catch (error) {
+    console.error('Error fetching templates:', error)
+    throw error
+  }
+}

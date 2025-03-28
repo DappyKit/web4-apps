@@ -20,7 +20,7 @@ vi.mock('../../services/api', () => ({
   getMyApps: vi.fn(),
   deleteApp: vi.fn(),
   createApp: vi.fn(),
-  getMyTemplates: vi.fn(),
+  getAllTemplatesForUser: vi.fn(),
 }))
 
 describe('MyApps Component', () => {
@@ -40,7 +40,10 @@ describe('MyApps Component', () => {
     })
     ;(api.checkUserRegistration as Mock).mockResolvedValue(true)
     ;(api.getMyApps as Mock).mockResolvedValue([])
-    ;(api.getMyTemplates as Mock).mockResolvedValue([])
+    ;(api.getAllTemplatesForUser as Mock).mockResolvedValue({
+      userTemplates: [],
+      publicTemplates: [],
+    })
   })
 
   it('displays loading state initially', () => {
@@ -49,7 +52,7 @@ describe('MyApps Component', () => {
         /* never resolves */
       }),
     )
-    ;(api.getMyTemplates as Mock).mockReturnValue(
+    ;(api.getAllTemplatesForUser as Mock).mockReturnValue(
       new Promise(() => {
         /* never resolves */
       }),

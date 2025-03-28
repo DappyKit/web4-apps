@@ -16,8 +16,12 @@ const AuthProvider = ({ children }: { children: ReactNode }): ReactNode => {
 
   useEffect(() => {
     if (isConnected && address) {
+      // Store the user's wallet address in localStorage for template ownership check
+      localStorage.setItem('userAddress', address)
       dispatch(login({ address }))
     } else {
+      // Remove the address from localStorage when the user disconnects
+      localStorage.removeItem('userAddress')
       dispatch(logout())
     }
   }, [isConnected, address, dispatch])

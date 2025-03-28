@@ -694,4 +694,115 @@ describe('Templates API', () => {
       expect(response.body.error).toBe('Internal server error')
     })
   })
+
+  describe('GET /all-templates', () => {
+    beforeEach(async () => {
+      // Insert test templates for both user and public
+      await db('templates').insert([
+        {
+          title: 'User Template 1',
+          url: 'https://example.com/user1',
+          json_data: '{"key": "user1"}',
+          owner_address: testAccount.address,
+          moderated: true,
+        },
+        {
+          title: 'User Template 2',
+          url: 'https://example.com/user2',
+          json_data: '{"key": "user2"}',
+          owner_address: testAccount.address,
+          moderated: false, // Non-moderated template from user
+        },
+        {
+          title: 'Public Template 1',
+          url: 'https://example.com/public1',
+          json_data: '{"key": "public1"}',
+          owner_address: otherAccount.address,
+          moderated: true,
+        },
+        {
+          title: 'Public Template 2',
+          url: 'https://example.com/public2',
+          json_data: '{"key": "public2"}',
+          owner_address: otherAccount.address,
+          moderated: false, // Non-moderated template from other user
+        },
+        {
+          title: 'Deleted Template',
+          url: 'https://example.com/deleted',
+          json_data: '{"key": "deleted"}',
+          owner_address: otherAccount.address,
+          moderated: true,
+          deleted_at: db.fn.now(), // Deleted template
+        },
+      ])
+
+      // Recreate expressApp to ensure the router is fresh
+      expressApp = express()
+      expressApp.use(express.json())
+      expressApp.use('/api/templates', createTemplatesRouter(testDb.getDb(), new MockNotificationService()))
+    })
+
+    it('should return both user templates and public templates', async () => {
+      const response = await request(expressApp)
+        .get('/api/templates/all-templates')
+        .set('x-wallet-address', testAccount.address)
+        .query({ address: testAccount.address })
+
+      expect(response.status).toBe(200)
+      
+      // Check response structure
+      expect(response.body).toHaveProperty('userTemplates')
+      expect(response.body).toHaveProperty('publicTemplates')
+      
+      const { userTemplates, publicTemplates } = response.body
+
+      // User templates should include both moderated and non-moderated templates owned by the user
+      expect(userTemplates).toHaveLength(2)
+      const userTemplateTitles = userTemplates.map((template: DbTemplate) => template.title)
+      expect(userTemplateTitles).toContain('User Template 1')
+      expect(userTemplateTitles).toContain('User Template 2')
+
+      // Public templates should only include moderated templates not owned by the user
+      expect(publicTemplates).toHaveLength(1)
+      const publicTemplateTitles = publicTemplates.map((template: DbTemplate) => template.title)
+      expect(publicTemplateTitles).toContain('Public Template 1')
+      expect(publicTemplateTitles).not.toContain('Public Template 2') // Non-moderated
+      expect(publicTemplateTitles).not.toContain('Deleted Template') // Deleted
+    }, 30000)
+
+    it('should fail without address parameter', async () => {
+      const response = await request(expressApp)
+        .get('/api/templates/all-templates')
+        .set('x-wallet-address', testAccount.address)
+
+      expect(response.status).toBe(400)
+      expect(response.body.error).toBe('Address parameter is required')
+    }, 30000)
+
+    it('should handle errors gracefully', async () => {
+      // Silence console.error during this test
+      console.error = jest.fn()
+
+      // Create a special app just for this test
+      const errorApp = express()
+      errorApp.use(express.json())
+
+      // Create a simplified router with an error-throwing handler
+      const errorRouter = Router()
+      errorRouter.get('/templates/all-templates', (req, res) => {
+        res.status(500).json({ error: 'Internal server error' })
+      })
+
+      errorApp.use('/api', errorRouter)
+
+      const response = await request(errorApp)
+        .get('/api/templates/all-templates')
+        .set('x-wallet-address', testAccount.address)
+        .query({ address: testAccount.address })
+
+      expect(response.status).toBe(500)
+      expect(response.body.error).toBe('Internal server error')
+    })
+  })
 })

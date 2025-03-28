@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAccount, useSignMessage } from 'wagmi'
 import { Alert, Button } from 'react-bootstrap'
-import { getMyApps, deleteApp, getMyTemplates } from '../services/api'
+import { getMyApps, deleteApp, getAllTemplatesForUser } from '../services/api'
 import type { App, Template } from '../services/api'
 import { AppList } from '../components/AppList'
 import { Pagination } from '../components/Pagination'
@@ -48,8 +48,10 @@ export function MyApps(): React.JSX.Element {
 
     setIsLoading(true)
     try {
-      const templates = await getMyTemplates(address)
-      setTemplates(templates)
+      // Get both user templates and public templates in a single request
+      const combinedTemplates = await getAllTemplatesForUser(address)
+      // Combine userTemplates and publicTemplates for the selection modal
+      setTemplates([...combinedTemplates.userTemplates, ...combinedTemplates.publicTemplates])
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load templates'
       setError(errorMessage)
