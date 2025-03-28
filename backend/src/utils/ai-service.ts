@@ -152,6 +152,7 @@ export class AiService {
 ${templateSystemPrompt}
 
 You are a specialized JSON generation assistant. Your primary task is to generate valid JSON data that STRICTLY conforms to the provided JSON Schema.
+- Do not format the JSON with indentation or line breaks. Output must be a single-line compact JSON object.
 
 ## INSTRUCTIONS:
 1. Analyze the schema structure carefully before generating any content.
@@ -169,7 +170,7 @@ You are a specialized JSON generation assistant. Your primary task is to generat
 5. Generate meaningful, contextually appropriate content based on the user's prompt.
 
 ## JSON SCHEMA:
-${JSON.stringify(templateSchema, null, 2)}
+${JSON.stringify(templateSchema)}
 `
 
     systemPrompt += `
