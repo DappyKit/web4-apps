@@ -35,26 +35,21 @@ export function TemplateSelectionModal({
       )
     })
 
-    const userTemps = filteredTemplates.filter(
-      template => template.owner_address.toLowerCase() === currentUserAddress
-    )
+    const userTemps = filteredTemplates.filter(template => template.owner_address.toLowerCase() === currentUserAddress)
     const publicTemps = filteredTemplates.filter(
-      template => template.owner_address.toLowerCase() !== currentUserAddress
+      template => template.owner_address.toLowerCase() !== currentUserAddress,
     )
 
     return {
       userTemplates: userTemps,
       publicTemplates: publicTemps,
-      allFilteredTemplates: filteredTemplates
+      allFilteredTemplates: filteredTemplates,
     }
   }, [templates, searchTerm, currentUserAddress])
 
   // Get the templates to display based on active tab
-  const templatesForActiveTab = activeTab === 'all' 
-    ? allFilteredTemplates 
-    : activeTab === 'mine' 
-      ? userTemplates 
-      : publicTemplates
+  const templatesForActiveTab =
+    activeTab === 'all' ? allFilteredTemplates : activeTab === 'mine' ? userTemplates : publicTemplates
 
   return (
     <Modal show={show} onHide={onHide} size="lg" centered>
@@ -68,7 +63,7 @@ export function TemplateSelectionModal({
               type="text"
               placeholder="Search templates..."
               value={searchTerm}
-              onChange={(e) => {
+              onChange={e => {
                 setSearchTerm(e.target.value)
               }}
             />
@@ -77,8 +72,8 @@ export function TemplateSelectionModal({
 
         <Nav variant="tabs" className="mb-3">
           <Nav.Item>
-            <Nav.Link 
-              active={activeTab === 'all'} 
+            <Nav.Link
+              active={activeTab === 'all'}
               onClick={() => {
                 setActiveTab('all')
               }}
@@ -87,8 +82,8 @@ export function TemplateSelectionModal({
             </Nav.Link>
           </Nav.Item>
           <Nav.Item>
-            <Nav.Link 
-              active={activeTab === 'mine'} 
+            <Nav.Link
+              active={activeTab === 'mine'}
               onClick={() => {
                 setActiveTab('mine')
               }}
@@ -97,8 +92,8 @@ export function TemplateSelectionModal({
             </Nav.Link>
           </Nav.Item>
           <Nav.Item>
-            <Nav.Link 
-              active={activeTab === 'public'} 
+            <Nav.Link
+              active={activeTab === 'public'}
               onClick={() => {
                 setActiveTab('public')
               }}
@@ -110,11 +105,11 @@ export function TemplateSelectionModal({
 
         {templatesForActiveTab.length === 0 ? (
           <p className="text-center py-3">
-            {activeTab === 'mine' 
-              ? "You don't have any templates yet." 
-              : activeTab === 'public' 
-                ? "No public templates found." 
-                : "No templates found."}
+            {activeTab === 'mine'
+              ? "You don't have any templates yet."
+              : activeTab === 'public'
+                ? 'No public templates found.'
+                : 'No templates found.'}
           </p>
         ) : (
           <Table striped bordered hover responsive>

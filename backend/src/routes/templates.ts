@@ -149,7 +149,7 @@ export function createTemplatesRouter(db: Knex, notificationService: INotificati
 
       res.json({
         userTemplates,
-        publicTemplates
+        publicTemplates,
       })
     } catch (error) {
       console.error('Error fetching templates:', error)

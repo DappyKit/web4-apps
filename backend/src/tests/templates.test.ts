@@ -750,22 +750,27 @@ describe('Templates API', () => {
         .query({ address: testAccount.address })
 
       expect(response.status).toBe(200)
-      
+
       // Check response structure
       expect(response.body).toHaveProperty('userTemplates')
       expect(response.body).toHaveProperty('publicTemplates')
-      
-      const { userTemplates, publicTemplates } = response.body
+
+      interface TemplateResponse {
+        userTemplates: { title: string }[]
+        publicTemplates: { title: string }[]
+      }
+
+      const { userTemplates, publicTemplates } = response.body as TemplateResponse
 
       // User templates should include both moderated and non-moderated templates owned by the user
       expect(userTemplates).toHaveLength(2)
-      const userTemplateTitles = userTemplates.map((template: DbTemplate) => template.title)
+      const userTemplateTitles = userTemplates.map(template => template.title)
       expect(userTemplateTitles).toContain('User Template 1')
       expect(userTemplateTitles).toContain('User Template 2')
 
       // Public templates should only include moderated templates not owned by the user
       expect(publicTemplates).toHaveLength(1)
-      const publicTemplateTitles = publicTemplates.map((template: DbTemplate) => template.title)
+      const publicTemplateTitles = publicTemplates.map(template => template.title)
       expect(publicTemplateTitles).toContain('Public Template 1')
       expect(publicTemplateTitles).not.toContain('Public Template 2') // Non-moderated
       expect(publicTemplateTitles).not.toContain('Deleted Template') // Deleted
