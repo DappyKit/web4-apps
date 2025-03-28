@@ -249,7 +249,8 @@ export function ViewApp(): React.JSX.Element {
             </li>
             <li className="mb-3">
               <strong className="d-block mb-2">
-                Download app data and place it in the project&apos;s <code>src/data</code> directory:
+                Download the app data and place it into <code>public/data.json</code>, or to the path specified in README.md of the <a
+                href={template?.url} target="_blank" rel="noreferrer nofollow">template</a>.
               </strong>
               <div className="d-grid d-md-block mt-2">
                 <Button
@@ -263,13 +264,11 @@ export function ViewApp(): React.JSX.Element {
               </div>
             </li>
             <li className="mb-3">
-              <strong className="d-block mb-2">Deploy using Netlify:</strong>
+              <strong className="d-block mb-2">Deploy using Vercel:</strong>
               <div className="bg-light p-3 rounded-3 border">
-                <code>npm install -g netlify-cli</code>
+                <code>npm install -g vercel</code>
                 <br />
-                <code>npm run build</code>
-                <br />
-                <code>netlify deploy</code>
+                <code>vercel</code>
               </div>
             </li>
           </ol>
