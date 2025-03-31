@@ -148,27 +148,52 @@ export function Dashboard(): JSX.Element {
       <div className="d-flex justify-content-center flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 className="text-center">Dashboard</h1>
       </div>
-      <p className="text-center text-muted">
+      <p className="text-center text-muted mb-5">
         Welcome to your Web4 Apps dashboard. Manage your apps and templates in one place.
       </p>
 
       {isRegistered === false && (
-        <div className="alert alert-info" role="alert">
-          <p>You need to register to use Web4 Apps.</p>
-          <button
-            className="btn btn-primary"
-            onClick={() => {
-              void handleRegister()
-            }}
-            disabled={isRegistering}
-          >
-            {isRegistering ? 'Registering...' : 'Register Now'}
-          </button>
+        <div
+          className="alert alert-primary shadow-sm border-0 rounded-4 p-4 position-relative overflow-hidden"
+          role="alert"
+        >
+          <div className="row align-items-center">
+            <div className="col-md-8">
+              <h4 className="alert-heading mb-2">Ready to join Web4 World?</h4>
+              <p className="mb-md-0">
+                Register now to create apps, share templates, and join our
+                developer community.
+              </p>
+            </div>
+            <div className="col-md-4 text-md-end mt-3 mt-md-0">
+              <button
+                className="btn btn-primary btn-lg px-4 fw-medium"
+                onClick={() => {
+                  void handleRegister()
+                }}
+                disabled={isRegistering}
+              >
+                {isRegistering ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Registering...
+                  </>
+                ) : (
+                  'Register Now'
+                )}
+              </button>
+            </div>
+          </div>
           {error && (
-            <div className="alert alert-danger mt-3" role="alert">
+            <div className="alert alert-danger mt-3 mb-0" role="alert">
               {error}
             </div>
           )}
+          <div className="position-absolute top-0 end-0 mt-n4 me-n4 d-none d-md-block">
+            <div className="text-primary opacity-10" style={{ fontSize: '150px' }}>
+              <i className="bi bi-box-arrow-in-right"></i>
+            </div>
+          </div>
         </div>
       )}
 
