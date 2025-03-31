@@ -44,7 +44,8 @@ describe('Dashboard Component', () => {
     render(<Dashboard />)
 
     await waitFor(() => {
-      expect(screen.getByText(/You need to register/)).toBeInTheDocument()
+      expect(screen.getByText(/Ready to join Web4 World\?/)).toBeInTheDocument()
+      expect(screen.getByText(/Register now to create apps, share templates/)).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'Register Now' })).toBeInTheDocument()
     })
   })

@@ -160,10 +160,7 @@ export function Dashboard(): JSX.Element {
           <div className="row align-items-center">
             <div className="col-md-8">
               <h4 className="alert-heading mb-2">Ready to join Web4 World?</h4>
-              <p className="mb-md-0">
-                Register now to create apps, share templates, and join our
-                developer community.
-              </p>
+              <p className="mb-md-0">Register now to create apps, share templates, and join our developer community.</p>
             </div>
             <div className="col-md-4 text-md-end mt-3 mt-md-0">
               <button
