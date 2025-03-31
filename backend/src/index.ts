@@ -53,7 +53,7 @@ app.use((_err: unknown, _req: express.Request, res: express.Response, _next: exp
 
 // Routes
 app.use('/api', createAppsRouter(db, notificationService))
-app.use('/api', createUsersRouter(db))
+app.use('/api', createUsersRouter(db, notificationService))
 app.use('/api/templates', createTemplatesRouter(db, notificationService))
 app.use('/api/ai', createAiRouter(db))
 app.use('/api/telegram', createTelegramRouter(db))

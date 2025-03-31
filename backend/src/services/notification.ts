@@ -17,6 +17,14 @@ export interface INotificationService {
    * @returns {Promise<boolean>} - Whether the notification was sent successfully
    */
   sendTemplateCreationNotification(title: string, description: string): Promise<boolean>
+
+  /**
+   * Sends a notification about a newly registered user
+   * @param {string} address - The ETH address of the registered user
+   * @param {number} totalUsers - The total count of registered users
+   * @returns {Promise<boolean>} - Whether the notification was sent successfully
+   */
+  sendUserRegistrationNotification(address: string, totalUsers: number): Promise<boolean>
 }
 
 /**
@@ -55,6 +63,17 @@ export class TelegramNotificationService implements INotificationService {
    */
   async sendTemplateCreationNotification(title: string, description: string): Promise<boolean> {
     const message = `🆕 New Template Created!\n\n📋 *${title}*\n\n${description}`
+    return this.sendTelegramMessage(message)
+  }
+
+  /**
+   * Sends a notification about a newly registered user
+   * @param {string} address - The ETH address of the registered user
+   * @param {number} totalUsers - The total count of registered users
+   * @returns {Promise<boolean>} - Whether the notification was sent successfully
+   */
+  async sendUserRegistrationNotification(address: string, totalUsers: number): Promise<boolean> {
+    const message = `👤 New User Registered!\n\n🔑 *${address}*\n\n📊 Total Users: *${totalUsers}*`
     return this.sendTelegramMessage(message)
   }
 
@@ -112,6 +131,10 @@ export function createNotificationService(): INotificationService {
     },
     async sendTemplateCreationNotification(title: string, description: string): Promise<boolean> {
       console.log(`[NOTIFICATION] New Template Created: ${title} - ${description}`)
+      return true
+    },
+    async sendUserRegistrationNotification(address: string, totalUsers: number): Promise<boolean> {
+      console.log(`[NOTIFICATION] New User Registered: ${address} - Total Users: ${totalUsers}`)
       return true
     },
   }

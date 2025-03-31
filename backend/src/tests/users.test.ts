@@ -5,6 +5,7 @@ import { createUsersRouter } from '../routes/users'
 import { type PrivateKeyAccount } from 'viem/accounts'
 import { createWalletClient } from 'viem'
 import { TestDb } from './utils/testDb'
+import { MockNotificationService } from './__mocks__/notification'
 
 describe('Users API', () => {
   let app: express.Application
@@ -12,6 +13,7 @@ describe('Users API', () => {
   let db: Knex
   let testAccount: PrivateKeyAccount
   let walletClient: ReturnType<typeof createWalletClient>
+  let mockNotificationService: MockNotificationService
 
   beforeAll(async () => {
     // Initialize test database and accounts
@@ -27,9 +29,10 @@ describe('Users API', () => {
       // Apply migrations before each test (creates users automatically)
       await testDb.setupTestDb(false) // Don't create users automatically for user tests
 
+      mockNotificationService = new MockNotificationService()
       app = express()
       app.use(express.json())
-      app.use('/api', createUsersRouter(testDb.getDb()))
+      app.use('/api', createUsersRouter(testDb.getDb(), mockNotificationService))
     } catch (error) {
       console.error('Setup failed:', error)
       throw error
@@ -80,6 +83,13 @@ describe('Users API', () => {
       // Verify user was created
       const user = await db('users').where('address', testAccount.address.toLowerCase()).first()
       expect(user).toBeTruthy()
+
+      // Verify notification was sent
+      const notifications = mockNotificationService.getNotificationsSent()
+      expect(notifications.length).toBe(1)
+      expect(notifications[0].type).toBe('user')
+      expect(notifications[0].address).toBe(testAccount.address.toLowerCase())
+      expect(notifications[0].totalUsers).toBe(1)
     })
 
     it('should prevent duplicate registration', async () => {
@@ -158,7 +168,7 @@ describe('Users API', () => {
 
       const mockApp = express()
       mockApp.use(express.json())
-      mockApp.use('/api', createUsersRouter(mockDb))
+      mockApp.use('/api', createUsersRouter(mockDb, mockNotificationService))
 
       const response = await request(mockApp).get(`/api/check/${testAccount.address}`)
 
@@ -181,7 +191,7 @@ describe('Users API', () => {
 
       const mockApp = express()
       mockApp.use(express.json())
-      mockApp.use('/api', createUsersRouter(mockDb))
+      mockApp.use('/api', createUsersRouter(mockDb, mockNotificationService))
 
       const response = await request(mockApp).post('/api/register').send({
         address: testAccount.address,
@@ -227,7 +237,7 @@ describe('Users API', () => {
 
       const mockApp = express()
       mockApp.use(express.json())
-      mockApp.use('/api', createUsersRouter(mockDb))
+      mockApp.use('/api', createUsersRouter(mockDb, mockNotificationService))
 
       const response = await request(mockApp).post('/api/register').send({
         address: testAccount.address,
@@ -297,7 +307,7 @@ describe('Users API', () => {
 
       const mockApp = express()
       mockApp.use(express.json())
-      mockApp.use('/api', createUsersRouter(mockDb))
+      mockApp.use('/api', createUsersRouter(mockDb, mockNotificationService))
 
       const response = await request(mockApp).get(`/api/check/${testAccount.address}`)
 
@@ -358,7 +368,7 @@ describe('Users API', () => {
 
       const mockApp = express()
       mockApp.use(express.json())
-      mockApp.use('/api', createUsersRouter(mockDb))
+      mockApp.use('/api', createUsersRouter(mockDb, mockNotificationService))
 
       const response = await request(mockApp).get('/api/with-app-counts')
 

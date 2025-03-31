@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { Knex } from 'knex'
 import { verifySignature } from '../utils/auth'
 import { CreateUserDTO, User } from '../types'
+import { INotificationService } from '../services/notification'
 
 /**
  * Message that must be signed by the user during registration
@@ -11,9 +12,10 @@ const REGISTRATION_MESSAGE = 'Web4 Apps Registration'
 /**
  * Creates and configures the users router
  * @param {Knex} db - The database connection instance
+ * @param {INotificationService} notificationService - The notification service to use
  * @returns {Router} Express router configured with user routes
  */
-export function createUsersRouter(db: Knex): Router {
+export function createUsersRouter(db: Knex, notificationService: INotificationService): Router {
   const router = Router()
 
   /**
@@ -196,6 +198,18 @@ export function createUsersRouter(db: Knex): Router {
 
       if (!user) {
         return res.status(500).json({ error: 'Internal server error' })
+      }
+
+      // Get total users count
+      const [totalUsersResult] = await db('users').count({ count: '*' })
+      const totalUsers = Number(totalUsersResult.count || 0)
+
+      // Send notification about new user registration
+      try {
+        await notificationService.sendUserRegistrationNotification(user.address.toLowerCase(), totalUsers)
+      } catch (error) {
+        console.error('Failed to send user registration notification:', error)
+        // Non-critical error, don't fail the request
       }
 
       res.status(201).json({ address: user.address.toLowerCase() })
