@@ -534,7 +534,6 @@ export function CreateAppModal({
                     disabled={isCreating || isAiLoading || !formData.templateId}
                     onClick={() => {
                       setShowAiModal(true)
-                      setAiUserInput('')
                     }}
                   >
                     {isAiLoading ? (
@@ -633,6 +632,17 @@ export function CreateAppModal({
         </Modal.Header>
         <Modal.Body>
           <Form>
+            <div className="mb-3 p-3 bg-light border rounded">
+              <h6 className="mb-2">✨ Enhance your AI prompt</h6>
+              <p className="mb-1 small">
+                <strong>Specify quantity:</strong> Include the number of items you need (e.g., &ldquo;Generate 5
+                products...&rdquo;)
+              </p>
+              <p className="mb-0 small">
+                <strong>Define your audience:</strong> Mention your target audience for more relevant content (e.g.,
+                &ldquo;...for a tech-savvy millennials market&rdquo;)
+              </p>
+            </div>
             <Form.Group className="mb-3">
               <Form.Label>Describe the data you want the AI to generate</Form.Label>
               <Form.Control
@@ -641,7 +651,7 @@ export function CreateAppModal({
                 onChange={e => {
                   setAiUserInput(e.target.value)
                 }}
-                placeholder="For example: Generate random user data with names, emails, and birthdays for a user management app..."
+                placeholder="For example: Generate 10 crypto quiz questions for non-tech users, with the first option always correct...."
                 rows={4}
               />
               <Form.Text className="text-muted">

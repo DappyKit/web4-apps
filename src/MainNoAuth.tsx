@@ -57,7 +57,7 @@ export function MainNoAuth(): React.JSX.Element {
                     <li className="d-flex align-items-center mb-3">
                       <i className="bi bi-check-circle-fill text-success me-2 d-flex align-items-center"></i>
                       <span>
-                        <strong>Start:</strong> March 28, 2025
+                        <strong>Start:</strong> April 1, 2025
                       </span>
                     </li>
                     <li className="d-flex align-items-center mb-3">
