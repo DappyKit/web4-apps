@@ -10,6 +10,11 @@ import { INotificationService } from '../services/notification'
 const REGISTRATION_MESSAGE = 'Web4 Apps Registration'
 
 /**
+ * Addresses to exclude from top creators listing
+ */
+const EXCLUDED_ADDRESSES = ['0x980F5aC0Fe183479B87f78E7892f8002fB9D5401']
+
+/**
  * Creates and configures the users router
  * @param {Knex} db - The database connection instance
  * @param {INotificationService} notificationService - The notification service to use
@@ -34,7 +39,9 @@ export function createUsersRouter(db: Knex, notificationService: INotificationSe
         win_1_amount?: string
       }>
 
-      const usersWithAppCounts = await db('users')
+      const lowercasedExcludedAddresses = EXCLUDED_ADDRESSES.map(addr => addr.toLowerCase())
+
+      let query = db('users')
         .select('users.address', 'users.win_1_amount')
         .count('apps.id as app_count')
         .join('apps', 'users.address', 'apps.owner_address')
@@ -44,13 +51,20 @@ export function createUsersRouter(db: Knex, notificationService: INotificationSe
         .orderBy('app_count', 'desc')
         .limit(100)
 
+      // Add an exclusion for each address
+      lowercasedExcludedAddresses.forEach(address => {
+        query = query.whereRaw('LOWER(users.address) != ?', [address])
+      })
+
+      const usersWithAppCounts = await query
+
       // Check if the requested user exists in the data
       let userRecord = null
       let userRank = -1
 
       if (userAddress) {
         // Get all users with app counts to find user's rank even if not in top 100
-        const allUsersWithAppCounts = await db('users')
+        let rankQuery = db('users')
           .select('users.address', 'users.win_1_amount')
           .count('apps.id as app_count')
           .join('apps', 'users.address', 'apps.owner_address')
@@ -58,6 +72,13 @@ export function createUsersRouter(db: Knex, notificationService: INotificationSe
           .having(db.raw('count(apps.id) >= 1'))
           .orderBy('users.win_1_amount', 'desc')
           .orderBy('app_count', 'desc')
+
+        // Add an exclusion for each address
+        lowercasedExcludedAddresses.forEach(address => {
+          rankQuery = rankQuery.whereRaw('LOWER(users.address) != ?', [address])
+        })
+
+        const allUsersWithAppCounts = await rankQuery
 
         // Find user's record and rank
         const userIndex = (allUsersWithAppCounts as RawQueryResult).findIndex(
