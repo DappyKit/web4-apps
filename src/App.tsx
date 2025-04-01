@@ -9,6 +9,7 @@ import { MainNoAuth } from './MainNoAuth'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { TopAppCreators } from './pages/TopAppCreators'
 import { Winners } from './pages/Winners'
+import { FeedbackButton } from './components/FeedbackButton'
 
 /**
  * Main content component that handles authentication state and routing
@@ -26,19 +27,27 @@ function AppContent(): React.JSX.Element {
   if (location.pathname === '/top-creators' || location.pathname === '/winners') {
     // If authenticated, show the content within MainLogged layout
     if (auth.isAuthenticated) {
-      return <MainLogged />
+      return (
+        <>
+          <MainLogged />
+          <FeedbackButton />
+        </>
+      )
     }
 
     // If not authenticated, show standalone view
     return (
-      <div className="overflow-x-hidden rounded-top-4 pt-2 pt-lg-4">
-        <Header />
-        <Routes>
-          <Route path="/top-creators" element={<TopAppCreators />} />
-          <Route path="/winners" element={<Winners />} />
-        </Routes>
-        <FooterNoAuth />
-      </div>
+      <>
+        <div className="overflow-x-hidden rounded-top-4 pt-2 pt-lg-4">
+          <Header />
+          <Routes>
+            <Route path="/top-creators" element={<TopAppCreators />} />
+            <Route path="/winners" element={<Winners />} />
+          </Routes>
+          <FooterNoAuth />
+        </div>
+        <FeedbackButton />
+      </>
     )
   }
 
@@ -48,11 +57,14 @@ function AppContent(): React.JSX.Element {
   }
 
   return (
-    <div className={auth.isAuthenticated ? '' : 'overflow-x-hidden rounded-top-4 pt-2 pt-lg-4'}>
-      {!auth.isAuthenticated ? <Header /> : <></>}
-      {auth.isAuthenticated ? <MainLogged /> : <MainNoAuth />}
-      {!auth.isAuthenticated ? <FooterNoAuth /> : <></>}
-    </div>
+    <>
+      <div className={auth.isAuthenticated ? '' : 'overflow-x-hidden rounded-top-4 pt-2 pt-lg-4'}>
+        {!auth.isAuthenticated ? <Header /> : <></>}
+        {auth.isAuthenticated ? <MainLogged /> : <MainNoAuth />}
+        {!auth.isAuthenticated ? <FooterNoAuth /> : <></>}
+      </div>
+      <FeedbackButton />
+    </>
   )
 }
 

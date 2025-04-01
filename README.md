@@ -143,6 +143,12 @@ npm run backend:new
 
 This script will rollback migrations, run them again, seed the database, and start the backend server.
 
+For a quick recreation of just the development database:
+
+```sh
+mysql -u root -p -e "DROP DATABASE IF EXISTS dappykit_apps; CREATE DATABASE dappykit_apps CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+```
+
 ### Testing
 
 Run frontend tests:

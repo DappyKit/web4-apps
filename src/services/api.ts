@@ -590,3 +590,36 @@ export async function getAllTemplatesForUser(address: string): Promise<CombinedT
     throw error
   }
 }
+
+/**
+ * Submits user feedback to the server
+ * @param feedback - User's feedback text
+ * @param email - Optional user email for follow-up
+ * @returns Promise resolving to success status and message
+ */
+export async function submitFeedback(feedback: string, email?: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch('/api/feedback', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        feedback,
+        email,
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const errorData = data as ApiErrorResponse
+      throw new Error(errorData.error || `HTTP error! status: ${String(response.status)}`)
+    }
+
+    return data as { success: boolean; message: string }
+  } catch (error) {
+    console.error('Error submitting feedback:', error)
+    throw error
+  }
+}

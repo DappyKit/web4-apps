@@ -25,6 +25,14 @@ export interface INotificationService {
    * @returns {Promise<boolean>} - Whether the notification was sent successfully
    */
   sendUserRegistrationNotification(address: string, totalUsers: number): Promise<boolean>
+
+  /**
+   * Sends a notification for user feedback
+   * @param {string} feedback - The user feedback text
+   * @param {string} email - Optional email for reply
+   * @returns {Promise<boolean>} - Whether the notification was sent successfully
+   */
+  sendFeedbackNotification(feedback: string, email?: string): Promise<boolean>
 }
 
 /**
@@ -33,6 +41,7 @@ export interface INotificationService {
 export class TelegramNotificationService implements INotificationService {
   private botToken: string
   private chatId: string
+  private readonly MAX_FEEDBACK_LENGTH = 2000
 
   /**
    * Creates a new TelegramNotificationService
@@ -74,6 +83,23 @@ export class TelegramNotificationService implements INotificationService {
    */
   async sendUserRegistrationNotification(address: string, totalUsers: number): Promise<boolean> {
     const message = `👤 New User Registered!\n\n🔑 *${address}*\n\n📊 Total Users: *${totalUsers}*`
+    return this.sendTelegramMessage(message)
+  }
+
+  /**
+   * Sends a notification for user feedback
+   * @param {string} feedback - The user feedback text
+   * @param {string} email - Optional email for reply
+   * @returns {Promise<boolean>} - Whether the notification was sent successfully
+   */
+  async sendFeedbackNotification(feedback: string, email?: string): Promise<boolean> {
+    // Truncate feedback if it exceeds maximum length
+    const truncatedFeedback =
+      feedback.length > this.MAX_FEEDBACK_LENGTH
+        ? feedback.substring(0, this.MAX_FEEDBACK_LENGTH) + '... (truncated)'
+        : feedback
+
+    const message = `📝 *New Feedback [web4.build]*\n\n💬 *Feedback:* ${truncatedFeedback}\n\n📧 *Email:* ${email || 'Not provided'}\n\n⏰ *Date:* ${new Date().toISOString()}`
     return this.sendTelegramMessage(message)
   }
 
@@ -135,6 +161,10 @@ export function createNotificationService(): INotificationService {
     },
     async sendUserRegistrationNotification(address: string, totalUsers: number): Promise<boolean> {
       console.log(`[NOTIFICATION] New User Registered: ${address} - Total Users: ${totalUsers}`)
+      return true
+    },
+    async sendFeedbackNotification(feedback: string, email?: string): Promise<boolean> {
+      console.log(`[NOTIFICATION] New Feedback: ${feedback} - Email: ${email || 'Not provided'}`)
       return true
     },
   }
