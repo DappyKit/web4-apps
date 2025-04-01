@@ -10,6 +10,8 @@ export class MockNotificationService implements INotificationService {
     description?: string
     address?: string
     totalUsers?: number
+    feedback?: string
+    email?: string
   }> = []
 
   /**
@@ -46,6 +48,17 @@ export class MockNotificationService implements INotificationService {
   }
 
   /**
+   * Sends a notification for user feedback (mock implementation)
+   * @param {string} feedback - The user feedback text
+   * @param {string} email - Optional email for reply
+   * @returns {Promise<boolean>} - Always returns true
+   */
+  async sendFeedbackNotification(feedback: string, email?: string): Promise<boolean> {
+    this.notificationsSent.push({ type: 'feedback', feedback, email })
+    return true
+  }
+
+  /**
    * Gets all notifications sent (for testing)
    * @returns {Array<{
    *   type: string
@@ -53,6 +66,8 @@ export class MockNotificationService implements INotificationService {
    *   description?: string
    *   address?: string
    *   totalUsers?: number
+   *   feedback?: string
+   *   email?: string
    * }>} The notifications sent
    */
   getNotificationsSent(): Array<{
@@ -61,6 +76,8 @@ export class MockNotificationService implements INotificationService {
     description?: string
     address?: string
     totalUsers?: number
+    feedback?: string
+    email?: string
   }> {
     return [...this.notificationsSent]
   }
