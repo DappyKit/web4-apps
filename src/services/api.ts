@@ -510,7 +510,7 @@ export async function generateTemplateDataWithAI(templateId: number, prompt: str
 
 /**
  * Fetches users with app counts, limited to users who have created at least one app
- * Returns maximum 100 users sorted by app count in descending order
+ * Returns maximum 200 users sorted by app count in descending order
  *
  * @param {string} [address] - Optional wallet address to highlight user's position
  * @returns {Promise<TopCreatorsResponse>} Object with users array and optional user record

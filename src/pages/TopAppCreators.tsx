@@ -35,12 +35,12 @@ export function TopAppCreators(): React.JSX.Element {
     void fetchUsers()
   }, [auth.isAuthenticated, auth.address])
 
-  // Generate placeholder rows if we have fewer than 100 users
+  // Generate placeholder rows if we have fewer than 200 users
   const generatePlaceholders = (): { key: string; isPlaceholder: boolean }[] => {
-    if (!topCreators?.users || topCreators.users.length >= 100) return []
+    if (!topCreators?.users || topCreators.users.length >= 200) return []
 
     const placeholders = []
-    for (let i = 0; i < 100 - topCreators.users.length; i++) {
+    for (let i = 0; i < 200 - topCreators.users.length; i++) {
       placeholders.push({
         key: `placeholder-${String(i)}`,
         isPlaceholder: true,
@@ -57,7 +57,7 @@ export function TopAppCreators(): React.JSX.Element {
 
       <Alert variant="info" className="mb-4">
         <h5>Rewards Program</h5>
-        <p className="mb-0">Top 100 creators receive 50 OP tokens each. Deadline: June 1, 2025.</p>
+        <p className="mb-0">Top 200 creators receive 50 OP tokens each. Deadline: June 1, 2025.</p>
       </Alert>
 
       {!auth.isAuthenticated && (

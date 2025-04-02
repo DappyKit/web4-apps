@@ -25,7 +25,7 @@ export function createUsersRouter(db: Knex, notificationService: INotificationSe
 
   /**
    * Get users with app counts (limited to users with at least one app)
-   * Returns maximum 100 users sorted by app count in descending order
+   * Returns maximum 200 users sorted by app count in descending order
    */
   router.get('/with-app-counts', async (req, res) => {
     try {
@@ -49,7 +49,7 @@ export function createUsersRouter(db: Knex, notificationService: INotificationSe
         .having(db.raw('count(apps.id) >= 1'))
         .orderBy('users.win_1_amount', 'desc')
         .orderBy('app_count', 'desc')
-        .limit(100)
+        .limit(200)
 
       // Add an exclusion for each address
       lowercasedExcludedAddresses.forEach(address => {
