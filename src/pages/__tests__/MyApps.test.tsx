@@ -84,6 +84,30 @@ describe('MyApps Component', () => {
     })
   })
 
+  it('disables New App button when user is not registered', async () => {
+    // Mock user as not registered
+    ;(api.checkUserRegistration as Mock).mockResolvedValue(false)
+
+    render(<MyApps />)
+
+    await waitFor(() => {
+      const newAppButton = screen.getByRole('button', { name: /New App/i })
+      expect(newAppButton).toBeDisabled()
+    })
+  })
+
+  it('enables New App button when user is registered', async () => {
+    // Mock user as registered
+    ;(api.checkUserRegistration as Mock).mockResolvedValue(true)
+
+    render(<MyApps />)
+
+    await waitFor(() => {
+      const newAppButton = screen.getByRole('button', { name: /New App/i })
+      expect(newAppButton).not.toBeDisabled()
+    })
+  })
+
   // Remove the app deletion test since delete buttons are now only on view pages
   // We'll test deletion functionality in the ViewApp component tests
 })

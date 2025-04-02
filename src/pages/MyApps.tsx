@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAccount, useSignMessage } from 'wagmi'
-import { Alert, Button } from 'react-bootstrap'
-import { getMyApps, deleteApp, getAllTemplatesForUser } from '../services/api'
+import { Alert } from 'react-bootstrap'
+import { getMyApps, deleteApp, getAllTemplatesForUser, checkUserRegistration } from '../services/api'
 import type { App, Template } from '../services/api'
 import { AppList } from '../components/AppList'
 import { Pagination } from '../components/Pagination'
 import { CreateAppModal } from '../components/CreateAppModal'
 import { TemplateSelectionModal } from '../components/TemplateSelectionModal'
+import { NewActionButton } from '../components/NewActionButton'
 
 // Constants matching backend limitations
 const ITEMS_PER_PAGE = 12
@@ -25,6 +26,18 @@ export function MyApps(): React.JSX.Element {
   const [totalPages, setTotalPages] = useState(1)
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isRegistered, setIsRegistered] = useState<boolean>(false)
+
+  const checkRegistrationStatus = useCallback(async (): Promise<void> => {
+    if (!address) return
+
+    try {
+      const registered = await checkUserRegistration(address)
+      setIsRegistered(registered)
+    } catch (error) {
+      console.error('Error checking registration:', error)
+    }
+  }, [address])
 
   const loadApps = useCallback(async () => {
     if (!address) return
@@ -64,7 +77,8 @@ export function MyApps(): React.JSX.Element {
   useEffect(() => {
     void loadApps()
     void loadTemplates()
-  }, [loadApps, loadTemplates])
+    void checkRegistrationStatus()
+  }, [loadApps, loadTemplates, checkRegistrationStatus])
 
   const handleDeleteApp = async (appId: number): Promise<void> => {
     if (!address || isDeleting !== null) return
@@ -105,16 +119,13 @@ export function MyApps(): React.JSX.Element {
         <div className="flex-grow-1 text-center">
           <h1 className="mb-0">My Apps</h1>
         </div>
-        <Button
-          variant="primary"
+        <NewActionButton
+          isRegistered={isRegistered}
           onClick={() => {
             setShowCreateModal(true)
           }}
-          className="btn-sm d-flex align-items-center gap-2"
-        >
-          <i className="bi bi-plus-circle d-flex align-items-center"></i>
-          New App
-        </Button>
+          label="New App"
+        />
       </div>
       <p className="text-center text-muted">Create and manage your Web4 applications. Build something amazing today.</p>
 

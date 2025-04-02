@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAccount, useSignMessage } from 'wagmi'
-import { Alert, Button } from 'react-bootstrap'
-import { createTemplate, getMyTemplates, deleteTemplate } from '../services/api'
+import { Alert } from 'react-bootstrap'
+import { createTemplate, getMyTemplates, deleteTemplate, checkUserRegistration } from '../services/api'
 import type { Template } from '../services/api'
 import TemplateList from '../components/TemplateList'
 import { Pagination } from '../components/Pagination'
 import { CreateTemplateModal } from '../components/CreateTemplateModal'
 import { DeleteTemplateModal } from '../components/DeleteTemplateModal'
+import { NewActionButton } from '../components/NewActionButton'
 
 // Constants
 const ITEMS_PER_PAGE = 12
@@ -49,6 +50,18 @@ export function MyTemplates(): React.JSX.Element {
   const [templateToDelete, setTemplateToDelete] = useState<number | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [isRegistered, setIsRegistered] = useState<boolean>(false)
+
+  const checkRegistrationStatus = useCallback(async (): Promise<void> => {
+    if (!address) return
+
+    try {
+      const registered = await checkUserRegistration(address)
+      setIsRegistered(registered)
+    } catch (error) {
+      console.error('Error checking registration:', error)
+    }
+  }, [address])
 
   const loadTemplates = useCallback(async () => {
     if (!address) return
@@ -66,7 +79,8 @@ export function MyTemplates(): React.JSX.Element {
 
   useEffect(() => {
     void loadTemplates()
-  }, [loadTemplates])
+    void checkRegistrationStatus()
+  }, [loadTemplates, checkRegistrationStatus])
 
   const validateForm = useCallback(() => {
     const newErrors: FormErrors = {
@@ -234,16 +248,13 @@ export function MyTemplates(): React.JSX.Element {
         <div className="flex-grow-1 text-center">
           <h1 className="mb-0">My Templates</h1>
         </div>
-        <Button
-          variant="primary"
+        <NewActionButton
+          isRegistered={isRegistered}
           onClick={() => {
             setShowCreateModal(true)
           }}
-          className="btn-sm d-flex align-items-center gap-2"
-        >
-          <i className="bi bi-plus-circle d-flex align-items-center"></i>
-          New Template
-        </Button>
+          label="New Template"
+        />
       </div>
       <p className="text-center text-muted">
         Create and manage your app templates. Share your innovations with the community.
