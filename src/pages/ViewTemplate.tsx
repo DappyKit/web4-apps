@@ -6,6 +6,7 @@ import type { Template } from '../services/api'
 import { Alert, Spinner, Card, Button, Accordion } from 'react-bootstrap'
 import { useAccount, useSignMessage } from 'wagmi'
 import { handlePromiseSafely } from '../utils/promiseUtils'
+import StatusIcon from '../components/StatusIcon'
 
 /**
  * Component for viewing detailed information about a specific template
@@ -128,7 +129,14 @@ export function ViewTemplate(): React.JSX.Element {
         >
           <i className="bi bi-arrow-left" style={{ lineHeight: 0 }}></i>
         </Link>
-        <h2 className="m-0">{template.title}</h2>
+        <h2 className="m-0 d-flex align-items-center">
+          {template.title}
+          {template.moderated && (
+            <span className="ms-2">
+              <StatusIcon type="moderated" id={String(template.id)} size={24} />
+            </span>
+          )}
+        </h2>
         {isOwner && (
           <div className="ms-auto">
             <Button variant="outline-danger" size="sm" onClick={confirmDelete} disabled={isDeleting}>

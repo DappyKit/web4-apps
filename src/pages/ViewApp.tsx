@@ -10,6 +10,7 @@ import { parseTemplateSchema } from '../utils/schemaParser'
 import type { FormField } from '../utils/schemaParser'
 import { useAccount, useSignMessage } from 'wagmi'
 import { handlePromiseSafely } from '../utils/promiseUtils'
+import StatusIcon from '../components/StatusIcon'
 
 /**
  * Component for viewing detailed information about a specific app
@@ -193,7 +194,14 @@ export function ViewApp(): React.JSX.Element {
           >
             <i className="bi bi-arrow-left" style={{ lineHeight: 0 }}></i>
           </Link>
-          <h2 className="m-0">{app.name}</h2>
+          <h2 className="m-0 d-flex align-items-center">
+            {app.name}
+            {app.moderated && (
+              <span className="ms-2">
+                <StatusIcon type="moderated" id={String(app.id)} size={24} />
+              </span>
+            )}
+          </h2>
           {/* Buttons for desktop view - hidden on mobile */}
           <div className="ms-auto d-none d-md-flex">
             <Button variant="primary" size="sm" className="d-flex align-items-center me-2" onClick={handleDownloadJson}>

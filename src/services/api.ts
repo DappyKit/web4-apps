@@ -42,6 +42,7 @@ export interface Template {
   owner_address: string
   created_at: string
   updated_at: string
+  moderated: boolean
 }
 
 export interface UserWithAppCount {

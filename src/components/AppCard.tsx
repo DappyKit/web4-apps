@@ -3,6 +3,7 @@ import { Card } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 import { App } from '../services/api'
 import { formatDate } from '../utils/dateUtils'
+import StatusIcon from './StatusIcon'
 
 interface AppCardProps {
   app: App
@@ -26,7 +27,10 @@ const AppCard: React.FC<AppCardProps> = ({ app, onDelete, isDeleting, showDelete
         </div>
         <div className="template-card-meta small text-muted mt-auto">
           <div className="d-flex justify-content-between align-items-center mb-2">
-            <span>Created: {formatDate(app.created_at)}</span>
+            <div className="d-flex align-items-center">
+              <StatusIcon type="created" value={formatDate(app.created_at)} id={String(app.id)} />
+              {app.moderated && <StatusIcon type="moderated" id={String(app.id)} />}
+            </div>
           </div>
         </div>
         <div className="template-card-actions mt-3 d-flex gap-2">

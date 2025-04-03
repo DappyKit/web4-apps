@@ -1,0 +1,23 @@
+/* Moderation badge styling */
+.moderation-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+}
+
+.moderation-badge:hover {
+  transform: scale(1.1);
+}
+
+/* Mobile optimization */
+@media (max-width: 576px) {
+  .template-card .card-title {
+    font-size: 1rem;
+  }
+  
+  .moderation-badge svg {
+    width: 14px;
+    height: 14px;
+  }
+} 

@@ -3,6 +3,7 @@ import { Card } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 import { Template } from '../services/api'
 import { formatDate } from '../utils/dateUtils'
+import StatusIcon from './StatusIcon'
 
 interface TemplateCardProps {
   template: Template
@@ -25,7 +26,10 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template }) => {
         </div>
         <div className="template-card-meta small text-muted mt-auto">
           <div className="d-flex justify-content-between align-items-center mb-2">
-            <span>Created: {formatDate(template.created_at)}</span>
+            <div className="d-flex align-items-center">
+              <StatusIcon type="created" value={formatDate(template.created_at)} id={String(template.id)} />
+              {template.moderated && <StatusIcon type="moderated" id={String(template.id)} />}
+            </div>
           </div>
         </div>
         <div className="template-card-actions mt-3">
