@@ -196,7 +196,7 @@ export function ViewApp(): React.JSX.Element {
           </Link>
           <h2 className="m-0 d-flex align-items-center">
             {app.name}
-            <span className="ms-2">
+            <span className="ms-2 d-flex align-items-center">
               <StatusIcon type={app.moderated ? 'moderated' : 'not-moderated'} id={String(app.id)} size={24} />
             </span>
           </h2>

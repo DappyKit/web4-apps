@@ -131,7 +131,7 @@ export function ViewTemplate(): React.JSX.Element {
         </Link>
         <h2 className="m-0 d-flex align-items-center">
           {template.title}
-          <span className="ms-2">
+          <span className="ms-2 d-flex align-items-center">
             <StatusIcon type={template.moderated ? 'moderated' : 'not-moderated'} id={String(template.id)} size={24} />
           </span>
         </h2>
