@@ -6,17 +6,26 @@ export interface INotificationService {
    * Sends a notification about a newly created app
    * @param {string} title - The full title of the app
    * @param {string} description - The shortened description of the app
+   * @param {number} appId - The ID of the newly created app
+   * @param {number} totalApps - The total count of apps
    * @returns {Promise<boolean>} - Whether the notification was sent successfully
    */
-  sendAppCreationNotification(title: string, description: string): Promise<boolean>
+  sendAppCreationNotification(title: string, description: string, appId: number, totalApps: number): Promise<boolean>
 
   /**
    * Sends a notification about a newly created template
    * @param {string} title - The full title of the template
    * @param {string} description - The shortened description of the template
+   * @param {number} templateId - The ID of the newly created template
+   * @param {number} totalTemplates - The total count of templates
    * @returns {Promise<boolean>} - Whether the notification was sent successfully
    */
-  sendTemplateCreationNotification(title: string, description: string): Promise<boolean>
+  sendTemplateCreationNotification(
+    title: string,
+    description: string,
+    templateId: number,
+    totalTemplates: number,
+  ): Promise<boolean>
 
   /**
    * Sends a notification about a newly registered user
@@ -57,10 +66,17 @@ export class TelegramNotificationService implements INotificationService {
    * Sends a notification about a newly created app
    * @param {string} title - The full title of the app
    * @param {string} description - The shortened description of the app
+   * @param {number} appId - The ID of the newly created app
+   * @param {number} totalApps - The total count of apps
    * @returns {Promise<boolean>} - Whether the notification was sent successfully
    */
-  async sendAppCreationNotification(title: string, description: string): Promise<boolean> {
-    const message = `🆕 New App Created!\n\n📱 *${title}*\n\n${description}`
+  async sendAppCreationNotification(
+    title: string,
+    description: string,
+    appId: number,
+    totalApps: number,
+  ): Promise<boolean> {
+    const message = `🆕 New App Created!\n\n📱 *${title}* (ID: ${appId})\n\n${description}\n\n📊 Total Apps: *${totalApps}*`
     return this.sendTelegramMessage(message)
   }
 
@@ -68,10 +84,17 @@ export class TelegramNotificationService implements INotificationService {
    * Sends a notification about a newly created template
    * @param {string} title - The full title of the template
    * @param {string} description - The shortened description of the template
+   * @param {number} templateId - The ID of the newly created template
+   * @param {number} totalTemplates - The total count of templates
    * @returns {Promise<boolean>} - Whether the notification was sent successfully
    */
-  async sendTemplateCreationNotification(title: string, description: string): Promise<boolean> {
-    const message = `🆕 New Template Created!\n\n📋 *${title}*\n\n${description}`
+  async sendTemplateCreationNotification(
+    title: string,
+    description: string,
+    templateId: number,
+    totalTemplates: number,
+  ): Promise<boolean> {
+    const message = `🆕 New Template Created!\n\n📋 *${title}* (ID: ${templateId})\n\n${description}\n\n📊 Total Templates: *${totalTemplates}*`
     return this.sendTelegramMessage(message)
   }
 
@@ -151,12 +174,24 @@ export function createNotificationService(): INotificationService {
   // If no configuration is available, use a mock service that logs to console
   console.warn('Telegram notification service not configured. Using console logging instead.')
   return {
-    async sendAppCreationNotification(title: string, description: string): Promise<boolean> {
-      console.log(`[NOTIFICATION] New App Created: ${title} - ${description}`)
+    async sendAppCreationNotification(
+      title: string,
+      description: string,
+      appId: number,
+      totalApps: number,
+    ): Promise<boolean> {
+      console.log(`[NOTIFICATION] New App Created: ${title} (ID: ${appId}) - ${description} - Total Apps: ${totalApps}`)
       return true
     },
-    async sendTemplateCreationNotification(title: string, description: string): Promise<boolean> {
-      console.log(`[NOTIFICATION] New Template Created: ${title} - ${description}`)
+    async sendTemplateCreationNotification(
+      title: string,
+      description: string,
+      templateId: number,
+      totalTemplates: number,
+    ): Promise<boolean> {
+      console.log(
+        `[NOTIFICATION] New Template Created: ${title} (ID: ${templateId}) - ${description} - Total Templates: ${totalTemplates}`,
+      )
       return true
     },
     async sendUserRegistrationNotification(address: string, totalUsers: number): Promise<boolean> {

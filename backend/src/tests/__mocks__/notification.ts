@@ -8,6 +8,10 @@ export class MockNotificationService implements INotificationService {
     type: string
     title?: string
     description?: string
+    appId?: number
+    templateId?: number
+    totalApps?: number
+    totalTemplates?: number
     address?: string
     totalUsers?: number
     feedback?: string
@@ -18,10 +22,17 @@ export class MockNotificationService implements INotificationService {
    * Sends a notification about a newly created app (mock implementation)
    * @param {string} title - The full title of the app
    * @param {string} description - The shortened description of the app
+   * @param {number} appId - The ID of the newly created app
+   * @param {number} totalApps - The total count of apps
    * @returns {Promise<boolean>} - Always returns true
    */
-  async sendAppCreationNotification(title: string, description: string): Promise<boolean> {
-    this.notificationsSent.push({ type: 'app', title, description })
+  async sendAppCreationNotification(
+    title: string,
+    description: string,
+    appId: number,
+    totalApps: number,
+  ): Promise<boolean> {
+    this.notificationsSent.push({ type: 'app', title, description, appId, totalApps })
     return true
   }
 
@@ -29,10 +40,17 @@ export class MockNotificationService implements INotificationService {
    * Sends a notification about a newly created template (mock implementation)
    * @param {string} title - The full title of the template
    * @param {string} description - The shortened description of the template
+   * @param {number} templateId - The ID of the newly created template
+   * @param {number} totalTemplates - The total count of templates
    * @returns {Promise<boolean>} - Always returns true
    */
-  async sendTemplateCreationNotification(title: string, description: string): Promise<boolean> {
-    this.notificationsSent.push({ type: 'template', title, description })
+  async sendTemplateCreationNotification(
+    title: string,
+    description: string,
+    templateId: number,
+    totalTemplates: number,
+  ): Promise<boolean> {
+    this.notificationsSent.push({ type: 'template', title, description, templateId, totalTemplates })
     return true
   }
 
@@ -64,6 +82,10 @@ export class MockNotificationService implements INotificationService {
    *   type: string
    *   title?: string
    *   description?: string
+   *   appId?: number
+   *   templateId?: number
+   *   totalApps?: number
+   *   totalTemplates?: number
    *   address?: string
    *   totalUsers?: number
    *   feedback?: string
@@ -74,6 +96,10 @@ export class MockNotificationService implements INotificationService {
     type: string
     title?: string
     description?: string
+    appId?: number
+    templateId?: number
+    totalApps?: number
+    totalTemplates?: number
     address?: string
     totalUsers?: number
     feedback?: string

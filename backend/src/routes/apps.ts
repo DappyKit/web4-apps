@@ -141,12 +141,17 @@ export function createAppsRouter(db: Knex, notificationService: INotificationSer
 
       const [insertId] = await db<App>('apps').insert(newApp)
 
+      // Get total count of apps for the notification
+      const result = await db('apps').count({ count: 'id' }).first()
+      const count = result?.count
+      const totalApps = typeof count === 'number' ? count : Number(count)
+
       // Send notification about the newly created app
       const appTitle = trimmedName
       const appDescription = truncateText(description || 'No description provided', MAX_NOTIFICATION_DESCRIPTION_LENGTH)
 
       try {
-        await notificationService.sendAppCreationNotification(appTitle, appDescription)
+        await notificationService.sendAppCreationNotification(appTitle, appDescription, insertId, totalApps)
       } catch (error) {
         console.error('Failed to send app creation notification:', error)
         // Non-critical error, don't fail the request

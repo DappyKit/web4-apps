@@ -73,6 +73,11 @@ export function createTemplatesRouter(db: Knex, notificationService: INotificati
         owner_address: address,
       })
 
+      // Get total count of templates for the notification
+      const result = await db('templates').count({ count: 'id' }).first()
+      const count = result?.count
+      const totalTemplates = typeof count === 'number' ? count : Number(count)
+
       // Send notification about the newly created template
       const templateTitle = templateData.title
       const templateDescription = truncateText(
@@ -81,7 +86,12 @@ export function createTemplatesRouter(db: Knex, notificationService: INotificati
       )
 
       try {
-        await notificationService.sendTemplateCreationNotification(templateTitle, templateDescription)
+        await notificationService.sendTemplateCreationNotification(
+          templateTitle,
+          templateDescription,
+          insertId,
+          totalTemplates,
+        )
       } catch (error) {
         console.error('Failed to send template creation notification:', error)
         // Non-critical error, don't fail the request
