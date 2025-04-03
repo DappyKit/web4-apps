@@ -28,7 +28,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template }) => {
           <div className="d-flex justify-content-between align-items-center mb-2">
             <div className="d-flex align-items-center">
               <StatusIcon type="created" value={formatDate(template.created_at)} id={String(template.id)} />
-              {template.moderated && <StatusIcon type="moderated" id={String(template.id)} />}
+              <StatusIcon type={template.moderated ? 'moderated' : 'not-moderated'} id={String(template.id)} />
             </div>
           </div>
         </div>

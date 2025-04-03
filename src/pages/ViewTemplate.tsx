@@ -131,11 +131,9 @@ export function ViewTemplate(): React.JSX.Element {
         </Link>
         <h2 className="m-0 d-flex align-items-center">
           {template.title}
-          {template.moderated && (
-            <span className="ms-2">
-              <StatusIcon type="moderated" id={String(template.id)} size={24} />
-            </span>
-          )}
+          <span className="ms-2">
+            <StatusIcon type={template.moderated ? 'moderated' : 'not-moderated'} id={String(template.id)} size={24} />
+          </span>
         </h2>
         {isOwner && (
           <div className="ms-auto">

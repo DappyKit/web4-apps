@@ -1,10 +1,10 @@
 import React from 'react'
 import { OverlayTrigger, Tooltip } from 'react-bootstrap'
-import { CheckCircleFill, Calendar3 } from 'react-bootstrap-icons'
+import { CheckCircleFill, Calendar3, Circle } from 'react-bootstrap-icons'
 
 interface StatusIconProps {
   /** Type of status icon to display */
-  type: 'moderated' | 'created'
+  type: 'moderated' | 'created' | 'not-moderated'
   /** Value to display in the tooltip (e.g., date for 'created' type) */
   value?: string
   /** Unique ID for the tooltip */
@@ -31,6 +31,12 @@ const StatusIcon: React.FC<StatusIconProps> = ({ type, value, id, size = 16 }): 
         return {
           icon: <CheckCircleFill className="text-success" size={size} />,
           tooltip: 'Verified by moderators',
+          className: 'moderation-badge',
+        }
+      case 'not-moderated':
+        return {
+          icon: <Circle className="text-secondary" size={size} />,
+          tooltip: 'Not moderated yet',
           className: 'moderation-badge',
         }
       case 'created':

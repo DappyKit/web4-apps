@@ -29,7 +29,7 @@ const AppCard: React.FC<AppCardProps> = ({ app, onDelete, isDeleting, showDelete
           <div className="d-flex justify-content-between align-items-center mb-2">
             <div className="d-flex align-items-center">
               <StatusIcon type="created" value={formatDate(app.created_at)} id={String(app.id)} />
-              {app.moderated && <StatusIcon type="moderated" id={String(app.id)} />}
+              <StatusIcon type={app.moderated ? 'moderated' : 'not-moderated'} id={String(app.id)} />
             </div>
           </div>
         </div>

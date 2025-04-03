@@ -196,11 +196,9 @@ export function ViewApp(): React.JSX.Element {
           </Link>
           <h2 className="m-0 d-flex align-items-center">
             {app.name}
-            {app.moderated && (
-              <span className="ms-2">
-                <StatusIcon type="moderated" id={String(app.id)} size={24} />
-              </span>
-            )}
+            <span className="ms-2">
+              <StatusIcon type={app.moderated ? 'moderated' : 'not-moderated'} id={String(app.id)} size={24} />
+            </span>
           </h2>
           {/* Buttons for desktop view - hidden on mobile */}
           <div className="ms-auto d-none d-md-flex">
