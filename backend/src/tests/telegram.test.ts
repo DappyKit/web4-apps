@@ -262,6 +262,207 @@ describe('Telegram Webhook', () => {
       })
       expect(mockDb).not.toHaveBeenCalled()
     })
+
+    it('should process public apps command with range format correctly', async () => {
+      const response = await request(app)
+        .post('/webhook')
+        .send({
+          update_id: 123456789,
+          message: {
+            message_id: 1,
+            from: {
+              id: 123456789,
+              is_bot: false,
+              first_name: 'Test',
+            },
+            chat: {
+              id: 123456789,
+              first_name: 'Test',
+              type: 'private',
+            },
+            date: 1631234567,
+            text: 'public apps: 1-3',
+          },
+        })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({
+        method: 'sendMessage',
+        chat_id: 123456789,
+        text: 'Successfully made 1 app(s) public',
+      })
+
+      expect(mockDb).toHaveBeenCalledWith('apps')
+      expect(mockQueryBuilder.whereIn).toHaveBeenCalledWith('id', [1, 2, 3])
+      expect(mockQueryBuilder.update).toHaveBeenCalledWith({ moderated: true })
+    })
+
+    it('should process public templates command with range format correctly', async () => {
+      const response = await request(app)
+        .post('/webhook')
+        .send({
+          update_id: 123456789,
+          message: {
+            message_id: 1,
+            from: {
+              id: 123456789,
+              is_bot: false,
+              first_name: 'Test',
+            },
+            chat: {
+              id: 123456789,
+              first_name: 'Test',
+              type: 'private',
+            },
+            date: 1631234567,
+            text: 'public templates: 4-6',
+          },
+        })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({
+        method: 'sendMessage',
+        chat_id: 123456789,
+        text: 'Successfully made 1 template(s) public',
+      })
+
+      expect(mockDb).toHaveBeenCalledWith('templates')
+      expect(mockQueryBuilder.whereIn).toHaveBeenCalledWith('id', [4, 5, 6])
+      expect(mockQueryBuilder.update).toHaveBeenCalledWith({ moderated: true })
+    })
+
+    it('should process private apps command with range format correctly', async () => {
+      const response = await request(app)
+        .post('/webhook')
+        .send({
+          update_id: 123456789,
+          message: {
+            message_id: 1,
+            from: {
+              id: 123456789,
+              is_bot: false,
+              first_name: 'Test',
+            },
+            chat: {
+              id: 123456789,
+              first_name: 'Test',
+              type: 'private',
+            },
+            date: 1631234567,
+            text: 'private apps: 1-3',
+          },
+        })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({
+        method: 'sendMessage',
+        chat_id: 123456789,
+        text: 'Successfully made 1 app(s) private',
+      })
+
+      expect(mockDb).toHaveBeenCalledWith('apps')
+      expect(mockQueryBuilder.whereIn).toHaveBeenCalledWith('id', [1, 2, 3])
+      expect(mockQueryBuilder.update).toHaveBeenCalledWith({ moderated: false })
+    })
+
+    it('should process private templates command with range format correctly', async () => {
+      const response = await request(app)
+        .post('/webhook')
+        .send({
+          update_id: 123456789,
+          message: {
+            message_id: 1,
+            from: {
+              id: 123456789,
+              is_bot: false,
+              first_name: 'Test',
+            },
+            chat: {
+              id: 123456789,
+              first_name: 'Test',
+              type: 'private',
+            },
+            date: 1631234567,
+            text: 'private templates: 4-6',
+          },
+        })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({
+        method: 'sendMessage',
+        chat_id: 123456789,
+        text: 'Successfully made 1 template(s) private',
+      })
+
+      expect(mockDb).toHaveBeenCalledWith('templates')
+      expect(mockQueryBuilder.whereIn).toHaveBeenCalledWith('id', [4, 5, 6])
+      expect(mockQueryBuilder.update).toHaveBeenCalledWith({ moderated: false })
+    })
+
+    it('should process mixed format commands correctly', async () => {
+      const response = await request(app)
+        .post('/webhook')
+        .send({
+          update_id: 123456789,
+          message: {
+            message_id: 1,
+            from: {
+              id: 123456789,
+              is_bot: false,
+              first_name: 'Test',
+            },
+            chat: {
+              id: 123456789,
+              first_name: 'Test',
+              type: 'private',
+            },
+            date: 1631234567,
+            text: 'public apps: 1-3, 5, 7-9',
+          },
+        })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({
+        method: 'sendMessage',
+        chat_id: 123456789,
+        text: 'Successfully made 1 app(s) public',
+      })
+
+      expect(mockDb).toHaveBeenCalledWith('apps')
+      expect(mockQueryBuilder.whereIn).toHaveBeenCalledWith('id', [1, 2, 3, 5, 7, 8, 9])
+      expect(mockQueryBuilder.update).toHaveBeenCalledWith({ moderated: true })
+    })
+
+    it('should handle invalid range format correctly', async () => {
+      const response = await request(app)
+        .post('/webhook')
+        .send({
+          update_id: 123456789,
+          message: {
+            message_id: 1,
+            from: {
+              id: 123456789,
+              is_bot: false,
+              first_name: 'Test',
+            },
+            chat: {
+              id: 123456789,
+              first_name: 'Test',
+              type: 'private',
+            },
+            date: 1631234567,
+            text: 'public apps: 5-2', // Invalid range (start > end)
+          },
+        })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({
+        method: 'sendMessage',
+        chat_id: 123456789,
+        text: expect.stringContaining('No valid app IDs provided'),
+      })
+      expect(mockDb).not.toHaveBeenCalled()
+    })
   })
 })
 /* eslint-enable @typescript-eslint/unbound-method */

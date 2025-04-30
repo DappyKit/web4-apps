@@ -73,7 +73,7 @@ export function createTelegramRouter(db: Knex): Router {
           return res.status(200).json({
             method: 'sendMessage',
             chat_id: chatId,
-            text: 'No valid app IDs provided. Format should be "public apps: 1, 2, 3"',
+            text: 'No valid app IDs provided. Format should be "public apps: 1, 2, 3" or "public apps: 1-10"',
           })
         }
 
@@ -112,7 +112,7 @@ export function createTelegramRouter(db: Knex): Router {
           return res.status(200).json({
             method: 'sendMessage',
             chat_id: chatId,
-            text: 'No valid template IDs provided. Format should be "public templates: 1, 2, 3"',
+            text: 'No valid template IDs provided. Format should be "public templates: 1, 2, 3" or "public templates: 1-10"',
           })
         }
 
@@ -151,7 +151,7 @@ export function createTelegramRouter(db: Knex): Router {
           return res.status(200).json({
             method: 'sendMessage',
             chat_id: chatId,
-            text: 'No valid app IDs provided. Format should be "private apps: 1, 2, 3"',
+            text: 'No valid app IDs provided. Format should be "private apps: 1, 2, 3" or "private apps: 1-10"',
           })
         }
 
@@ -190,7 +190,7 @@ export function createTelegramRouter(db: Knex): Router {
           return res.status(200).json({
             method: 'sendMessage',
             chat_id: chatId,
-            text: 'No valid template IDs provided. Format should be "private templates: 1, 2, 3"',
+            text: 'No valid template IDs provided. Format should be "private templates: 1, 2, 3" or "private templates: 1-10"',
           })
         }
 
@@ -226,10 +226,10 @@ export function createTelegramRouter(db: Knex): Router {
         chat_id: chatId,
         text:
           'Supported commands:\n' +
-          '- "public apps: 1, 2, 3" - Make specified apps public\n' +
-          '- "public templates: 1, 2, 3" - Make specified templates public\n' +
-          '- "private apps: 1, 2, 3" - Make specified apps private\n' +
-          '- "private templates: 1, 2, 3" - Make specified templates private',
+          '- "public apps: 1, 2, 3" or "public apps: 1-10" - Make specified apps public\n' +
+          '- "public templates: 1, 2, 3" or "public templates: 1-10" - Make specified templates public\n' +
+          '- "private apps: 1, 2, 3" or "private apps: 1-10" - Make specified apps private\n' +
+          '- "private templates: 1, 2, 3" or "private templates: 1-10" - Make specified templates private',
       })
     } catch (error) {
       console.error('Error processing telegram webhook:', error)
@@ -242,15 +242,40 @@ export function createTelegramRouter(db: Knex): Router {
 
 /**
  * Parse a comma-separated string of IDs into an array of numbers
- * @param {string} text - The comma-separated string of IDs
+ * @param {string} text - The comma-separated string of IDs, can also include ranges like "1-5"
  * @returns {number[]} Array of valid numeric IDs
  */
 function parseIds(text: string): number[] {
   if (!text) return []
 
+  // Split by commas and process each part
   return text
     .split(',')
-    .map(id => id.trim())
-    .filter(id => id && !isNaN(Number(id)))
-    .map(id => Number(id))
+    .flatMap(part => {
+      part = part.trim()
+
+      // Check if it's a range (contains hyphen)
+      if (part.includes('-')) {
+        const [startStr, endStr] = part.split('-').map(x => x.trim())
+        const start = Number(startStr)
+        const end = Number(endStr)
+
+        // Validate that both start and end are numbers
+        if (isNaN(start) || isNaN(end)) {
+          return []
+        }
+
+        // Validate that start is less than or equal to end
+        if (start > end) {
+          return []
+        }
+
+        // Generate array of numbers in the range
+        return Array.from({ length: end - start + 1 }, (_, i) => start + i)
+      }
+
+      // Handle single number case
+      return !isNaN(Number(part)) ? [Number(part)] : []
+    })
+    .filter(id => id > 0) // Ensure all IDs are positive numbers
 }
