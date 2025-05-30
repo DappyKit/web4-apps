@@ -59,7 +59,8 @@ export function TopAppCreators(): React.JSX.Element {
 
       <Alert variant="info" className="mb-4">
         <h5>Rewards Program</h5>
-        <p className="mb-0">Top 200 creators receive 50 OP tokens each. Deadline: June 1, 2025.</p>
+        <p>Top 200 creators receive 50 OP tokens each. Deadline: June 1, 2025.</p>
+        <p className="mb-0">Only moderated apps count.</p>
         {!areSubmissionsEnabled && (
           <p className="mb-0 mt-2 text-warning">
             <strong>
