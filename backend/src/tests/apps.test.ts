@@ -6,6 +6,7 @@ import { type PrivateKeyAccount } from 'viem/accounts'
 import { createWalletClient } from 'viem'
 import { TestDb } from './utils/testDb'
 import { MockNotificationService } from './__mocks__/notification'
+import { globalState } from '../utils/globalState'
 
 const quizSchema = {
   type: 'object',
@@ -399,6 +400,39 @@ describe('Apps API', () => {
 
         expect(response.status).toBe(400)
         expect(response.body.error).toBe('Missing required fields')
+      })
+
+      it('should reject app creation when submissions are disabled', async () => {
+        // Disable submissions
+        globalState.setSubmissionsEnabled(false)
+
+        const name = 'Test App'
+        const message = `Create app: ${name}`
+        const signature = await walletClient.signMessage({
+          message,
+          account: testAccount,
+        })
+
+        const response = await request(expressApp)
+          .post('/api/my-apps')
+          .set('x-wallet-address', testAccount.address)
+          .send({
+            name: name,
+            description: 'Test Description',
+            signature,
+            template_id: templateId,
+            json_data: quizData,
+          })
+
+        expect(response.status).toBe(403)
+        expect(response.body.error).toBe('Submissions are currently disabled. Thank you for your participation in the hackathon!')
+
+        // Verify no app was created
+        const apps = await db('apps').where('owner_address', testAccount.address)
+        expect(apps).toHaveLength(0)
+
+        // Re-enable submissions for other tests
+        globalState.setSubmissionsEnabled(true)
       })
     })
   })

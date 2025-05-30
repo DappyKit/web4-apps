@@ -2,6 +2,7 @@ import { Router, Request, Response, RequestHandler } from 'express'
 import { Knex } from 'knex'
 import * as dotenv from 'dotenv'
 import path from 'path'
+import { globalState } from '../utils/globalState'
 
 // Type definition for telegram update
 interface TelegramUpdate {
@@ -220,6 +221,33 @@ export function createTelegramRouter(db: Knex): Router {
         }
       }
 
+      // Command for controlling submissions
+      if (lowerCaseMessage.startsWith('submissions:')) {
+        const submissionsValue = message.substring('submissions:'.length).trim()
+
+        if (submissionsValue === '1') {
+          globalState.setSubmissionsEnabled(true)
+          return res.status(200).json({
+            method: 'sendMessage',
+            chat_id: chatId,
+            text: 'Submissions have been enabled.',
+          })
+        } else if (submissionsValue === '0') {
+          globalState.setSubmissionsEnabled(false)
+          return res.status(200).json({
+            method: 'sendMessage',
+            chat_id: chatId,
+            text: 'Submissions have been disabled.',
+          })
+        } else {
+          return res.status(200).json({
+            method: 'sendMessage',
+            chat_id: chatId,
+            text: 'Invalid submissions value. Use "submissions: 1" to enable or "submissions: 0" to disable.',
+          })
+        }
+      }
+
       // If none of the commands matched, send help message
       return res.status(200).json({
         method: 'sendMessage',
@@ -229,9 +257,11 @@ export function createTelegramRouter(db: Knex): Router {
           '- "public apps: 1, 2, 3" or "public apps: 1-10" - Make specified apps public\n' +
           '- "public templates: 1, 2, 3" or "public templates: 1-10" - Make specified templates public\n' +
           '- "private apps: 1, 2, 3" or "private apps: 1-10" - Make specified apps private\n' +
-          '- "private templates: 1, 2, 3" or "private templates: 1-10" - Make specified templates private',
+          '- "private templates: 1, 2, 3" or "private templates: 1-10" - Make specified templates private\n' +
+          '- "submissions: 1" - Enable submissions\n' +
+          '- "submissions: 0" - Disable submissions',
       })
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error processing telegram webhook:', error)
       res.sendStatus(200) // Always respond with 200 to Telegram
     }

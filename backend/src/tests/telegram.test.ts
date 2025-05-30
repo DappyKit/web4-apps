@@ -2,6 +2,7 @@ import request from 'supertest'
 import express from 'express'
 import { Knex } from 'knex'
 import { createTelegramRouter } from '../routes/telegram'
+import { globalState } from '../utils/globalState'
 
 // Mock environment variables
 process.env.TELEGRAM_CHAT_ID = '123456789'
@@ -229,6 +230,8 @@ describe('Telegram Webhook', () => {
         chat_id: 123456789,
         text: expect.stringContaining('Supported commands:'),
       })
+      expect(response.body.text).toContain('submissions: 1')
+      expect(response.body.text).toContain('submissions: 0')
       expect(mockDb).not.toHaveBeenCalled()
     })
 
@@ -462,6 +465,100 @@ describe('Telegram Webhook', () => {
         text: expect.stringContaining('No valid app IDs provided'),
       })
       expect(mockDb).not.toHaveBeenCalled()
+    })
+
+    it('should process submissions enable command correctly', async () => {
+      const response = await request(app)
+        .post('/webhook')
+        .send({
+          update_id: 123456789,
+          message: {
+            message_id: 1,
+            from: {
+              id: 123456789,
+              is_bot: false,
+              first_name: 'Test',
+            },
+            chat: {
+              id: 123456789, // Same as TELEGRAM_CHAT_ID
+              first_name: 'Test',
+              type: 'private',
+            },
+            date: 1631234567,
+            text: 'submissions: 1',
+          },
+        })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({
+        method: 'sendMessage',
+        chat_id: 123456789,
+        text: 'Submissions have been enabled.',
+      })
+
+      expect(globalState.getSubmissionsEnabled()).toBe(true)
+    })
+
+    it('should process submissions disable command correctly', async () => {
+      const response = await request(app)
+        .post('/webhook')
+        .send({
+          update_id: 123456789,
+          message: {
+            message_id: 1,
+            from: {
+              id: 123456789,
+              is_bot: false,
+              first_name: 'Test',
+            },
+            chat: {
+              id: 123456789,
+              first_name: 'Test',
+              type: 'private',
+            },
+            date: 1631234567,
+            text: 'submissions: 0',
+          },
+        })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({
+        method: 'sendMessage',
+        chat_id: 123456789,
+        text: 'Submissions have been disabled.',
+      })
+
+      expect(globalState.getSubmissionsEnabled()).toBe(false)
+    })
+
+    it('should handle invalid submissions command correctly', async () => {
+      const response = await request(app)
+        .post('/webhook')
+        .send({
+          update_id: 123456789,
+          message: {
+            message_id: 1,
+            from: {
+              id: 123456789,
+              is_bot: false,
+              first_name: 'Test',
+            },
+            chat: {
+              id: 123456789,
+              first_name: 'Test',
+              type: 'private',
+            },
+            date: 1631234567,
+            text: 'submissions: invalid',
+          },
+        })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({
+        method: 'sendMessage',
+        chat_id: 123456789,
+        text: 'Invalid submissions value. Use "submissions: 1" to enable or "submissions: 0" to disable.',
+      })
     })
   })
 })

@@ -9,6 +9,7 @@ import { TestDb } from './utils/testDb'
 import { Router } from 'express'
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts'
 import { MockNotificationService } from './__mocks__/notification'
+import { globalState } from '../utils/globalState'
 
 interface DbTemplate {
   id: number
@@ -199,6 +200,38 @@ describe('Templates API', () => {
 
       expect(response.status).toBe(400)
       expect(response.body.error).toBe(TEMPLATE_VALIDATION.JSON_TOO_LONG)
+    }, 30000)
+
+    it('should reject template creation when submissions are disabled', async () => {
+      // Disable submissions
+      globalState.setSubmissionsEnabled(false)
+
+      const message = `Create template: ${validTemplate.title}`
+      const signature = await walletClient.signMessage({
+        message,
+        account: testAccount,
+      })
+
+      const response = await request(expressApp)
+        .post('/api/templates')
+        .set('x-wallet-address', testAccount.address)
+        .send({
+          ...validTemplate,
+          address: testAccount.address,
+          signature,
+        })
+
+      expect(response.status).toBe(403)
+      expect(response.body.error).toBe('Submissions are currently disabled. Thank you for your participation in the hackathon!')
+
+      // Verify no template was created
+      const templates = await db<DbTemplate>('templates')
+        .whereRaw('LOWER(owner_address) = ?', [testAccount.address.toLowerCase()])
+        .select()
+      expect(templates).toHaveLength(0)
+
+      // Re-enable submissions for other tests
+      globalState.setSubmissionsEnabled(true)
     }, 30000)
 
     it('should handle errors gracefully', async () => {

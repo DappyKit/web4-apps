@@ -8,6 +8,7 @@ import { JsonSchema, validateInputData } from '../utils/input-validation'
 import { validateJson, JsonValidationError } from '../utils/jsonValidation'
 import { INotificationService } from '../services/notification'
 import { truncateText } from '../utils/text'
+import { globalState } from '../utils/globalState'
 
 /**
  * Extended Request type that includes the authenticated wallet address
@@ -56,6 +57,13 @@ export function createAppsRouter(db: Knex, notificationService: INotificationSer
   // Create new app
   router.post('/my-apps', requireAuth, (async (req: Request, res: Response) => {
     try {
+      // Check if submissions are enabled
+      if (!globalState.getSubmissionsEnabled()) {
+        return res.status(403).json({
+          error: 'Submissions are currently disabled. Thank you for your participation in the hackathon!',
+        })
+      }
+
       const body = req.body
       if (!body || typeof body !== 'object') {
         return res.status(400).json({ error: 'Invalid request body' })

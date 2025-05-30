@@ -11,6 +11,7 @@ import { createFeedbackRouter } from './routes/feedback'
 import { createNotificationService } from './services/notification'
 import cors from 'cors'
 import path from 'path'
+import { createSystemRouter } from './routes/system'
 
 // Determine if we're running from dist or directly from src
 const isDist = __dirname.includes('dist')
@@ -59,6 +60,7 @@ app.use('/api/templates', createTemplatesRouter(db, notificationService))
 app.use('/api/ai', createAiRouter(db))
 app.use('/api/telegram', createTelegramRouter(db))
 app.use('/api/feedback', createFeedbackRouter(db, notificationService))
+app.use('/api/system', createSystemRouter())
 
 const port = process.env.PORT || 3001
 app.listen(port, () => {

@@ -5,6 +5,7 @@ import { validateTemplate, ValidationError } from '../utils/templateValidation'
 import { Template, CreateTemplateDTO } from '../types/template'
 import { INotificationService } from '../services/notification'
 import { truncateText } from '../utils/text'
+import { globalState } from '../utils/globalState'
 
 /**
  * Extended request interface for template creation
@@ -49,6 +50,13 @@ export function createTemplatesRouter(db: Knex, notificationService: INotificati
   // Create template
   router.post('/', requireAuth, async (req: CreateTemplateRequest, res: Response) => {
     try {
+      // Check if submissions are enabled
+      if (!globalState.getSubmissionsEnabled()) {
+        return res.status(403).json({
+          error: 'Submissions are currently disabled. Thank you for your participation in the hackathon!',
+        })
+      }
+
       const { address, signature } = req.body
       const templateData: CreateTemplateDTO = {
         title: req.body.title,

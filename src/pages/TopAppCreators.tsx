@@ -4,6 +4,7 @@ import { getUsersWithAppCounts, TopCreatorsResponse } from '../services/api'
 import { useAppSelector } from '../redux/hooks'
 import { selectAuth } from '../redux/reducers/authSlice'
 import { Link } from 'react-router-dom'
+import { useSubmissionsStatus } from '../hooks/useSubmissionsStatus'
 
 /**
  * Component that displays users who have created at least one app,
@@ -11,6 +12,7 @@ import { Link } from 'react-router-dom'
  */
 export function TopAppCreators(): React.JSX.Element {
   const auth = useAppSelector(selectAuth)
+  const { areSubmissionsEnabled } = useSubmissionsStatus()
   const [topCreators, setTopCreators] = useState<TopCreatorsResponse | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
@@ -58,6 +60,13 @@ export function TopAppCreators(): React.JSX.Element {
       <Alert variant="info" className="mb-4">
         <h5>Rewards Program</h5>
         <p className="mb-0">Top 200 creators receive 50 OP tokens each. Deadline: June 1, 2025.</p>
+        {!areSubmissionsEnabled && (
+          <p className="mb-0 mt-2 text-warning">
+            <strong>
+              Submissions are currently locked until calculation of hackathon results. Thank you for participation!
+            </strong>
+          </p>
+        )}
       </Alert>
 
       {!auth.isAuthenticated && (

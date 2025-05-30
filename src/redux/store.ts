@@ -1,9 +1,11 @@
 import { configureStore, ThunkAction, Action } from '@reduxjs/toolkit'
 import { authSlice } from './reducers/authSlice'
+import { submissionsSlice } from './reducers/submissionsSlice'
 
 export const store = configureStore({
   reducer: {
     auth: authSlice.reducer,
+    submissions: submissionsSlice.reducer,
   },
 })
 

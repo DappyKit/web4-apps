@@ -624,3 +624,24 @@ export async function submitFeedback(feedback: string, email?: string): Promise<
     throw error
   }
 }
+
+/**
+ * Fetches the current submissions status from the server
+ * @returns {Promise<{areSubmissionsEnabled: boolean; message: string}>} The submissions status
+ */
+export async function getSubmissionsStatus(): Promise<{ areSubmissionsEnabled: boolean; message: string }> {
+  try {
+    const response = await fetch('/api/system/submissions-status')
+
+    if (!response.ok) {
+      const errorData: ApiErrorResponse = await response.json()
+      throw new Error(errorData.error || 'Failed to fetch submissions status')
+    }
+
+    const data = await response.json()
+    return data as { areSubmissionsEnabled: boolean; message: string }
+  } catch (error) {
+    console.error('Error fetching submissions status:', error)
+    throw error
+  }
+}

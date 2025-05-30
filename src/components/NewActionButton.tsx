@@ -1,4 +1,5 @@
 import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap'
+import { useSubmissionsStatus } from '../hooks/useSubmissionsStatus'
 
 interface NewActionButtonProps {
   isRegistered: boolean
@@ -20,7 +21,10 @@ export function NewActionButton({
   label,
   icon = 'bi-plus-circle',
 }: NewActionButtonProps): React.JSX.Element {
-  if (isRegistered) {
+  const { areSubmissionsEnabled } = useSubmissionsStatus()
+
+  // If user is registered and submissions are enabled, show active button
+  if (isRegistered && areSubmissionsEnabled) {
     return (
       <Button variant="primary" onClick={onClick} className="btn-sm d-flex align-items-center gap-2">
         <i className={`bi ${icon} d-flex align-items-center`}></i>
@@ -29,15 +33,19 @@ export function NewActionButton({
     )
   }
 
+  // Determine tooltip message based on the reason for disabled state
+  let tooltipMessage: string
+  if (!isRegistered) {
+    tooltipMessage = `Please register your account on the Dashboard page before creating ${label.toLowerCase().replace('new ', '')}`
+  } else if (!areSubmissionsEnabled) {
+    tooltipMessage =
+      'Submissions are currently locked until calculation of hackathon results. Thank you for participation!'
+  } else {
+    tooltipMessage = 'Action not available'
+  }
+
   return (
-    <OverlayTrigger
-      placement="left"
-      overlay={
-        <Tooltip id="register-tooltip">
-          Please register your account on the Dashboard page before creating {label.toLowerCase().replace('new ', '')}
-        </Tooltip>
-      }
-    >
+    <OverlayTrigger placement="left" overlay={<Tooltip id="action-tooltip">{tooltipMessage}</Tooltip>}>
       <span>
         <Button variant="primary" className="btn-sm d-flex align-items-center gap-2" disabled>
           <i className={`bi ${icon} d-flex align-items-center`}></i>
