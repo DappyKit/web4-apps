@@ -27,6 +27,34 @@ interface TelegramUpdate {
 }
 
 /**
+ * Parses the TELEGRAM_CHAT_ID environment variable to support multiple chat IDs
+ * @param {string | undefined} chatIdEnv - The TELEGRAM_CHAT_ID environment variable
+ * @returns {number[]} Array of authorized chat IDs
+ */
+function parseAuthorizedChatIds(chatIdEnv: string | undefined): number[] {
+  if (!chatIdEnv) {
+    return []
+  }
+
+  return chatIdEnv
+    .split(',')
+    .map(id => id.trim())
+    .filter(id => id.length > 0)
+    .map(id => Number(id))
+    .filter(id => !isNaN(id))
+}
+
+/**
+ * Checks if a chat ID is authorized
+ * @param {number} chatId - The chat ID to check
+ * @param {number[]} authorizedChatIds - Array of authorized chat IDs
+ * @returns {boolean} Whether the chat ID is authorized
+ */
+function isAuthorizedChat(chatId: number, authorizedChatIds: number[]): boolean {
+  return authorizedChatIds.includes(chatId)
+}
+
+/**
  * Creates and configures the telegram webhook router
  * @param {Knex} db - The database connection instance
  * @returns {Router} Express router configured with telegram webhook route
@@ -38,6 +66,9 @@ export function createTelegramRouter(db: Knex): Router {
   const isDist = __dirname.includes('dist')
   const envPath = isDist ? path.resolve(__dirname, '../../../.env') : path.resolve(__dirname, '../../.env')
   dotenv.config({ path: envPath })
+
+  // Parse authorized chat IDs
+  const authorizedChatIds = parseAuthorizedChatIds(process.env.TELEGRAM_CHAT_ID)
 
   // Webhook endpoint for Telegram
   router.post('/webhook', (async (req: Request, res: Response) => {
@@ -51,10 +82,9 @@ export function createTelegramRouter(db: Knex): Router {
 
       const chatId = update.message.chat.id
       const message = update.message.text.trim()
-      const authorizedChatId = process.env.TELEGRAM_CHAT_ID
 
       // Check if the chat is authorized
-      if (!authorizedChatId || chatId.toString() !== authorizedChatId) {
+      if (authorizedChatIds.length === 0 || !isAuthorizedChat(chatId, authorizedChatIds)) {
         return res.status(200).json({
           method: 'sendMessage',
           chat_id: chatId,

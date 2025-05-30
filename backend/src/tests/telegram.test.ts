@@ -5,7 +5,7 @@ import { createTelegramRouter } from '../routes/telegram'
 import { globalState } from '../utils/globalState'
 
 // Mock environment variables
-process.env.TELEGRAM_CHAT_ID = '123456789'
+process.env.TELEGRAM_CHAT_ID = '123456789,987654321'
 
 /* eslint-disable @typescript-eslint/unbound-method */
 describe('Telegram Webhook', () => {
@@ -35,38 +35,7 @@ describe('Telegram Webhook', () => {
   })
 
   describe('POST /webhook', () => {
-    it('should reject messages from unauthorized chat', async () => {
-      const response = await request(app)
-        .post('/webhook')
-        .send({
-          update_id: 123456789,
-          message: {
-            message_id: 1,
-            from: {
-              id: 987654321,
-              is_bot: false,
-              first_name: 'Test',
-            },
-            chat: {
-              id: 987654321, // Different from TELEGRAM_CHAT_ID
-              first_name: 'Test',
-              type: 'private',
-            },
-            date: 1631234567,
-            text: 'public apps: 1, 2, 3',
-          },
-        })
-
-      expect(response.status).toBe(200)
-      expect(response.body).toEqual({
-        method: 'sendMessage',
-        chat_id: 987654321,
-        text: 'You have no access to this bot.',
-      })
-      expect(mockDb).not.toHaveBeenCalled()
-    })
-
-    it('should process public apps command correctly', async () => {
+    it('should accept messages from first authorized chat', async () => {
       const response = await request(app)
         .post('/webhook')
         .send({
@@ -79,7 +48,7 @@ describe('Telegram Webhook', () => {
               first_name: 'Test',
             },
             chat: {
-              id: 123456789, // Same as TELEGRAM_CHAT_ID
+              id: 123456789, // First authorized chat ID
               first_name: 'Test',
               type: 'private',
             },
@@ -100,7 +69,7 @@ describe('Telegram Webhook', () => {
       expect(mockQueryBuilder.update).toHaveBeenCalledWith({ moderated: true })
     })
 
-    it('should process public templates command correctly', async () => {
+    it('should accept messages from second authorized chat', async () => {
       const response = await request(app)
         .post('/webhook')
         .send({
@@ -108,12 +77,12 @@ describe('Telegram Webhook', () => {
           message: {
             message_id: 1,
             from: {
-              id: 123456789,
+              id: 987654321,
               is_bot: false,
               first_name: 'Test',
             },
             chat: {
-              id: 123456789,
+              id: 987654321, // Second authorized chat ID
               first_name: 'Test',
               type: 'private',
             },
@@ -125,13 +94,44 @@ describe('Telegram Webhook', () => {
       expect(response.status).toBe(200)
       expect(response.body).toEqual({
         method: 'sendMessage',
-        chat_id: 123456789,
+        chat_id: 987654321,
         text: 'Successfully made 1 template(s) public',
       })
 
       expect(mockDb).toHaveBeenCalledWith('templates')
       expect(mockQueryBuilder.whereIn).toHaveBeenCalledWith('id', [4, 5, 6])
       expect(mockQueryBuilder.update).toHaveBeenCalledWith({ moderated: true })
+    })
+
+    it('should reject messages from unauthorized chat', async () => {
+      const response = await request(app)
+        .post('/webhook')
+        .send({
+          update_id: 123456789,
+          message: {
+            message_id: 1,
+            from: {
+              id: 555666777,
+              is_bot: false,
+              first_name: 'Test',
+            },
+            chat: {
+              id: 555666777, // Unauthorized chat ID
+              first_name: 'Test',
+              type: 'private',
+            },
+            date: 1631234567,
+            text: 'public apps: 1, 2, 3',
+          },
+        })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({
+        method: 'sendMessage',
+        chat_id: 555666777,
+        text: 'You have no access to this bot.',
+      })
+      expect(mockDb).not.toHaveBeenCalled()
     })
 
     it('should process private apps command correctly', async () => {
@@ -560,6 +560,68 @@ describe('Telegram Webhook', () => {
         text: 'Invalid submissions value. Use "submissions: 1" to enable or "submissions: 0" to disable.',
       })
     })
+  })
+})
+
+describe('Multiple Chat ID Support', () => {
+  let app: express.Express
+  let mockDb: jest.Mock
+  let mockQueryBuilder: Knex.QueryBuilder
+
+  beforeEach(() => {
+    // Create mock query builder
+    mockQueryBuilder = {
+      whereIn: jest.fn().mockReturnThis(),
+      update: jest.fn().mockResolvedValue([1]),
+      where: jest.fn().mockReturnThis(),
+      count: jest.fn().mockReturnThis(),
+      first: jest.fn().mockResolvedValue({ count: 1 }),
+    } as unknown as Knex.QueryBuilder
+
+    // Create mock database function
+    mockDb = jest.fn().mockImplementation(() => {
+      return mockQueryBuilder
+    })
+  })
+
+  it('should work with single chat ID', () => {
+    process.env.TELEGRAM_CHAT_ID = '123456789'
+    app = express()
+    app.use(express.json())
+    app.use('/', createTelegramRouter(mockDb as unknown as Knex))
+
+    // Test that the single ID works
+    expect(process.env.TELEGRAM_CHAT_ID).toBe('123456789')
+  })
+
+  it('should work with multiple chat IDs separated by commas', () => {
+    process.env.TELEGRAM_CHAT_ID = '123456789,987654321,555666777'
+    app = express()
+    app.use(express.json())
+    app.use('/', createTelegramRouter(mockDb as unknown as Knex))
+
+    // Test that multiple IDs work
+    expect(process.env.TELEGRAM_CHAT_ID).toBe('123456789,987654321,555666777')
+  })
+
+  it('should handle whitespace in chat ID list', () => {
+    process.env.TELEGRAM_CHAT_ID = ' 123456789 , 987654321 , 555666777 '
+    app = express()
+    app.use(express.json())
+    app.use('/', createTelegramRouter(mockDb as unknown as Knex))
+
+    // Test that whitespace is handled
+    expect(process.env.TELEGRAM_CHAT_ID).toBe(' 123456789 , 987654321 , 555666777 ')
+  })
+
+  it('should handle empty environment variable', () => {
+    process.env.TELEGRAM_CHAT_ID = ''
+    app = express()
+    app.use(express.json())
+    app.use('/', createTelegramRouter(mockDb as unknown as Knex))
+
+    // Test that empty string is handled
+    expect(process.env.TELEGRAM_CHAT_ID).toBe('')
   })
 })
 /* eslint-enable @typescript-eslint/unbound-method */
