@@ -19,6 +19,7 @@ vi.mock('../../services/api', () => ({
   getMyTemplates: vi.fn(),
   deleteTemplate: vi.fn(),
   createTemplate: vi.fn(),
+  getSubmissionsStatus: vi.fn(),
 }))
 
 describe('MyTemplates Component', () => {
@@ -38,6 +39,7 @@ describe('MyTemplates Component', () => {
     })
     ;(api.checkUserRegistration as Mock).mockResolvedValue(true)
     ;(api.getMyTemplates as Mock).mockResolvedValue([])
+    ;(api.getSubmissionsStatus as Mock).mockResolvedValue({ areSubmissionsEnabled: true })
   })
 
   it('displays templates when loaded', async () => {

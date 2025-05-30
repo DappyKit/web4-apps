@@ -425,7 +425,9 @@ describe('Apps API', () => {
           })
 
         expect(response.status).toBe(403)
-        expect(response.body.error).toBe('Submissions are currently disabled. Thank you for your participation in the hackathon!')
+        expect(response.body.error).toBe(
+          'Submissions are currently disabled. Thank you for your participation in the hackathon!',
+        )
 
         // Verify no app was created
         const apps = await db('apps').where('owner_address', testAccount.address)

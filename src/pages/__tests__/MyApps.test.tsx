@@ -21,6 +21,7 @@ vi.mock('../../services/api', () => ({
   deleteApp: vi.fn(),
   createApp: vi.fn(),
   getAllTemplatesForUser: vi.fn(),
+  getSubmissionsStatus: vi.fn(),
 }))
 
 describe('MyApps Component', () => {
@@ -44,6 +45,7 @@ describe('MyApps Component', () => {
       userTemplates: [],
       publicTemplates: [],
     })
+    ;(api.getSubmissionsStatus as Mock).mockResolvedValue({ areSubmissionsEnabled: true })
   })
 
   it('displays loading state initially', () => {

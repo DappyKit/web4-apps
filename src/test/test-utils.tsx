@@ -2,6 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider, type Config } from 'wagmi'
 import { BrowserRouter } from 'react-router-dom'
 import { ReactNode, JSX } from 'react'
+import { Provider } from 'react-redux'
+import { store } from '../redux/store'
 
 const queryClient = new QueryClient()
 
@@ -21,10 +23,12 @@ export function MockWagmiProvider({ children }: { children: ReactNode }): JSX.El
  */
 export function AllTheProviders({ children }: { children: ReactNode }): JSX.Element {
   return (
-    <QueryClientProvider client={queryClient}>
-      <MockWagmiProvider>
-        <BrowserRouter>{children}</BrowserRouter>
-      </MockWagmiProvider>
-    </QueryClientProvider>
+    <Provider store={store}>
+      <QueryClientProvider client={queryClient}>
+        <MockWagmiProvider>
+          <BrowserRouter>{children}</BrowserRouter>
+        </MockWagmiProvider>
+      </QueryClientProvider>
+    </Provider>
   )
 }

@@ -20,6 +20,7 @@ vi.mock('../../services/api', () => ({
   getMyApps: vi.fn(),
   deleteApp: vi.fn(),
   getMyTemplates: vi.fn(),
+  getSubmissionsStatus: vi.fn(),
 }))
 
 describe('Dashboard Component', () => {
@@ -38,6 +39,7 @@ describe('Dashboard Component', () => {
       signMessageAsync: mockSignMessage,
     })
     ;(api.checkUserRegistration as Mock).mockResolvedValue(false)
+    ;(api.getSubmissionsStatus as Mock).mockResolvedValue({ areSubmissionsEnabled: true })
   })
 
   it('displays registration prompt when not registered', async () => {

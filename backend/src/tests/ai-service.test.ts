@@ -34,9 +34,11 @@ describe('AiService', () => {
         apiKey: 'test-api-key',
       })
 
+      // Set up the mock response before making the call
+      mockSuccessResponse('{}')
+
       // We can't directly test private properties, but we can test their effects
       // through the behavior of the service when calling methods
-      mockSuccessResponse('{}')
       await service.processPrompt('test')
 
       // Check that the default values were used in the API call
