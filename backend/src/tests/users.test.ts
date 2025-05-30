@@ -330,10 +330,10 @@ describe('Users API', () => {
         owner_address: address,
       })
 
-      // Create some test apps for the user
+      // Create some test apps for the user (must be moderated to be counted)
       await db('apps').insert([
-        { name: 'Test App 1', owner_address: address, template_id: templateId },
-        { name: 'Test App 2', owner_address: address, template_id: templateId },
+        { name: 'Test App 1', owner_address: address, template_id: templateId, moderated: true },
+        { name: 'Test App 2', owner_address: address, template_id: templateId, moderated: true },
       ])
 
       const response = await request(app).get('/api/with-app-counts')
@@ -357,6 +357,58 @@ describe('Users API', () => {
       const testUser = responseBody.find(user => user.trimmed_address === expectedTrimmedAddress)
       expect(testUser).toBeDefined()
       expect(Number(testUser?.app_count)).toBe(2) // Count is returned as string from the database
+    })
+
+    it('should only count moderated apps, not non-moderated apps', async () => {
+      // Create test users
+      const address1 = '0x1234567890123456789012345678901234567890'
+      const address2 = '0x2345678901234567890123456789012345678901'
+      await db('users').insert([{ address: address1 }, { address: address2 }])
+
+      // Create a test template
+      const [templateId] = await db('templates').insert({
+        title: 'Test Template',
+        url: 'https://example.com',
+        json_data: '{}',
+        owner_address: address1,
+      })
+
+      // User 1: 2 moderated apps, 1 non-moderated app
+      await db('apps').insert([
+        { name: 'Moderated App 1', owner_address: address1, template_id: templateId, moderated: true },
+        { name: 'Moderated App 2', owner_address: address1, template_id: templateId, moderated: true },
+        { name: 'Non-moderated App', owner_address: address1, template_id: templateId, moderated: false },
+      ])
+
+      // User 2: Only non-moderated apps (should not appear in results)
+      await db('apps').insert([
+        { name: 'Non-moderated App 3', owner_address: address2, template_id: templateId, moderated: false },
+        { name: 'Non-moderated App 4', owner_address: address2, template_id: templateId, moderated: false },
+      ])
+
+      const response = await request(app).get('/api/with-app-counts')
+
+      expect(response.status).toBe(200)
+      expect(response.body).toHaveProperty('users')
+
+      // Type the response body properly
+      interface UserResponse {
+        trimmed_address: string
+        app_count: string
+      }
+
+      const responseBody = response.body.users as UserResponse[]
+
+      // User 1 should appear with count of 2 (only moderated apps)
+      const expectedTrimmedAddress1 = `${address1.substring(0, 7)}...${address1.substring(address1.length - 5)}`
+      const testUser1 = responseBody.find(user => user.trimmed_address === expectedTrimmedAddress1)
+      expect(testUser1).toBeDefined()
+      expect(Number(testUser1?.app_count)).toBe(2) // Only moderated apps counted
+
+      // User 2 should NOT appear because they have no moderated apps
+      const expectedTrimmedAddress2 = `${address2.substring(0, 7)}...${address2.substring(address2.length - 5)}`
+      const testUser2 = responseBody.find(user => user.trimmed_address === expectedTrimmedAddress2)
+      expect(testUser2).toBeUndefined()
     })
 
     it('should handle database errors gracefully', async () => {

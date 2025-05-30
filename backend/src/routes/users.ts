@@ -24,8 +24,9 @@ export function createUsersRouter(db: Knex, notificationService: INotificationSe
   const router = Router()
 
   /**
-   * Get users with app counts (limited to users with at least one app)
-   * Returns maximum 200 users sorted by app count in descending order
+   * Get users with app counts, sorted by number of moderated apps they have created
+   * Only counts moderated apps (approved apps) for ranking
+   * Returns maximum 200 users sorted by moderated app count in descending order
    */
   router.get('/with-app-counts', async (req, res) => {
     try {
@@ -45,6 +46,7 @@ export function createUsersRouter(db: Knex, notificationService: INotificationSe
         .select('users.address', 'users.win_1_amount')
         .count('apps.id as app_count')
         .join('apps', 'users.address', 'apps.owner_address')
+        .where('apps.moderated', true) // Only count moderated apps
         .groupBy('users.address', 'users.win_1_amount')
         .having(db.raw('count(apps.id) >= 1'))
         .orderBy('users.win_1_amount', 'desc')
@@ -68,6 +70,7 @@ export function createUsersRouter(db: Knex, notificationService: INotificationSe
           .select('users.address', 'users.win_1_amount')
           .count('apps.id as app_count')
           .join('apps', 'users.address', 'apps.owner_address')
+          .where('apps.moderated', true) // Only count moderated apps for ranking too
           .groupBy('users.address', 'users.win_1_amount')
           .having(db.raw('count(apps.id) >= 1'))
           .orderBy('users.win_1_amount', 'desc')
@@ -143,6 +146,7 @@ export function createUsersRouter(db: Knex, notificationService: INotificationSe
         .select('users.address', 'users.win_1_amount')
         .count('apps.id as app_count')
         .join('apps', 'users.address', 'apps.owner_address')
+        .where('apps.moderated', true) // Only count moderated apps
         .whereNotNull('users.win_1_amount')
         .where('users.win_1_amount', '>', '0') // Only get users with positive win amount
         .groupBy('users.address', 'users.win_1_amount')
