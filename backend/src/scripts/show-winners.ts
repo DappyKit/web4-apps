@@ -63,30 +63,29 @@ async function showWinners(): Promise<void> {
     })
 
     console.log(`\nTotal creators displayed: ${winners.length}`)
-    
+
     // Get all moderated templates
     console.log('\n' + '='.repeat(50))
     console.log('MODERATED TEMPLATES')
     console.log('='.repeat(50) + '\n')
-    
+
     const templates = await db('templates')
       .select('owner_address', 'title')
       .where('moderated', true)
       .orderBy('title', 'asc')
-    
+
     if (templates.length === 0) {
       console.log('No moderated templates found.')
     } else {
       console.log(`Found ${templates.length} moderated templates:\n`)
-      
+
       templates.forEach(template => {
         const templateData = template as { owner_address: string; title: string }
         console.log(`${templateData.owner_address} "${templateData.title}"`)
       })
-      
+
       console.log(`\nTotal moderated templates displayed: ${templates.length}`)
     }
-    
   } catch (error: unknown) {
     console.error('Error fetching creators:', error)
     process.exit(1)
