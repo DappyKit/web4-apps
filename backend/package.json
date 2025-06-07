@@ -12,7 +12,8 @@
     "test": "jest --detectOpenHandles --runInBand --forceExit --testTimeout=30000",
     "test:coverage": "jest --coverage --detectOpenHandles --runInBand --forceExit --testTimeout=30000",
     "seed": "knex seed:run --knexfile src/knexfile.ts",
-    "test:gpt-schema": "ts-node src/scripts/test-gpt-schema.ts"
+    "test:gpt-schema": "ts-node src/scripts/test-gpt-schema.ts",
+    "show-winners": "ts-node src/scripts/show-winners.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
